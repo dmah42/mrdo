@@ -8,15 +8,33 @@
 
 namespace parser {
 namespace {
-std::map<char, int> binary_op_precedence;
+ast::Expression* Identifier();
+ast::Expression* If();
+ast::Expression* Nested();
+ast::Expression* Number();
+
+const std::map<char, std::function<ast::Expression*()>> token_func = {
+  {lexer::TOKEN_IDENT, Identifier},
+  {lexer::TOKEN_NUMBER, Number},
+  {lexer::TOKEN_IF, If},
+  {'(', Nested}
+};
+
+const std::map<char, int> binary_op_precedence = {
+  {'<', 10},
+  {'+', 20},
+  {'-', 20},
+  {'*', 40}
+};
 
 int GetTokenPrecedence() {
   if (!isascii(lexer::current_token))
     return -1;
 
-  int prec = binary_op_precedence[lexer::current_token];
-  if (prec <= 0) return -1;
-  return prec;
+  std::map<char, int>::const_iterator prec_it =
+      binary_op_precedence.find(lexer::current_token);
+  if (prec_it == binary_op_precedence.end()) return -1;
+  return prec_it->second;
 }
 
 ast::Expression* Error(const std::string& s) {
@@ -103,14 +121,11 @@ ast::Expression* If() {
 }
 
 ast::Expression* Primary() {
-  switch (lexer::current_token) {
-    case lexer::TOKEN_IDENT: return Identifier();
-    case lexer::TOKEN_NUMBER: return Number();
-    case '(': return Nested();
-    case lexer::TOKEN_IF: return If();
-    default:
-      return Error("unknown token expecting expression");
-  }
+  std::map<char, std::function<ast::Expression*()>>::const_iterator
+      token_func_it = token_func.find(lexer::current_token);
+  if (token_func_it == token_func.end())
+    return Error("unknown token expecting expression");
+  return token_func_it->second();
 }
 
 ast::Expression* BinaryOpRHS(
@@ -170,17 +185,15 @@ ast::Prototype* Prototype() {
 }
 }  // end namespace
 
-void SetBinaryOpPrecedence(char c, int p) {
-  binary_op_precedence[c] = p;
-}
-
 ast::Function* Function() {
   lexer::GetNextToken();
   ast::Prototype* proto = Prototype();
-  if (proto == nullptr) return nullptr;
+  if (proto == nullptr)
+    return ErrorF("unable to parse prototype");
 
   ast::Expression* e = Expression();
-  if (e == nullptr) return nullptr;
+  if (e == nullptr)
+    return ErrorF("unable to parse body");
 
   return new ast::Function(proto, e);
 }

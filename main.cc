@@ -51,16 +51,7 @@ void HandleTopLevel() {
   lexer::GetNextToken();
 }
 
-void SetBinaryOpPrecedence() {
-  parser::SetBinaryOpPrecedence('<', 10);
-  parser::SetBinaryOpPrecedence('+', 20);
-  parser::SetBinaryOpPrecedence('-', 20);
-  parser::SetBinaryOpPrecedence('*', 40);
-}
-
 int main() {
-  SetBinaryOpPrecedence();
-
   std::cout << "> ";
 
   lexer::Initialize();
