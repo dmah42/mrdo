@@ -7,12 +7,8 @@
 #include "lexer.h"
 
 namespace parser {
-
+namespace {
 std::map<char, int> binary_op_precedence;
-
-void SetBinaryOpPrecedence(char c, int p) {
-  binary_op_precedence[c] = p;
-}
 
 int GetTokenPrecedence() {
   if (!isascii(lexer::current_token))
@@ -87,14 +83,31 @@ ast::Expression* Nested() {
   return e;
 }
 
+ast::Expression* If() {
+  lexer::GetNextToken();
+
+  const ast::Expression* condition = Expression();
+  if (!condition) return nullptr;
+
+  const ast::Expression* _if = Expression();
+  if (!_if) return nullptr;
+
+  if (lexer::current_token != lexer::TOKEN_ELSE)
+    return Error("Expected 'else'");
+  lexer::GetNextToken();
+
+  const ast::Expression* _else = Expression();
+  if (!_else) return nullptr;
+
+  return new ast::If(condition, _if, _else);
+}
+
 ast::Expression* Primary() {
   switch (lexer::current_token) {
-    case lexer::TOKEN_IDENT:
-      return Identifier();
-    case lexer::TOKEN_NUMBER:
-      return Number();
-    case '(':
-      return Nested();
+    case lexer::TOKEN_IDENT: return Identifier();
+    case lexer::TOKEN_NUMBER: return Number();
+    case '(': return Nested();
+    case lexer::TOKEN_IF: return If();
     default:
       return Error("unknown token expecting expression");
   }
@@ -154,6 +167,11 @@ ast::Prototype* Prototype() {
 
   lexer::GetNextToken();
   return new ast::Prototype(name, args);
+}
+}  // end namespace
+
+void SetBinaryOpPrecedence(char c, int p) {
+  binary_op_precedence[c] = p;
 }
 
 ast::Function* Function() {

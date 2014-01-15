@@ -72,6 +72,53 @@ llvm::Value* Call::Codegen() const {
   return builder.CreateCall(callee_func, argv, "calltmp");
 }
 
+llvm::Value* If::Codegen() const {
+  llvm::Value* condition_value = condition_->Codegen();
+  if (!condition_value) return nullptr;
+
+  // convert double to bool
+  condition_value = builder.CreateFCmpONE(
+      condition_value,
+      llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0)),
+      "ifcond");
+
+  llvm::Function* parent = builder.GetInsertBlock()->getParent();
+
+  // Create blocks for 'if' and 'else'
+  llvm::BasicBlock* if_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "if", parent);
+  llvm::BasicBlock* else_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "else");
+  llvm::BasicBlock* merge_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "ifcont");
+
+  builder.CreateCondBr(condition_value, if_block, else_block);
+
+  // emit if block
+  builder.SetInsertPoint(if_block);
+
+  llvm::Value* if_value = if_->Codegen();
+  if (!if_value) return nullptr;
+
+  builder.CreateBr(merge_block);
+  if_block = builder.GetInsertBlock();
+
+  // emit else block
+  parent->getBasicBlockList().push_back(else_block);
+  builder.SetInsertPoint(else_block);
+
+  llvm::Value* else_value = else_->Codegen();
+  if (!else_value) return nullptr;
+
+  builder.CreateBr(merge_block);
+  else_block  = builder.GetInsertBlock();
+
+  // emit merge block
+  parent->getBasicBlockList().push_back(merge_block);
+  builder.SetInsertPoint(merge_block);
+  llvm::PHINode* phi = builder.CreatePHI(llvm::Type::getDoubleTy(llvm::getGlobalContext()), 2, "iftmp");
+  phi->addIncoming(if_value, if_block);
+  phi->addIncoming(else_value, else_block);
+  return phi;
+}
+
 llvm::Function* Prototype::Codegen() const {
   llvm::FunctionType* ft = llvm::FunctionType::get(
       llvm::Type::getDoubleTy(llvm::getGlobalContext()),

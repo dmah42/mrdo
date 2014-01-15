@@ -16,3 +16,4 @@ CMakeFiles/
 Makefile
 bin/
 cmake_install.cmake
+.ycm_extra_conf.pyc

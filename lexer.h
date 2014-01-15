@@ -10,7 +10,9 @@ enum Token {
   TOKEN_FUNC = -2,
   TOKEN_EXTERN = -3,
   TOKEN_IDENT = -4,
-  TOKEN_NUMBER = -5
+  TOKEN_NUMBER = -5,
+  TOKEN_IF = -6,
+  TOKEN_ELSE = -7
 };
 
 extern int current_token;

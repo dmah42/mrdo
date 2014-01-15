@@ -58,6 +58,18 @@ class Call : public Expression {
   std::vector<Expression*> args_;
 };
 
+class If : public Expression {
+ public:
+  If(const Expression* condition, const Expression* _if,
+     const Expression* _else)
+    : condition_(condition), if_(_if), else_(_else) {}
+  virtual llvm::Value* Codegen() const;
+ private:
+  const Expression* condition_;
+  const Expression* if_;
+  const Expression* else_;
+};
+
 class Prototype {
  public:
   Prototype(const std::string& name, const std::vector<std::string>& args)

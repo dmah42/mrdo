@@ -1,6 +1,7 @@
 #include "lexer.h"
 
 #include <iostream>
+#include <map>
 #include <string>
 
 namespace lexer {
@@ -9,8 +10,13 @@ int current_token = TOKEN_EOF;
 std::string identifier_str;
 double number_value = 0.0;
 
-const char func_str[] = "func";
-const char extern_str[] = "extern";
+namespace {
+const std::map<std::string, lexer::Token> token_map = {
+  {"func", TOKEN_FUNC},
+  {"extern", TOKEN_EXTERN},
+  {"if", TOKEN_IF},
+  {"else", TOKEN_ELSE},
+};
 
 int GetToken() {
   static char lastch = ' ';
@@ -23,9 +29,11 @@ int GetToken() {
     while (isalnum((lastch = getchar())))
       identifier_str += lastch;
 
-    if (identifier_str == func_str) return TOKEN_FUNC;
-    if (identifier_str == extern_str) return TOKEN_EXTERN;
-    return TOKEN_IDENT;
+    std::map<std::string, lexer::Token>::const_iterator tok_it =
+        token_map.find(identifier_str);
+    if (tok_it == token_map.end())
+      return TOKEN_IDENT;
+    return tok_it->second;
   }
 
   if (isdigit(lastch)) {
@@ -52,6 +60,7 @@ int GetToken() {
   lastch = getchar();
   return ch;
 }
+}  // end namespace
 
 void Initialize() {
   GetNextToken();
@@ -60,5 +69,4 @@ void Initialize() {
 int GetNextToken() {
   return current_token = GetToken();
 }
-
 }
