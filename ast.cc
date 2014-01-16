@@ -14,14 +14,22 @@
 #include "engine.h"
 
 namespace ast {
-
+namespace {
 llvm::IRBuilder<> builder(llvm::getGlobalContext());
 std::map<std::string, llvm::Value*> named_values;
+
+llvm::Value* ToBool(llvm::Value* val) {
+  return builder.CreateFCmpUNE(
+      val,
+      llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0)),
+      "booltmp");
+}
 
 llvm::Value* ErrorV(const std::string& str) {
   std::cerr << "Error: " << str << "\n";
   return nullptr;
 }
+}  // end namespace
 
 llvm::Value* Number::Codegen() const {
   return llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(value_));
@@ -60,6 +68,14 @@ llvm::Value* Binary::Codegen() const {
     return builder.CreateUIToFP(
         builder.CreateFCmpUEQ(l, r, "cmptmp"),
         llvm::Type::getDoubleTy(llvm::getGlobalContext()), "booltmp");
+  else if (op_ == "or")
+    return builder.CreateUIToFP(
+        builder.CreateOr(ToBool(l), ToBool(r), "ortmp"),
+        llvm::Type::getDoubleTy(llvm::getGlobalContext()), "booltmp");
+  else if (op_ == "and")
+    return builder.CreateUIToFP(
+        builder.CreateAnd(ToBool(l), ToBool(r), "andtmp"),
+        llvm::Type::getDoubleTy(llvm::getGlobalContext()), "booltmp");
   else
     return ErrorV("unknown binary operator");
 }
@@ -70,7 +86,7 @@ llvm::Value* Unary::Codegen() const {
 
   if (op_ == "not")
     return builder.CreateUIToFP(
-        builder.CreateFCmpUEQ(expr, llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0)), "nottmp"),
+        builder.CreateNot(ToBool(expr), "nottmp"),
         llvm::Type::getDoubleTy(llvm::getGlobalContext()), "booltmp");
   else
     return ErrorV("unknown unary operator");

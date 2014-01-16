@@ -26,6 +26,8 @@ const std::map<std::string, lexer::Token> token_map = {
   {"eq", TOKEN_BINOP},
   {"lt", TOKEN_BINOP},
   {"gt", TOKEN_BINOP},
+  {"and", TOKEN_BINOP},
+  {"or", TOKEN_BINOP},
   {"not", TOKEN_UNOP}
 };
 

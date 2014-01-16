@@ -23,7 +23,10 @@ const std::map<char, std::function<ast::Expression*()>> token_func = {
   {'(', Nested}
 };
 
+// TODO: keep this in sync with lexer somehow...
 const std::map<std::string, int> binary_op_precedence = {
+  {"or", 5},
+  {"and", 6},
   {"eq", 9},
   {"lt", 10},
   {"gt", 10},
@@ -115,11 +118,9 @@ ast::Expression* If() {
   assert(lexer::current_token == lexer::TOKEN_IF);
   lexer::GetNextToken();
 
-  std::cerr << "++ parsing condition\n";
   const ast::Expression* condition = Expression();
   if (!condition) return nullptr;
 
-  std::cerr << "++ parsing if block\n";
   const ast::Expression* _if = Expression();
   if (!_if) return nullptr;
 
@@ -129,7 +130,6 @@ ast::Expression* If() {
   }
   lexer::GetNextToken();
 
-  std::cerr << "++ parsing else block\n";
   const ast::Expression* _else = Expression();
   if (!_else) return nullptr;
 
@@ -190,7 +190,6 @@ ast::Expression* Primary() {
     Error("unknown token ", lexer::current_token, " expecting expression");
     return nullptr;
   }
-  std::cerr << "++ calling token_func for " << lexer::current_token << '\n';
   return token_func.at(lexer::current_token)();
 }
 
