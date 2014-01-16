@@ -18,6 +18,10 @@
 #include "parser.h"
 
 namespace engine {
+namespace {
+const char prompt[] = "hup> ";
+}
+
 llvm::ExecutionEngine* execution_engine = nullptr;
 llvm::FunctionPassManager* fpm = nullptr;
 llvm::Module* module = nullptr;
@@ -47,7 +51,31 @@ void Initialize() {
   fpm->add(llvm::createCFGSimplificationPass());
   fpm->doInitialization();
 
+  std::cout << prompt << std::flush;
+
   lexer::Initialize();
+}
+
+void Run() {
+  while (true) {
+    std::cout << prompt << std::flush;
+    switch (lexer::current_token) {
+      case lexer::TOKEN_EOF:
+        return;
+      case ';':  // ignore top-level semicolons
+        lexer::GetNextToken();
+        break;
+      case lexer::TOKEN_FUNC:
+        engine::HandleFunc();
+        break;
+      case lexer::TOKEN_NATIVE:
+        engine::HandleNative();
+        break;
+      default:
+        engine::HandleTopLevel();
+        break;
+    }
+  }
 }
 
 void Dump() {
@@ -66,9 +94,9 @@ void HandleFunc() {
   lexer::GetNextToken();
 }
 
-void HandleExtern() {
-  if (ast::Prototype* p = parser::Extern()) {
-    std::cerr << "Parsed extern\n";
+void HandleNative() {
+  if (ast::Prototype* p = parser::Native()) {
+    std::cerr << "Parsed native\n";
     if (llvm::Function* lf = p->Codegen()) {
       std::cerr << "Read prototype:\n";
       lf->dump();

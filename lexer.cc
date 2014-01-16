@@ -8,32 +8,52 @@ namespace lexer {
 
 int current_token = TOKEN_EOF;
 std::string identifier_str;
+std::string op_str;
 double number_value = 0.0;
 
 namespace {
 const std::map<std::string, lexer::Token> token_map = {
   {"func", TOKEN_FUNC},
-  {"extern", TOKEN_EXTERN},
+  {"native", TOKEN_NATIVE},
   {"if", TOKEN_IF},
   {"else", TOKEN_ELSE},
   {"for", TOKEN_FOR},
-  {"do", TOKEN_DO}
+  {"do", TOKEN_DO},
+  {"+", TOKEN_BINOP},
+  {"-", TOKEN_BINOP},
+  {"*", TOKEN_BINOP},
+  {"/", TOKEN_BINOP},
+  {"eq", TOKEN_BINOP},
+  {"lt", TOKEN_BINOP},
+  {"gt", TOKEN_BINOP},
+  {"not", TOKEN_UNOP}
 };
 
 int GetToken() {
   static char lastch = ' ';
 
+  identifier_str.clear();
+  op_str.clear();
+
   while (isspace(lastch))
     lastch = getchar();
 
+  // identifier or op
   if (isalpha(lastch)) {
-    identifier_str = lastch;
-    while (isalnum((lastch = getchar())))
-      identifier_str += lastch;
+    std::string str;
+    do {
+      str += lastch;
+      lastch = getchar();
+    } while (isalnum(lastch));
 
-    if (token_map.count(identifier_str) == 0)
+    if (token_map.count(str) == 0) {
+      identifier_str = str;
       return TOKEN_IDENT;
-    return token_map.at(identifier_str);
+    }
+    Token tok = token_map.at(str);
+    if (tok == TOKEN_BINOP || tok == TOKEN_UNOP)
+      op_str = str;
+    return tok;
   }
 
   if (isdigit(lastch)) {
@@ -47,14 +67,26 @@ int GetToken() {
     return TOKEN_NUMBER;
   }
 
-  if (lastch == '#') {
-    do lastch = getchar();
-    while (lastch != EOF && lastch != '\n' && lastch != '\r');
-    if (lastch != EOF)
-      return GetToken();
+  std::string maybe_op(1, lastch);
+  if (token_map.count(maybe_op) != 0) {
+    Token tok = token_map.at(maybe_op);
+    if (tok == TOKEN_BINOP || tok == TOKEN_UNOP)
+      op_str = maybe_op;
+    lastch = getchar();
+    return tok;
   }
 
-  if (lastch == EOF) return TOKEN_EOF;
+  switch (lastch) {
+    case '#':
+      do lastch = getchar();
+      while (lastch != EOF && lastch != '\n' && lastch != '\r');
+      if (lastch != EOF)
+        return GetToken();
+      break;
+
+    case EOF:
+      return TOKEN_EOF;
+  }
 
   int ch = lastch;
   lastch = getchar();

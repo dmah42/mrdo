@@ -1,5 +1,6 @@
 #include "parser.h"
 
+#include <cassert>
 #include <iostream>
 #include <map>
 
@@ -22,41 +23,42 @@ const std::map<char, std::function<ast::Expression*()>> token_func = {
   {'(', Nested}
 };
 
-const std::map<char, int> binary_op_precedence = {
-  {'<', 10},
-  {'+', 20},
-  {'-', 20},
-  {'*', 40}
+const std::map<std::string, int> binary_op_precedence = {
+  {"eq", 9},
+  {"lt", 10},
+  {"gt", 10},
+  {"+", 20},
+  {"-", 20},
+  {"*", 40},
+  {"/", 40}
 };
 
+// TODO: better error checking if this is called with a binop that isn't in the
+// precedence map.
 int GetTokenPrecedence() {
-  if (!isascii(lexer::current_token))
+  if (lexer::current_token != lexer::TOKEN_BINOP)
     return -1;
 
-  std::map<char, int>::const_iterator prec_it =
-      binary_op_precedence.find(lexer::current_token);
+  std::map<std::string, int>::const_iterator prec_it =
+      binary_op_precedence.find(lexer::op_str);
   if (prec_it == binary_op_precedence.end()) return -1;
   return prec_it->second;
 }
 
-ast::Expression* Error(const std::string& s) {
-  std::cerr << "Error: " << s << "\n";
-  return nullptr;
+void Error() {
+  std::cerr << "\n";
 }
 
-ast::Prototype* ErrorP(const std::string& s) {
-  Error(s);
-  return nullptr;
-}
-
-ast::Function* ErrorF(const std::string& s) {
-  Error(s);
-  return nullptr;
+template <typename H, typename ...T>
+void Error(const H& err, T&&... t) {
+  std::cerr << err;
+  Error(std::forward<T>(t)...);
 }
 
 ast::Expression* Expression();
 
 ast::Expression* Identifier() {
+  assert(lexer::current_token == lexer::TOKEN_IDENT);
   std::string name = lexer::identifier_str;
   lexer::GetNextToken();
 
@@ -76,8 +78,10 @@ ast::Expression* Identifier() {
 
       if (lexer::current_token == ')') break;
 
-      if (lexer::current_token != ',')
-        return Error("Expected ')' or ',' in argument list.");
+      if (lexer::current_token != ',') {
+        Error("Expected ')' or ',' in argument list.");
+        return nullptr;
+      }
       lexer::GetNextToken();
     }
   }
@@ -88,6 +92,7 @@ ast::Expression* Identifier() {
 }
 
 ast::Expression* Number() {
+  assert(lexer::current_token == lexer::TOKEN_NUMBER);
   ast::Expression* e(new ast::Number(lexer::number_value));
   lexer::GetNextToken();
   return e;
@@ -98,24 +103,33 @@ ast::Expression* Nested() {
   ast::Expression* e = Expression();
   if (e == nullptr) return nullptr;
 
-  if (lexer::current_token != ')') return Error("expected ')'");
+  if (lexer::current_token != ')') {
+    Error("expected ')', got ", lexer::current_token);
+    return nullptr;
+  }
   lexer::GetNextToken();
   return e;
 }
 
 ast::Expression* If() {
+  assert(lexer::current_token == lexer::TOKEN_IF);
   lexer::GetNextToken();
 
+  std::cerr << "++ parsing condition\n";
   const ast::Expression* condition = Expression();
   if (!condition) return nullptr;
 
+  std::cerr << "++ parsing if block\n";
   const ast::Expression* _if = Expression();
   if (!_if) return nullptr;
 
-  if (lexer::current_token != lexer::TOKEN_ELSE)
-    return Error("Expected 'else'");
+  if (lexer::current_token != lexer::TOKEN_ELSE) {
+    Error("Expected 'else', got ", lexer::current_token);
+    return nullptr;
+  }
   lexer::GetNextToken();
 
+  std::cerr << "++ parsing else block\n";
   const ast::Expression* _else = Expression();
   if (!_else) return nullptr;
 
@@ -123,23 +137,30 @@ ast::Expression* If() {
 }
 
 ast::Expression* For() {
+  assert(lexer::current_token == lexer::TOKEN_FOR);
   lexer::GetNextToken();
 
-  if (lexer::current_token != lexer::TOKEN_IDENT)
-    return Error("Expected identifier after for");
+  if (lexer::current_token != lexer::TOKEN_IDENT) {
+    Error("Expected identifier after for");
+    return nullptr;
+  }
 
   std::string name = lexer::identifier_str;
   lexer::GetNextToken();
 
-  if (lexer::current_token != '=')
-    return Error("expected '=' after for");
+  if (lexer::current_token != '=') {
+    Error("expected '=' after for");
+    return nullptr;
+  }
   lexer::GetNextToken();
 
   const ast::Expression* start = Expression();
   if (!start) return nullptr;
 
-  if (lexer::current_token != ',')
-    return Error("expected ',' after for start");
+  if (lexer::current_token != ',') {
+    Error("expected ',' after for start");
+    return nullptr;
+  }
   lexer::GetNextToken();
 
   const ast::Expression* end = Expression();
@@ -152,8 +173,10 @@ ast::Expression* For() {
     if (!step) return nullptr;
   }
 
-  if (lexer::current_token != lexer::TOKEN_DO)
-    return Error("expected 'do' after step");
+  if (lexer::current_token != lexer::TOKEN_DO) {
+    Error("expected 'do' after step");
+    return nullptr;
+  }
   lexer::GetNextToken();
 
   const ast::Expression* body = Expression();
@@ -163,9 +186,23 @@ ast::Expression* For() {
 }
 
 ast::Expression* Primary() {
-  if (token_func.count(lexer::current_token) == 0)
-    return Error("unknown token expecting expression");
+  if (token_func.count(lexer::current_token) == 0) {
+    Error("unknown token ", lexer::current_token, " expecting expression");
+    return nullptr;
+  }
+  std::cerr << "++ calling token_func for " << lexer::current_token << '\n';
   return token_func.at(lexer::current_token)();
+}
+
+ast::Expression* Unary() {
+  if (lexer::current_token != lexer::TOKEN_UNOP)
+    return Primary();
+  std::string op = lexer::op_str;
+  lexer::GetNextToken();
+
+  ast::Expression* operand = Unary();
+  if (!operand) return nullptr;
+  return new ast::Unary(op, operand);
 }
 
 ast::Expression* BinaryOpRHS(
@@ -177,17 +214,21 @@ ast::Expression* BinaryOpRHS(
     // done.
     if (token_prec < precedence) return lhs;
 
-    int op = lexer::current_token;
+    if (lexer::current_token != lexer::TOKEN_BINOP) {
+      Error("unknown operator ", lexer::current_token);
+      return nullptr;
+    }
+    std::string op = lexer::op_str;
     lexer::GetNextToken();
 
-    ast::Expression* rhs = std::move(Primary());
+    ast::Expression* rhs = Unary();
     if (rhs == nullptr) return nullptr;
 
     // If the binop binds less tightly with RHS than the operator after RHS, let
     // the pending op take RHS as its LHS.
     int next_prec = GetTokenPrecedence();
     if (token_prec < next_prec) {
-      rhs = BinaryOpRHS(token_prec + 1, std::move(rhs));
+      rhs = BinaryOpRHS(token_prec + 1, rhs);
       if (rhs == nullptr) return nullptr;
     }
 
@@ -197,28 +238,34 @@ ast::Expression* BinaryOpRHS(
 }
 
 ast::Expression* Expression() {
-  ast::Expression* lhs = Primary();
+  ast::Expression* lhs = Unary();
   if (lhs == nullptr) return nullptr;
-  return BinaryOpRHS(0, std::move(lhs));
+  return BinaryOpRHS(0, lhs);
 }
 
 ast::Prototype* Prototype() {
-  if (lexer::current_token != lexer::TOKEN_IDENT)
-    return ErrorP("Expected function name in prototype");
+  if (lexer::current_token != lexer::TOKEN_IDENT) {
+    Error("Expected function name in prototype");
+    return nullptr;
+  }
 
   std::string name = lexer::identifier_str;
   lexer::GetNextToken();
 
-  if (lexer::current_token != '(')
-    return ErrorP("Expected '(' in prototype");
+  if (lexer::current_token != '(') {
+    Error("Expected '(' in prototype");
+    return nullptr;
+  }
 
   std::vector<std::string> args;
   // TODO: comma between args
   while (lexer::GetNextToken() == lexer::TOKEN_IDENT)
     args.push_back(lexer::identifier_str);
 
-  if (lexer::current_token != ')')
-    return ErrorP("Expected ')' in prototype");
+  if (lexer::current_token != ')') {
+    Error("Expected ')' in prototype");
+    return nullptr;
+  }
 
   lexer::GetNextToken();
   return new ast::Prototype(name, args);
@@ -228,12 +275,10 @@ ast::Prototype* Prototype() {
 ast::Function* Function() {
   lexer::GetNextToken();
   ast::Prototype* proto = Prototype();
-  if (proto == nullptr)
-    return ErrorF("unable to parse prototype");
+  if (proto == nullptr) return nullptr;
 
   ast::Expression* e = Expression();
-  if (e == nullptr)
-    return ErrorF("unable to parse body");
+  if (e == nullptr) return nullptr;
 
   return new ast::Function(proto, e);
 }
@@ -246,7 +291,7 @@ ast::Function* TopLevel() {
   return new ast::Function(p, e);
 }
 
-ast::Prototype* Extern() {
+ast::Prototype* Native() {
   lexer::GetNextToken();
   return Prototype();
 }

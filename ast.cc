@@ -40,21 +40,40 @@ llvm::Value* Binary::Codegen() const {
   llvm::Value* r = rhs_->Codegen();
   if (!l || !r) return nullptr;
 
-  switch (op_) {
-    case '+':
-      return builder.CreateFAdd(l, r, "addtmp");
-    case '-':
-      return builder.CreateFSub(l, r, "subtmp");
-    case '*':
-      return builder.CreateFMul(l, r, "multmp");
-    case '<': {
-      return builder.CreateUIToFP(
-            builder.CreateFCmpULT(l, r, "cmptmp"),
-            llvm::Type::getDoubleTy(llvm::getGlobalContext()), "booltmp");
-    }
-    default:
-      return ErrorV("unknown binary operator");
-  }
+  if (op_ == "+")
+    return builder.CreateFAdd(l, r, "addtmp");
+  else if (op_ == "-")
+    return builder.CreateFSub(l, r, "subtmp");
+  else if (op_ == "*")
+    return builder.CreateFMul(l, r, "multmp");
+  else if (op_ == "/")
+    return builder.CreateFDiv(l, r, "divtmp");
+  else if (op_ == "lt")
+    return builder.CreateUIToFP(
+        builder.CreateFCmpULT(l, r, "cmptmp"),
+        llvm::Type::getDoubleTy(llvm::getGlobalContext()), "booltmp");
+  else if (op_ == "gt")
+    return builder.CreateUIToFP(
+        builder.CreateFCmpUGT(l, r, "cmptmp"),
+        llvm::Type::getDoubleTy(llvm::getGlobalContext()), "booltmp");
+  else if (op_ == "eq")
+    return builder.CreateUIToFP(
+        builder.CreateFCmpUEQ(l, r, "cmptmp"),
+        llvm::Type::getDoubleTy(llvm::getGlobalContext()), "booltmp");
+  else
+    return ErrorV("unknown binary operator");
+}
+
+llvm::Value* Unary::Codegen() const {
+  llvm::Value* expr = expression_->Codegen();
+  if (!expr) return nullptr;
+
+  if (op_ == "not")
+    return builder.CreateUIToFP(
+        builder.CreateFCmpUEQ(expr, llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0)), "nottmp"),
+        llvm::Type::getDoubleTy(llvm::getGlobalContext()), "booltmp");
+  else
+    return ErrorV("unknown unary operator");
 }
 
 llvm::Value* Call::Codegen() const {

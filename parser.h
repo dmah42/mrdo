@@ -8,7 +8,7 @@
 namespace parser {
 ast::Function* Function();
 ast::Function* TopLevel();
-ast::Prototype* Extern();
+ast::Prototype* Native();
 }  // end parser
 
 #endif

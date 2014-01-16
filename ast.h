@@ -39,13 +39,23 @@ class Variable : public Expression {
 
 class Binary : public Expression {
  public:
-  Binary(char op, Expression* lhs, Expression* rhs)
-    : op_(op), lhs_(std::move(lhs)), rhs_(std::move(rhs)) {}
+  Binary(const std::string& op, Expression* lhs, Expression* rhs)
+    : op_(op), lhs_(lhs), rhs_(rhs) {}
   virtual llvm::Value* Codegen() const;
  private:
-  char op_;
+  std::string op_;
   Expression* lhs_;
   Expression* rhs_;
+};
+
+class Unary : public Expression {
+ public:
+  Unary(const std::string& op, Expression* expr)
+    : op_(op), expression_(expr) {}
+  virtual llvm::Value* Codegen() const;
+ private:
+  std::string op_;
+  Expression* expression_;
 };
 
 class Call : public Expression {
