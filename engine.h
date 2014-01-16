@@ -13,6 +13,12 @@ extern llvm::FunctionPassManager* fpm;
 extern llvm::Module* module;
 
 void Initialize();
-}
+
+void Dump();
+
+void HandleFunc();
+void HandleExtern();
+void HandleTopLevel();
+}  // end namespace engine
 
 #endif

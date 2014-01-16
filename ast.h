@@ -65,9 +65,19 @@ class If : public Expression {
     : condition_(condition), if_(_if), else_(_else) {}
   virtual llvm::Value* Codegen() const;
  private:
-  const Expression* condition_;
-  const Expression* if_;
-  const Expression* else_;
+  const Expression *condition_, *if_, *else_;
+};
+
+class For : public Expression {
+ public:
+   // TODO: for i = 1..n, 2 {
+  For(const std::string& var, const Expression* start, const Expression* end,
+      const Expression* step, const Expression* body)
+      : var_(var), start_(start), end_(end), step_(step), body_(body) {}
+  virtual llvm::Value* Codegen() const;
+ private:
+  std::string var_;
+  const Expression *start_, *end_, *step_, *body_;
 };
 
 class Prototype {

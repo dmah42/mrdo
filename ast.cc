@@ -28,8 +28,10 @@ llvm::Value* Number::Codegen() const {
 }
 
 llvm::Value* Variable::Codegen() const {
-  if (named_values.count(name_) == 0)
-    return ErrorV("Unknown variable name");
+  if (named_values.count(name_) == 0) {
+    std::cerr << "Error: Unknown variable name: " << name_ << "\n";
+    return nullptr;
+  }
   return named_values[name_];
 }
 
@@ -117,6 +119,75 @@ llvm::Value* If::Codegen() const {
   phi->addIncoming(if_value, if_block);
   phi->addIncoming(else_value, else_block);
   return phi;
+}
+
+llvm::Value* For::Codegen() const {
+  llvm::Value* start_value = start_->Codegen();
+  if (!start_value) return nullptr;
+
+  llvm::Function* parent = builder.GetInsertBlock()->getParent();
+  llvm::BasicBlock* preheader_block = builder.GetInsertBlock();
+  llvm::BasicBlock* loop_block =
+      llvm::BasicBlock::Create(llvm::getGlobalContext(), "loop", parent);
+
+  builder.CreateBr(loop_block);
+
+  builder.SetInsertPoint(loop_block);
+
+  llvm::PHINode* variable = builder.CreatePHI(
+      llvm::Type::getDoubleTy(llvm::getGlobalContext()), 2, var_.c_str());
+  variable->addIncoming(start_value, preheader_block);
+
+  // Within the loop, the variable is defined equal to the PHI node. This allows
+  // shadowing of existing variables.
+  llvm::Value* old_value = named_values[var_];
+  named_values[var_] = variable;
+
+  if (!body_->Codegen()) return nullptr;
+
+  // emit start value
+  llvm::Value* step_value;
+  if (step_) {
+    step_value = step_->Codegen();
+    if (!step_value) return nullptr;
+  } else {
+    // default step to 1.0
+    step_value = llvm::ConstantFP::get(
+        llvm::getGlobalContext(), llvm::APFloat(1.0));
+  }
+
+  llvm::Value* next_var = builder.CreateFAdd(variable, step_value, "nextvar");
+
+  // compute end condition
+  llvm::Value* end_cond = end_->Codegen();
+  if (!end_cond) return nullptr;
+
+  // convert to bool
+  end_cond =
+    builder.CreateFCmpONE(end_cond,
+                          llvm::ConstantFP::get(llvm::getGlobalContext(),
+                                                llvm::APFloat(0.0)),
+                          "loopcond");
+
+  // create the after loop
+  llvm::BasicBlock* loop_end_block = builder.GetInsertBlock();
+  llvm::BasicBlock* after_block =
+      llvm::BasicBlock::Create(llvm::getGlobalContext(), "afterloop", parent);
+
+  builder.CreateCondBr(end_cond, loop_block, after_block);
+  builder.SetInsertPoint(after_block);
+
+  variable->addIncoming(next_var, loop_end_block);
+
+  // restore the shadowed variable
+  if (old_value)
+    named_values[var_] = old_value;
+  else
+    named_values.erase(var_);
+
+  // for always returns 0.0
+  return llvm::Constant::getNullValue(
+      llvm::Type::getDoubleTy(llvm::getGlobalContext()));
 }
 
 llvm::Function* Prototype::Codegen() const {

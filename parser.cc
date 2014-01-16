@@ -10,6 +10,7 @@ namespace parser {
 namespace {
 ast::Expression* Identifier();
 ast::Expression* If();
+ast::Expression* For();
 ast::Expression* Nested();
 ast::Expression* Number();
 
@@ -17,6 +18,7 @@ const std::map<char, std::function<ast::Expression*()>> token_func = {
   {lexer::TOKEN_IDENT, Identifier},
   {lexer::TOKEN_NUMBER, Number},
   {lexer::TOKEN_IF, If},
+  {lexer::TOKEN_FOR, For},
   {'(', Nested}
 };
 
@@ -120,12 +122,50 @@ ast::Expression* If() {
   return new ast::If(condition, _if, _else);
 }
 
+ast::Expression* For() {
+  lexer::GetNextToken();
+
+  if (lexer::current_token != lexer::TOKEN_IDENT)
+    return Error("Expected identifier after for");
+
+  std::string name = lexer::identifier_str;
+  lexer::GetNextToken();
+
+  if (lexer::current_token != '=')
+    return Error("expected '=' after for");
+  lexer::GetNextToken();
+
+  const ast::Expression* start = Expression();
+  if (!start) return nullptr;
+
+  if (lexer::current_token != ',')
+    return Error("expected ',' after for start");
+  lexer::GetNextToken();
+
+  const ast::Expression* end = Expression();
+  if (!end) return nullptr;
+
+  const ast::Expression* step = nullptr;
+  if (lexer::current_token == ',') {
+    lexer::GetNextToken();
+    step = Expression();
+    if (!step) return nullptr;
+  }
+
+  if (lexer::current_token != lexer::TOKEN_DO)
+    return Error("expected 'do' after step");
+  lexer::GetNextToken();
+
+  const ast::Expression* body = Expression();
+  if (!body) return nullptr;
+
+  return new ast::For(name, start, end, step, body);
+}
+
 ast::Expression* Primary() {
-  std::map<char, std::function<ast::Expression*()>>::const_iterator
-      token_func_it = token_func.find(lexer::current_token);
-  if (token_func_it == token_func.end())
+  if (token_func.count(lexer::current_token) == 0)
     return Error("unknown token expecting expression");
-  return token_func_it->second();
+  return token_func.at(lexer::current_token)();
 }
 
 ast::Expression* BinaryOpRHS(

@@ -13,6 +13,10 @@
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Transforms/Scalar.h>
 
+#include "ast.h"
+#include "lexer.h"
+#include "parser.h"
+
 namespace engine {
 llvm::ExecutionEngine* execution_engine = nullptr;
 llvm::FunctionPassManager* fpm = nullptr;
@@ -42,5 +46,54 @@ void Initialize() {
   fpm->add(llvm::createGVNPass());
   fpm->add(llvm::createCFGSimplificationPass());
   fpm->doInitialization();
+
+  lexer::Initialize();
 }
+
+void Dump() {
+  module->dump();
+}
+
+void HandleFunc() {
+  if (ast::Function* f = parser::Function()) {
+    std::cerr << "Parsed function\n";
+    if (llvm::Function* lf = f->Codegen()) {
+      std::cerr << "Read function:\n";
+      lf->dump();
+    }
+    return;
+  }
+  lexer::GetNextToken();
+}
+
+void HandleExtern() {
+  if (ast::Prototype* p = parser::Extern()) {
+    std::cerr << "Parsed extern\n";
+    if (llvm::Function* lf = p->Codegen()) {
+      std::cerr << "Read prototype:\n";
+      lf->dump();
+    }
+    return;
+  }
+  lexer::GetNextToken();
+}
+
+void HandleTopLevel() {
+  if (ast::Function* f = parser::TopLevel()) {
+    std::cerr << "Parsed top-level expression\n";
+    if (llvm::Function* lf = f->Codegen()) {
+      std::cerr << "Read top-level expression:\n";
+      lf->dump();
+
+      // JIT
+      void* fptr = engine::execution_engine->getPointerToFunction(lf);
+
+      double (*fp)() = (double (*)())(intptr_t)fptr;
+      std::cerr << "Evaluated to " << fp() << "\n";
+    }
+    return;
+  }
+  lexer::GetNextToken();
+}
+
 }

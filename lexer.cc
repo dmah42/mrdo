@@ -16,6 +16,8 @@ const std::map<std::string, lexer::Token> token_map = {
   {"extern", TOKEN_EXTERN},
   {"if", TOKEN_IF},
   {"else", TOKEN_ELSE},
+  {"for", TOKEN_FOR},
+  {"do", TOKEN_DO}
 };
 
 int GetToken() {
@@ -29,11 +31,9 @@ int GetToken() {
     while (isalnum((lastch = getchar())))
       identifier_str += lastch;
 
-    std::map<std::string, lexer::Token>::const_iterator tok_it =
-        token_map.find(identifier_str);
-    if (tok_it == token_map.end())
+    if (token_map.count(identifier_str) == 0)
       return TOKEN_IDENT;
-    return tok_it->second;
+    return token_map.at(identifier_str);
   }
 
   if (isdigit(lastch)) {
