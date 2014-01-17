@@ -1,6 +1,6 @@
-hup
+do
 ===
-hup is a language in which variables may be either a:
+do is a language in which variables may be either a:
 
 * coll (an immutable collection of things)
 * seq (an ordered immutable collection of things)
