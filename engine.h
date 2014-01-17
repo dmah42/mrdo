@@ -12,7 +12,7 @@ extern llvm::ExecutionEngine* execution_engine;
 extern llvm::FunctionPassManager* fpm;
 extern llvm::Module* module;
 
-void Initialize();
+void Initialize(bool opt);
 void Run();
 void Dump();
 

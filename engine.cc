@@ -27,7 +27,7 @@ llvm::ExecutionEngine* execution_engine = nullptr;
 llvm::FunctionPassManager* fpm = nullptr;
 llvm::Module* module = nullptr;
 
-void Initialize() {
+void Initialize(bool opt) {
   llvm::InitializeNativeTarget();
 
   module = new llvm::Module("kaleidoscope jit", llvm::getGlobalContext());
@@ -44,12 +44,14 @@ void Initialize() {
   }
 
   fpm = new llvm::FunctionPassManager(module);
-  fpm->add(new llvm::DataLayout(*(execution_engine->getDataLayout())));
-  fpm->add(llvm::createBasicAliasAnalysisPass());
-  fpm->add(llvm::createInstructionCombiningPass());
-  fpm->add(llvm::createReassociatePass());
-  fpm->add(llvm::createGVNPass());
-  fpm->add(llvm::createCFGSimplificationPass());
+  if (opt) {
+    fpm->add(new llvm::DataLayout(*(execution_engine->getDataLayout())));
+    fpm->add(llvm::createBasicAliasAnalysisPass());
+    fpm->add(llvm::createInstructionCombiningPass());
+    fpm->add(llvm::createReassociatePass());
+    fpm->add(llvm::createGVNPass());
+    fpm->add(llvm::createCFGSimplificationPass());
+  }
   fpm->doInitialization();
 
   native::Initialize();
