@@ -60,13 +60,25 @@ llvm::Value* Binary::Codegen() const {
     return builder.CreateUIToFP(
         builder.CreateFCmpULT(l, r, "cmptmp"),
         llvm::Type::getDoubleTy(llvm::getGlobalContext()), "booltmp");
+  else if (op_ == "le")
+    return builder.CreateUIToFP(
+        builder.CreateFCmpULE(l, r, "cmptmp"),
+        llvm::Type::getDoubleTy(llvm::getGlobalContext()), "booltmp");
   else if (op_ == "gt")
     return builder.CreateUIToFP(
         builder.CreateFCmpUGT(l, r, "cmptmp"),
         llvm::Type::getDoubleTy(llvm::getGlobalContext()), "booltmp");
+  else if (op_ == "ge")
+    return builder.CreateUIToFP(
+        builder.CreateFCmpUGE(l, r, "cmptmp"),
+        llvm::Type::getDoubleTy(llvm::getGlobalContext()), "booltmp");
   else if (op_ == "eq")
     return builder.CreateUIToFP(
         builder.CreateFCmpUEQ(l, r, "cmptmp"),
+        llvm::Type::getDoubleTy(llvm::getGlobalContext()), "booltmp");
+  else if (op_ == "ne")
+    return builder.CreateUIToFP(
+        builder.CreateFCmpUNE(l, r, "cmptmp"),
         llvm::Type::getDoubleTy(llvm::getGlobalContext()), "booltmp");
   else if (op_ == "or")
     return builder.CreateUIToFP(

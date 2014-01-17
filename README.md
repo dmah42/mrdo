@@ -27,7 +27,7 @@ The usual operations are available within a function for elements of a
 collection:
 
 * arithmetical: +, -, /, *
-* comparitive: gt, lt, eq
+* comparitive: gt, ge, lt, le, eq, ne
 * logical: and, or, not
 
 Collections themselves have the following operations defined:
