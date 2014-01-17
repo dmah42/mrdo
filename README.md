@@ -1,6 +1,6 @@
-hup
+do
 ===
-hup is a language in which variables may be either a:
+do is a language in which variables may be either a:
 
 * real (mutable 64-bit floating point)
 * coll (an immutable collection of reals)
