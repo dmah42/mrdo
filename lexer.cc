@@ -14,7 +14,6 @@ double number_value = 0.0;
 namespace {
 const std::map<std::string, lexer::Token> token_map = {
   {"func", TOKEN_FUNC},
-  {"native", TOKEN_NATIVE},
   {"if", TOKEN_IF},
   {"else", TOKEN_ELSE},
   {"for", TOKEN_FOR},

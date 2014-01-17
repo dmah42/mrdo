@@ -1,13 +1,21 @@
+#include "native.h"
+
 #include <cstdio>
+#include <vector>
 
-// native methods to expose to hup
-// TODO: register them to remove the need for the 'native' keyword.
+#include "ast.h"
+
+// native methods to expose to do
 extern "C" {
-
 double printd(double d) {
   char ret = putchar((char)d);
   putchar('\n');
   return ret;
 }
-
 }
+
+namespace native {
+void Initialize() {
+  (new ast::Prototype("printd", {"c"}))->Codegen();
+}
+}  // end namespace native

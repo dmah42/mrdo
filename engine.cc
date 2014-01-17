@@ -15,6 +15,7 @@
 
 #include "ast.h"
 #include "lexer.h"
+#include "native.h"
 #include "parser.h"
 
 namespace engine {
@@ -51,6 +52,8 @@ void Initialize() {
   fpm->add(llvm::createCFGSimplificationPass());
   fpm->doInitialization();
 
+  native::Initialize();
+
   std::cout << prompt << std::flush;
 
   lexer::Initialize();
@@ -68,9 +71,6 @@ void Run() {
       case lexer::TOKEN_FUNC:
         engine::HandleFunc();
         break;
-      case lexer::TOKEN_NATIVE:
-        engine::HandleNative();
-        break;
       default:
         engine::HandleTopLevel();
         break;
@@ -87,18 +87,6 @@ void HandleFunc() {
     std::cerr << "Parsed function\n";
     if (llvm::Function* lf = f->Codegen()) {
       std::cerr << "Read function:\n";
-      lf->dump();
-    }
-    return;
-  }
-  lexer::GetNextToken();
-}
-
-void HandleNative() {
-  if (ast::Prototype* p = parser::Native()) {
-    std::cerr << "Parsed native\n";
-    if (llvm::Function* lf = p->Codegen()) {
-      std::cerr << "Read prototype:\n";
       lf->dump();
     }
     return;

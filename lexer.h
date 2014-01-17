@@ -8,16 +8,15 @@ namespace lexer {
 enum Token {
   TOKEN_EOF = -1,
   TOKEN_FUNC = -2,
-  TOKEN_NATIVE = -3,
-  TOKEN_IDENT = -4,
-  TOKEN_NUMBER = -5,
-  TOKEN_IF = -6,
-  TOKEN_ELSE = -7,
-  TOKEN_FOR = -8,
-  TOKEN_DO = -9,
-  TOKEN_DONE = -10,
-  TOKEN_BINOP = -11,
-  TOKEN_UNOP = -12
+  TOKEN_IDENT = -3,
+  TOKEN_NUMBER = -4,
+  TOKEN_IF = -5,
+  TOKEN_ELSE = -6,
+  TOKEN_FOR = -7,
+  TOKEN_DO = -8,
+  TOKEN_DONE = -9,
+  TOKEN_BINOP = -10,
+  TOKEN_UNOP = -11
 };
 
 extern int current_token;
