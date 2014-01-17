@@ -12,7 +12,6 @@ class Value;
 }
 
 namespace ast {
-
 void Initialize();
 
 class Expression {
@@ -33,6 +32,7 @@ class Variable : public Expression {
  public:
   Variable(const std::string& name) : name_(name) {}
   virtual llvm::Value* Codegen() const;
+  const std::string& name() const { return name_; }
  private:
   std::string name_;
 };
@@ -93,11 +93,22 @@ class For : public Expression {
   std::vector<const Expression*> body_;
 };
 
+class Var : public Expression {
+ public:
+  Var(std::string& name, const Expression* init)
+      : name_(name), init_(init) {}
+  virtual llvm::Value* Codegen() const;
+ private:
+  std::string name_;
+  const Expression* init_;
+};
+
 class Prototype {
  public:
   Prototype(const std::string& name, const std::vector<std::string>& args)
     : name_(name), args_(args) {}
   llvm::Function* Codegen() const;
+  const std::vector<std::string>& args() const { return args_; }
  private:
   std::string name_;
   std::vector<std::string> args_;
@@ -105,15 +116,15 @@ class Prototype {
 
 class Function {
  public:
-  Function(Prototype* prototype,
-           std::vector<const Expression*> body)
+  Function(Prototype* prototype, std::vector<const Expression*> body)
     : prototype_(prototype), body_(body) {}
   llvm::Function* Codegen() const;
  private:
+  void CreateArgumentAllocas(llvm::Function* f) const;
+
   Prototype* prototype_;
   std::vector<const Expression*> body_;
 };
-
-}  // end ast
+}  // end namespace ast
 
 #endif

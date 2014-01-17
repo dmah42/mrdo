@@ -16,7 +16,8 @@ enum Token {
   TOKEN_DO = -8,
   TOKEN_DONE = -9,
   TOKEN_BINOP = -10,
-  TOKEN_UNOP = -11
+  TOKEN_UNOP = -11,
+  TOKEN_VAR = -12  // TODO: break into coll/seq/dict
 };
 
 extern int current_token;

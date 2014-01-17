@@ -14,17 +14,20 @@ ast::Expression* If();
 ast::Expression* For();
 ast::Expression* Nested();
 ast::Expression* Number();
+ast::Expression* Var();
 
 const std::map<char, std::function<ast::Expression*()>> token_func = {
   {lexer::TOKEN_IDENT, Identifier},
   {lexer::TOKEN_NUMBER, Number},
   {lexer::TOKEN_IF, If},
   {lexer::TOKEN_FOR, For},
+  {lexer::TOKEN_VAR, Var},
   {'(', Nested}
 };
 
 // TODO: keep this in sync with lexer somehow...
 const std::map<std::string, int> binary_op_precedence = {
+  {"=", 2},
   {"or", 5},
   {"and", 6},
   {"eq", 9},
@@ -223,6 +226,34 @@ ast::Expression* For() {
   if (!ExpressionList(&body)) return nullptr;
 
   return new ast::For(name, start, end, step, body);
+}
+
+ast::Expression* Var() {
+  lexer::GetNextToken();
+
+  if (lexer::current_token != lexer::TOKEN_IDENT) {
+    Error("expected identifier after var");
+    return nullptr;
+  }
+
+  std::string name = lexer::identifier_str;
+  lexer::GetNextToken();
+
+  // read optional initializer
+  // TODO: make this required - copy or 'read'
+  ast::Expression* init = nullptr;
+  if (lexer::current_token == lexer::TOKEN_BINOP) {
+    if (lexer::op_str != "=") {
+      Error("expected '=' after variable name");
+      return nullptr;
+    }
+    lexer::GetNextToken();
+
+    init = Expression();
+    if (!init) return nullptr;
+  }
+
+  return new ast::Var(name, init);
 }
 
 ast::Expression* Primary() {

@@ -47,10 +47,11 @@ void Initialize(bool opt) {
   if (opt) {
     fpm->add(new llvm::DataLayout(*(execution_engine->getDataLayout())));
     fpm->add(llvm::createBasicAliasAnalysisPass());
-    fpm->add(llvm::createInstructionCombiningPass());
-    fpm->add(llvm::createReassociatePass());
-    fpm->add(llvm::createGVNPass());
     fpm->add(llvm::createCFGSimplificationPass());
+    fpm->add(llvm::createGVNPass());
+    fpm->add(llvm::createInstructionCombiningPass());
+    fpm->add(llvm::createPromoteMemoryToRegisterPass());
+    fpm->add(llvm::createReassociatePass());
   }
   fpm->doInitialization();
 
@@ -86,9 +87,8 @@ void Dump() {
 
 void HandleFunc() {
   if (ast::Function* f = parser::Function()) {
-    std::cerr << "Parsed function\n";
     if (llvm::Function* lf = f->Codegen()) {
-      std::cerr << "Read function:\n";
+      std::cerr << "Function:\n";
       lf->dump();
     }
     return;
@@ -98,9 +98,8 @@ void HandleFunc() {
 
 void HandleTopLevel() {
   if (ast::Function* f = parser::TopLevel()) {
-    std::cerr << "Parsed top-level expression\n";
     if (llvm::Function* lf = f->Codegen()) {
-      std::cerr << "Read top-level expression:\n";
+      std::cerr << "Top-level expression:\n";
       lf->dump();
 
       // JIT
@@ -113,5 +112,4 @@ void HandleTopLevel() {
   }
   lexer::GetNextToken();
 }
-
-}
+}  // end namespace engine

@@ -16,7 +16,17 @@
 namespace ast {
 namespace {
 llvm::IRBuilder<> builder(llvm::getGlobalContext());
-std::map<std::string, llvm::Value*> named_values;
+
+// A vector of maps means we can push and pop scope easily.
+std::vector<std::map<std::string, llvm::AllocaInst*>> named_values;
+
+llvm::AllocaInst* CreateEntryBlockAlloca(llvm::Function* function,
+                                         const std::string& var) {
+  llvm::IRBuilder<> tmp(&function->getEntryBlock(),
+                        function->getEntryBlock().begin());
+  return tmp.CreateAlloca(llvm::Type::getDoubleTy(llvm::getGlobalContext()), 0,
+                          var.c_str());
+}
 
 llvm::Value* ToBool(llvm::Value* val) {
   return builder.CreateFCmpUNE(
@@ -29,21 +39,51 @@ llvm::Value* ErrorV(const std::string& str) {
   std::cerr << "Error: " << str << "\n";
   return nullptr;
 }
+
+void EnterScope() {
+  named_values.push_back({});
+}
+
+void ExitScope() {
+  // TODO: clean up memory.
+  named_values.back().clear();
+  named_values.pop_back();
+}
 }  // end namespace
+
+void Initialize() {
+  // Add global scope
+  EnterScope();
+}
 
 llvm::Value* Number::Codegen() const {
   return llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(value_));
 }
 
 llvm::Value* Variable::Codegen() const {
-  if (named_values.count(name_) == 0) {
+  if (named_values.back().count(name_) == 0) {
     std::cerr << "Error: Unknown variable name: " << name_ << "\n";
     return nullptr;
   }
-  return named_values[name_];
+  return builder.CreateLoad(named_values.back()[name_], name_.c_str());
 }
 
 llvm::Value* Binary::Codegen() const {
+  if (op_ == "=") {
+    // Require LHS to be identifier
+    Variable* lhs_expression = dynamic_cast<Variable*>(lhs_);
+    if (!lhs_expression) return ErrorV("destination of '=' must be a variable");
+
+    llvm::Value* v = rhs_->Codegen();
+    if (!v) return nullptr;
+
+    llvm::Value* var = named_values.back()[lhs_expression->name()];
+    if (!var) return ErrorV("unknown variable name");
+
+    builder.CreateStore(v, var);
+    return v;
+  }
+
   llvm::Value* l = lhs_->Codegen();
   llvm::Value* r = rhs_->Codegen();
   if (!l || !r) return nullptr;
@@ -146,10 +186,12 @@ llvm::Value* If::Codegen() const {
   // emit if block
   builder.SetInsertPoint(if_block);
 
+  EnterScope();
   for (const ast::Expression* e : if_) {
     llvm::Value* value = e->Codegen();
     if (!value) return nullptr;
   }
+  ExitScope();
 
   builder.CreateBr(merge_block);
   if_block = builder.GetInsertBlock();
@@ -159,10 +201,13 @@ llvm::Value* If::Codegen() const {
     // emit else block
     builder.SetInsertPoint(else_block);
 
+    EnterScope();
     for (const ast::Expression* e : else_) {
       llvm::Value* value = e->Codegen();
       if (!value) return nullptr;
     }
+    ExitScope();
+
     builder.CreateBr(merge_block);
     else_block = builder.GetInsertBlock();
   }
@@ -176,11 +221,34 @@ llvm::Value* If::Codegen() const {
 }
 
 llvm::Value* For::Codegen() const {
+  // var = alloca real
+  // ...
+  // start = startexpr
+  // store start -> var
+  // goto loop
+  //loop:
+  // ...
+  // body
+  // ...
+  //loopend:
+  //  step = stepexpr
+  //  endcond = endexpr
+  //
+  //  curvar = load var
+  //  nextvar = curvar + step
+  //  store nextvar -> var
+  //  br endcond, loop, endloop
+  //outloop:
+
+  llvm::Function* parent = builder.GetInsertBlock()->getParent();
+
+  llvm::AllocaInst* alloca = CreateEntryBlockAlloca(parent, var_);
+
   llvm::Value* start_value = start_->Codegen();
   if (!start_value) return nullptr;
 
-  llvm::Function* parent = builder.GetInsertBlock()->getParent();
-  llvm::BasicBlock* preheader_block = builder.GetInsertBlock();
+  builder.CreateStore(start_value, alloca);
+
   llvm::BasicBlock* loop_block =
       llvm::BasicBlock::Create(llvm::getGlobalContext(), "loop", parent);
 
@@ -188,18 +256,15 @@ llvm::Value* For::Codegen() const {
 
   builder.SetInsertPoint(loop_block);
 
-  llvm::PHINode* variable = builder.CreatePHI(
-      llvm::Type::getDoubleTy(llvm::getGlobalContext()), 2, var_.c_str());
-  variable->addIncoming(start_value, preheader_block);
+  // Start a new scope for the loop.
+  EnterScope();
 
   // Within the loop, the variable is defined equal to the PHI node. This allows
   // shadowing of existing variables.
-  llvm::Value* old_value = named_values[var_];
-  named_values[var_] = variable;
+  named_values.back().insert(std::make_pair(var_, alloca));
 
-  for (const ast::Expression* e : body_) {
+  for (const ast::Expression* e : body_)
     if (!e->Codegen()) return nullptr;
-  }
 
   // emit start value
   llvm::Value* step_value;
@@ -212,11 +277,15 @@ llvm::Value* For::Codegen() const {
         llvm::getGlobalContext(), llvm::APFloat(1.0));
   }
 
-  llvm::Value* next_var = builder.CreateFAdd(variable, step_value, "nextvar");
-
   // compute end condition
   llvm::Value* end_cond = end_->Codegen();
   if (!end_cond) return nullptr;
+
+  // reload, increment, restore alloca.
+  llvm::Value* current_var = builder.CreateLoad(alloca, var_.c_str());
+  llvm::Value* next_var =
+      builder.CreateFAdd(current_var, step_value, "nextvar");
+  builder.CreateStore(next_var, alloca);
 
   // convert to bool
   end_cond =
@@ -226,24 +295,43 @@ llvm::Value* For::Codegen() const {
                           "loopcond");
 
   // create the after loop
-  llvm::BasicBlock* loop_end_block = builder.GetInsertBlock();
   llvm::BasicBlock* after_block =
       llvm::BasicBlock::Create(llvm::getGlobalContext(), "afterloop", parent);
 
   builder.CreateCondBr(end_cond, loop_block, after_block);
   builder.SetInsertPoint(after_block);
 
-  variable->addIncoming(next_var, loop_end_block);
-
-  // restore the shadowed variable
-  if (old_value)
-    named_values[var_] = old_value;
-  else
-    named_values.erase(var_);
+  // remove the latest scope from the stack
+  ExitScope();
 
   // for always returns 0.0
   return llvm::Constant::getNullValue(
       llvm::Type::getDoubleTy(llvm::getGlobalContext()));
+}
+
+llvm::Value* Var::Codegen() const {
+  llvm::Function* f = builder.GetInsertBlock()->getParent();
+
+  // register var and emit initializer
+  llvm::Value* init_value = nullptr;
+  if (init_) {
+    init_value = init_->Codegen();
+    if (!init_value) return nullptr;
+  } else {
+    init_value = llvm::ConstantFP::get(
+        llvm::getGlobalContext(), llvm::APFloat(0.0));
+  }
+
+  llvm::AllocaInst* alloca = CreateEntryBlockAlloca(f, name_);
+  builder.CreateStore(init_value, alloca);
+
+  // TODO: warn on shadowing
+  if (named_values.back().count(name_) != 0)
+    return ErrorV("variable of that name already exists");
+  
+  named_values.back().insert(std::make_pair(name_, alloca));
+
+  return init_value; 
 }
 
 llvm::Function* Prototype::Codegen() const {
@@ -273,21 +361,21 @@ llvm::Function* Prototype::Codegen() const {
   llvm::Function::arg_iterator ai = f->arg_begin();
   for (size_t i = 0; i != args_.size(); ++i) {
     ai->setName(args_[i]);
-    named_values[args_[i]] = ai;
     ++ai;
   }
   return f;
 }
 
 llvm::Function* Function::Codegen() const {
-  named_values.clear();
-
   llvm::Function* f = prototype_->Codegen();
   if (!f) return nullptr;
 
   llvm::BasicBlock* bb = llvm::BasicBlock::Create(
       llvm::getGlobalContext(), "entry", f);
   builder.SetInsertPoint(bb);
+
+  EnterScope();
+  CreateArgumentAllocas(f);
 
   // return value is value of last expression in function.
   llvm::Value* return_value = nullptr;
@@ -296,15 +384,28 @@ llvm::Function* Function::Codegen() const {
     return_value = e->Codegen();
     if (!return_value) {
       f->eraseFromParent();
+      ExitScope();
       return nullptr;
     }
   }
 
   // TODO: return value for filter, no return for map
   builder.CreateRet(return_value);
+
+  ExitScope();
+
   llvm::verifyFunction(*f);
   engine::fpm->run(*f);
   return f;
 }
 
+void Function::CreateArgumentAllocas(llvm::Function* f) const {
+  llvm::Function::arg_iterator ai = f->arg_begin();
+  for (const std::string& arg : prototype_->args()) {
+    llvm::AllocaInst* alloca = CreateEntryBlockAlloca(f, arg);
+    builder.CreateStore(ai, alloca);
+    named_values.back().insert(std::make_pair(arg, alloca));
+    ++ai;
+  }
 }
+}  // end namespace ast
