@@ -15,8 +15,9 @@ enum Token {
   TOKEN_ELSE = -7,
   TOKEN_FOR = -8,
   TOKEN_DO = -9,
-  TOKEN_BINOP = -10,
-  TOKEN_UNOP = -11
+  TOKEN_DONE = -10,
+  TOKEN_BINOP = -11,
+  TOKEN_UNOP = -12
 };
 
 extern int current_token;

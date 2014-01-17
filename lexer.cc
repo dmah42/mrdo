@@ -19,6 +19,7 @@ const std::map<std::string, lexer::Token> token_map = {
   {"else", TOKEN_ELSE},
   {"for", TOKEN_FOR},
   {"do", TOKEN_DO},
+  {"done", TOKEN_DONE},
   {"+", TOKEN_BINOP},
   {"-", TOKEN_BINOP},
   {"*", TOKEN_BINOP},

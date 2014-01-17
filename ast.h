@@ -70,24 +70,27 @@ class Call : public Expression {
 
 class If : public Expression {
  public:
-  If(const Expression* condition, const Expression* _if,
-     const Expression* _else)
+  If(const Expression* condition,
+     std::vector<const Expression*>& _if,
+     std::vector<const Expression*>& _else)
     : condition_(condition), if_(_if), else_(_else) {}
   virtual llvm::Value* Codegen() const;
  private:
-  const Expression *condition_, *if_, *else_;
+  const Expression* condition_;
+  std::vector<const Expression*> if_;
+  std::vector<const Expression*> else_;
 };
 
 class For : public Expression {
  public:
-   // TODO: for i = 1..n, 2 {
   For(const std::string& var, const Expression* start, const Expression* end,
-      const Expression* step, const Expression* body)
+      const Expression* step, std::vector<const Expression*>& body)
       : var_(var), start_(start), end_(end), step_(step), body_(body) {}
   virtual llvm::Value* Codegen() const;
  private:
   std::string var_;
-  const Expression *start_, *end_, *step_, *body_;
+  const Expression *start_, *end_, *step_;
+  std::vector<const Expression*> body_;
 };
 
 class Prototype {
@@ -103,12 +106,12 @@ class Prototype {
 class Function {
  public:
   Function(Prototype* prototype,
-           Expression* body)
-    : prototype_(std::move(prototype)), body_(std::move(body)) {}
+           std::vector<const Expression*> body)
+    : prototype_(prototype), body_(body) {}
   llvm::Function* Codegen() const;
  private:
   Prototype* prototype_;
-  Expression* body_;
+  std::vector<const Expression*> body_;
 };
 
 }  // end ast

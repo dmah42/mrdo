@@ -138,34 +138,41 @@ llvm::Value* If::Codegen() const {
   llvm::BasicBlock* else_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "else");
   llvm::BasicBlock* merge_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "ifcont");
 
-  builder.CreateCondBr(condition_value, if_block, else_block);
+  if (else_.empty())
+    builder.CreateCondBr(condition_value, if_block, merge_block);
+  else
+    builder.CreateCondBr(condition_value, if_block, else_block);
 
   // emit if block
   builder.SetInsertPoint(if_block);
 
-  llvm::Value* if_value = if_->Codegen();
-  if (!if_value) return nullptr;
+  for (const ast::Expression* e : if_) {
+    llvm::Value* value = e->Codegen();
+    if (!value) return nullptr;
+  }
 
   builder.CreateBr(merge_block);
   if_block = builder.GetInsertBlock();
 
-  // emit else block
-  parent->getBasicBlockList().push_back(else_block);
-  builder.SetInsertPoint(else_block);
+  if (!else_.empty()) {
+    parent->getBasicBlockList().push_back(else_block);
+    // emit else block
+    builder.SetInsertPoint(else_block);
 
-  llvm::Value* else_value = else_->Codegen();
-  if (!else_value) return nullptr;
+    for (const ast::Expression* e : else_) {
+      llvm::Value* value = e->Codegen();
+      if (!value) return nullptr;
+    }
+    builder.CreateBr(merge_block);
+    else_block = builder.GetInsertBlock();
+  }
 
-  builder.CreateBr(merge_block);
-  else_block  = builder.GetInsertBlock();
-
-  // emit merge block
   parent->getBasicBlockList().push_back(merge_block);
   builder.SetInsertPoint(merge_block);
-  llvm::PHINode* phi = builder.CreatePHI(llvm::Type::getDoubleTy(llvm::getGlobalContext()), 2, "iftmp");
-  phi->addIncoming(if_value, if_block);
-  phi->addIncoming(else_value, else_block);
-  return phi;
+
+  // if always returns 0.0
+  return llvm::Constant::getNullValue(
+      llvm::Type::getDoubleTy(llvm::getGlobalContext()));
 }
 
 llvm::Value* For::Codegen() const {
@@ -190,7 +197,9 @@ llvm::Value* For::Codegen() const {
   llvm::Value* old_value = named_values[var_];
   named_values[var_] = variable;
 
-  if (!body_->Codegen()) return nullptr;
+  for (const ast::Expression* e : body_) {
+    if (!e->Codegen()) return nullptr;
+  }
 
   // emit start value
   llvm::Value* step_value;
@@ -280,12 +289,18 @@ llvm::Function* Function::Codegen() const {
       llvm::getGlobalContext(), "entry", f);
   builder.SetInsertPoint(bb);
 
-  llvm::Value* return_value = body_->Codegen();
-  if (!return_value) {
-    f->eraseFromParent();
-    return nullptr;
+  // return value is value of last expression in function.
+  llvm::Value* return_value = nullptr;
+
+  for (const Expression* e : body_) { 
+    return_value = e->Codegen();
+    if (!return_value) {
+      f->eraseFromParent();
+      return nullptr;
+    }
   }
 
+  // TODO: return value for filter, no return for map
   builder.CreateRet(return_value);
   llvm::verifyFunction(*f);
   engine::fpm->run(*f);

@@ -63,6 +63,23 @@ void Error(const H& err, T&&... t) {
 
 ast::Expression* Expression();
 
+bool ExpressionList(std::vector<const ast::Expression*>* list) {
+  assert(list);
+  while (lexer::current_token != lexer::TOKEN_DONE) {
+    const ast::Expression* e = Expression();
+    if (!e) return nullptr;
+    list->push_back(e);
+
+    if (lexer::current_token != ';') {
+      Error("expected ';' after expression");
+      return false;
+    }
+    lexer::GetNextToken();
+  }
+  lexer::GetNextToken();
+  return true;
+}
+
 ast::Expression* Identifier() {
   assert(lexer::current_token == lexer::TOKEN_IDENT);
   std::string name = lexer::identifier_str;
@@ -77,7 +94,7 @@ ast::Expression* Identifier() {
   std::vector<ast::Expression*> args;
   if (lexer::current_token != ')') {
     while (true) {
-      ast::Expression* arg = std::move(parser::Expression());
+      ast::Expression* arg = Expression();
       if (arg == nullptr) return nullptr;
 
       args.push_back(arg);
@@ -124,17 +141,37 @@ ast::Expression* If() {
   const ast::Expression* condition = Expression();
   if (!condition) return nullptr;
 
-  const ast::Expression* _if = Expression();
-  if (!_if) return nullptr;
-
-  if (lexer::current_token != lexer::TOKEN_ELSE) {
-    Error("Expected 'else', got ", lexer::current_token);
+  if (lexer::current_token != lexer::TOKEN_DO) {
+    Error("expected 'do'");
     return nullptr;
   }
   lexer::GetNextToken();
 
-  const ast::Expression* _else = Expression();
-  if (!_else) return nullptr;
+  std::vector<const ast::Expression*> _if;
+
+  // TODO: figure out how to use ExpressionList with this.
+  while (lexer::current_token != lexer::TOKEN_DONE &&
+         lexer::current_token != lexer::TOKEN_ELSE) {
+    const ast::Expression* if_expr = Expression();
+    if (!if_expr) return nullptr;
+
+    _if.push_back(if_expr);
+
+    if (lexer::current_token != ';') {
+      Error("expected ';' after expression");
+      return nullptr;
+    }
+    lexer::GetNextToken();
+  }
+
+  std::vector<const ast::Expression*> _else;
+  if (lexer::current_token == lexer::TOKEN_ELSE) {
+    lexer::GetNextToken();
+    if (!ExpressionList(&_else)) return nullptr;
+  } else {
+    assert(lexer::current_token == lexer::TOKEN_DONE);
+    lexer::GetNextToken();
+  }
 
   return new ast::If(condition, _if, _else);
 }
@@ -182,8 +219,8 @@ ast::Expression* For() {
   }
   lexer::GetNextToken();
 
-  const ast::Expression* body = Expression();
-  if (!body) return nullptr;
+  std::vector<const ast::Expression*> body;
+  if (!ExpressionList(&body)) return nullptr;
 
   return new ast::For(name, start, end, step, body);
 }
@@ -272,6 +309,7 @@ ast::Prototype* Prototype() {
   lexer::GetNextToken();
   return new ast::Prototype(name, args);
 }
+
 }  // end namespace
 
 ast::Function* Function() {
@@ -279,18 +317,25 @@ ast::Function* Function() {
   ast::Prototype* proto = Prototype();
   if (proto == nullptr) return nullptr;
 
-  ast::Expression* e = Expression();
-  if (e == nullptr) return nullptr;
+  std::vector<const ast::Expression*> body;
+  if (!ExpressionList(&body)) return nullptr;
 
-  return new ast::Function(proto, e);
+  return new ast::Function(proto, body);
 }
 
 ast::Function* TopLevel() {
-  ast::Expression* e = Expression();
-  if (e == nullptr) return nullptr;
+  /*
+  std::vector<const ast::Expression*> expr_list;
+  if (!ExpressionList(&expr_list)) return nullptr;
 
   ast::Prototype* p = new ast::Prototype("", {});
-  return new ast::Function(p, e);
+  return new ast::Function(p, expr_list);
+  */
+  const ast::Expression* expr = Expression();
+  if (!expr) return nullptr;
+
+  ast::Prototype* p = new ast::Prototype("", {});
+  return new ast::Function(p, {expr});
 }
 
 ast::Prototype* Native() {
