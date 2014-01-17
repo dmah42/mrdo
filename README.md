@@ -2,11 +2,12 @@ hup
 ===
 hup is a language in which variables may be either a:
 
-* coll (an immutable collection of things)
-* seq (an ordered immutable collection of things)
-* dict (key-value immutable collection of things)
+* real (mutable 64-bit floating point)
+* coll (an immutable collection of reals)
+* seq (an ordered immutable collection of reals)
+* dict (key-value immutable collection of reals)
 
-Each thing is a double, though more types may be added later.
+Other types than real may be added later.
 
 functions
 ---------
@@ -30,6 +31,8 @@ collection:
 * comparitive: gt, ge, lt, le, eq, ne
 * logical: and, or, not
 
+Logical operations treat 0.0 as false and all other values as true.
+
 Collections themselves have the following operations defined:
 
 * flatten: takes multiple collections and combines them into a single
@@ -39,7 +42,6 @@ governed by a given comparison operation.
 * first: returns the first 'n' elements of a collection in the same collection
 type.
 
-
 io
 --
 Collections can be read or written to files on disk using the functions
@@ -47,4 +49,4 @@ Collections can be read or written to files on disk using the functions
 * read
 * write
 
-both of which take a name.
+both of which take a filename.
