@@ -30,7 +30,7 @@ llvm::Module* module = nullptr;
 void Initialize(bool opt) {
   llvm::InitializeNativeTarget();
 
-  module = new llvm::Module("kaleidoscope jit", llvm::getGlobalContext());
+  module = new llvm::Module("do jit", llvm::getGlobalContext());
   if (!module) {
     std::cerr << "Failed to create module\n";
     exit(1);
@@ -57,17 +57,16 @@ void Initialize(bool opt) {
 
   native::Initialize();
 
-  std::cout << prompt << std::flush;
+ // std::cout << prompt << std::flush;
 
   lexer::Initialize();
 }
 
 void Run() {
-  while (true) {
-    std::cout << prompt << std::flush;
+  // TODO: if everything is top-level, this should be much simpler.
+  while (lexer::current_token != lexer::TOKEN_EOF) {
+//    std::cout << prompt << std::flush;
     switch (lexer::current_token) {
-      case lexer::TOKEN_EOF:
-        return;
       case ';':  // ignore top-level semicolons
         lexer::GetNextToken();
         break;
@@ -96,7 +95,9 @@ void HandleFunc() {
   lexer::GetNextToken();
 }
 
+// TODO: remove requirement for top level expression to end in ';'
 void HandleTopLevel() {
+  // TODO: remove requirement for file to end in done;
   if (ast::Function* f = parser::TopLevel()) {
     if (llvm::Function* lf = f->Codegen()) {
       std::cerr << "Top-level expression:\n";

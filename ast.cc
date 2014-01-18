@@ -49,6 +49,15 @@ void ExitScope() {
   named_values.back().clear();
   named_values.pop_back();
 }
+
+llvm::AllocaInst* GetNamedValue(const std::string& name) {
+  for (const auto& m : named_values) {
+    if (m.count(name) != 0) {
+      return m.at(name);
+    }
+  }
+  return nullptr;
+}
 }  // end namespace
 
 void Initialize() {
@@ -61,11 +70,12 @@ llvm::Value* Number::Codegen() const {
 }
 
 llvm::Value* Variable::Codegen() const {
-  if (named_values.back().count(name_) == 0) {
+  llvm::AllocaInst* val = GetNamedValue(name_);
+  if (!val) {
     std::cerr << "Error: Unknown variable name: " << name_ << "\n";
     return nullptr;
   }
-  return builder.CreateLoad(named_values.back()[name_], name_.c_str());
+  return builder.CreateLoad(val, name_.c_str());
 }
 
 llvm::Value* Binary::Codegen() const {
@@ -77,7 +87,7 @@ llvm::Value* Binary::Codegen() const {
     llvm::Value* v = rhs_->Codegen();
     if (!v) return nullptr;
 
-    llvm::Value* var = named_values.back()[lhs_expression->name()];
+    llvm::AllocaInst* var = GetNamedValue(lhs_expression->name());
     if (!var) return ErrorV("unknown variable name");
 
     builder.CreateStore(v, var);
@@ -392,10 +402,10 @@ llvm::Function* Function::Codegen() const {
   // TODO: return value for filter, no return for map
   builder.CreateRet(return_value);
 
-  ExitScope();
-
   llvm::verifyFunction(*f);
   engine::fpm->run(*f);
+
+  ExitScope();
   return f;
 }
 

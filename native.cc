@@ -7,9 +7,7 @@
 // native methods to expose to do
 extern "C" {
 double printd(double d) {
-  char ret = putchar((char)d);
-  putchar('\n');
-  return ret;
+  return putchar((char)d);
 }
 }
 

@@ -74,7 +74,7 @@ bool ExpressionList(std::vector<const ast::Expression*>* list) {
     list->push_back(e);
 
     if (lexer::current_token != ';') {
-      Error("expected ';' after expression");
+      Error("expected ';' after expression. got ", lexer::current_token);
       return false;
     }
     lexer::GetNextToken();
@@ -145,7 +145,7 @@ ast::Expression* If() {
   if (!condition) return nullptr;
 
   if (lexer::current_token != lexer::TOKEN_DO) {
-    Error("expected 'do'");
+    Error("expected 'do', got ", lexer::current_token);
     return nullptr;
   }
   lexer::GetNextToken();
@@ -161,7 +161,7 @@ ast::Expression* If() {
     _if.push_back(if_expr);
 
     if (lexer::current_token != ';') {
-      Error("expected ';' after expression");
+      Error("expected ';' after expression, got ", lexer::current_token);
       return nullptr;
     }
     lexer::GetNextToken();
@@ -184,15 +184,16 @@ ast::Expression* For() {
   lexer::GetNextToken();
 
   if (lexer::current_token != lexer::TOKEN_IDENT) {
-    Error("Expected identifier after for");
+    Error("Expected identifier after for, got ", lexer::current_token);
     return nullptr;
   }
 
   std::string name = lexer::identifier_str;
   lexer::GetNextToken();
 
-  if (lexer::current_token != '=') {
-    Error("expected '=' after for");
+  if (lexer::current_token != lexer::TOKEN_BINOP ||
+      lexer::op_str != "=") {
+    Error("expected '=' after for, got ", lexer::current_token);
     return nullptr;
   }
   lexer::GetNextToken();
@@ -201,7 +202,7 @@ ast::Expression* For() {
   if (!start) return nullptr;
 
   if (lexer::current_token != ',') {
-    Error("expected ',' after for start");
+    Error("expected ',' after for start, got ", lexer::current_token);
     return nullptr;
   }
   lexer::GetNextToken();
@@ -355,18 +356,16 @@ ast::Function* Function() {
 }
 
 ast::Function* TopLevel() {
-  /*
   std::vector<const ast::Expression*> expr_list;
   if (!ExpressionList(&expr_list)) return nullptr;
 
   ast::Prototype* p = new ast::Prototype("", {});
   return new ast::Function(p, expr_list);
-  */
-  const ast::Expression* expr = Expression();
-  if (!expr) return nullptr;
+  //const ast::Expression* expr = Expression();
+  //if (!expr) return nullptr;
 
-  ast::Prototype* p = new ast::Prototype("", {});
-  return new ast::Function(p, {expr});
+  //ast::Prototype* p = new ast::Prototype("", {});
+  //return new ast::Function(p, {expr});
 }
 
 ast::Prototype* Native() {
