@@ -19,7 +19,7 @@
 
 namespace engine {
 namespace {
-const char prompt[] = "hup> ";
+const char prompt[] = "do] ";
 }
 
 llvm::ExecutionEngine* execution_engine = nullptr;

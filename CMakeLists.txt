@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8)
-project(hup)
+project(do)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR} ${CMAKE_MODULE_PATH})
 
@@ -15,7 +15,7 @@ include_directories(${LLVM_INCLUDE_DIR})
 link_directories(${LLVM_LIBRARY_DIR})
 
 FILE(GLOB SOURCE_FILES "*.cc")
-add_executable(hup ${SOURCE_FILES})
+add_executable(do ${SOURCE_FILES})
 
-set_target_properties(hup PROPERTIES LINK_FLAGS ${LLVM_LFLAGS})
-target_link_libraries(hup ${LLVM_MODULE_LIBS} dl pthread)
+set_target_properties(do PROPERTIES LINK_FLAGS ${LLVM_LFLAGS})
+target_link_libraries(do ${LLVM_MODULE_LIBS} dl pthread)
