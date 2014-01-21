@@ -7,12 +7,12 @@
 #  LLVM_MODULE_LIBS - list of llvm libs for working with modules.
 #  LLVM_FOUND       - True if llvm found.
 
-find_program(LLVM_CONFIG_EXECUTABLE NAMES llvm-config-3.2 DOC "llvm-config executable")
+find_program(LLVM_CONFIG_EXECUTABLE NAMES llvm-config-3.4 DOC "llvm-config executable")
 
 if (LLVM_CONFIG_EXECUTABLE)
-  message(STATUS "LLVM llvm-config found at: ${LLVM_CONFIG_EXECUTABLE}")
+  message(STATUS "LLVM llvm-config-3.4 found at: ${LLVM_CONFIG_EXECUTABLE}")
 else (LLVM_CONFIG_EXECUTABLE)
-  message(FATAL_ERROR "Could NOT find LLVM executable")
+  message(FATAL_ERROR "Could NOT find LLVM executable. Version 3.4 expected.")
 endif (LLVM_CONFIG_EXECUTABLE)
 
 execute_process(

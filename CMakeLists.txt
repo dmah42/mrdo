@@ -7,7 +7,7 @@ find_package(LLVM REQUIRED)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 
-set(CMAKE_CXX_FLAGS "-Wall -Werror -pedantic-errors --std=c++0x ${LLVM_LFLAGS} ${LLVM_CFLAGS}")
+set(CMAKE_CXX_FLAGS "-Wall -Werror -pedantic-errors --std=c++0x ${LLVM_CFLAGS}")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "-fno-strict-aliasing -O3 -DNDEBUG")
 
@@ -17,4 +17,5 @@ link_directories(${LLVM_LIBRARY_DIR})
 FILE(GLOB SOURCE_FILES "*.cc")
 add_executable(hup ${SOURCE_FILES})
 
+set_target_properties(hup PROPERTIES LINK_FLAGS ${LLVM_LFLAGS})
 target_link_libraries(hup ${LLVM_MODULE_LIBS} dl pthread)
