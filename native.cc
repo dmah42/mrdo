@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "ast.h"
+
 // native methods to expose to do
 extern "C" {
 double printd(double d) {
