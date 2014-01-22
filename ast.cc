@@ -276,7 +276,7 @@ llvm::Function* Function::Codegen() const {
 
   builder.CreateRet(return_value);
   llvm::verifyFunction(*f);
-  engine::fpm->run(*f);
+  engine::Optimize(f);
   return f;
 }
 

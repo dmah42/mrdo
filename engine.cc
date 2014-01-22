@@ -78,6 +78,12 @@ void Run() {
   }
 }
 
+void Optimize(llvm::Function* f) {
+  if (fpm) {
+    fpm->run(*f);
+  }
+}
+
 void Dump() {
   module->dump();
 }
