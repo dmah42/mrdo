@@ -12,6 +12,7 @@
 #include <llvm/PassManager.h>
 
 #include "engine.h"
+#include "error.h"
 
 namespace ast {
 namespace {
@@ -33,11 +34,6 @@ llvm::Value* ToBool(llvm::Value* val) {
       val,
       llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0)),
       "booltmp");
-}
-
-llvm::Value* ErrorV(const std::string& str) {
-  std::cerr << "Error: " << str << "\n";
-  return nullptr;
 }
 
 void EnterScope() {
@@ -82,13 +78,19 @@ llvm::Value* Binary::Codegen() const {
   if (op_ == "=") {
     // Require LHS to be identifier
     Variable* lhs_expression = dynamic_cast<Variable*>(lhs_);
-    if (!lhs_expression) return ErrorV("destination of '=' must be a variable");
+    if (!lhs_expression) {
+      Error("destination of '=' must be a variable");
+      return nullptr;
+    }
 
     llvm::Value* v = rhs_->Codegen();
     if (!v) return nullptr;
 
     llvm::AllocaInst* var = GetNamedValue(lhs_expression->name());
-    if (!var) return ErrorV("unknown variable name");
+    if (!var) {
+      Error("unknown variable name");
+      return nullptr;
+    }
 
     builder.CreateStore(v, var);
     return v;
@@ -138,8 +140,9 @@ llvm::Value* Binary::Codegen() const {
     return builder.CreateUIToFP(
         builder.CreateAnd(ToBool(l), ToBool(r), "andtmp"),
         llvm::Type::getDoubleTy(llvm::getGlobalContext()), "booltmp");
-  else
-    return ErrorV("unknown binary operator");
+
+  Error("unknown binary operator");
+  return nullptr;
 }
 
 llvm::Value* Unary::Codegen() const {
@@ -150,17 +153,21 @@ llvm::Value* Unary::Codegen() const {
     return builder.CreateUIToFP(
         builder.CreateNot(ToBool(expr), "nottmp"),
         llvm::Type::getDoubleTy(llvm::getGlobalContext()), "booltmp");
-  else
-    return ErrorV("unknown unary operator");
+  Error("unknown unary operator");
+  return nullptr;
 }
 
 llvm::Value* Call::Codegen() const {
   llvm::Function* callee_func = engine::module->getFunction(callee_);
-  if (!callee_func)
-    return ErrorV("attempt to call unknown function");
+  if (!callee_func) {
+    Error("attempt to call unknown function");
+    return nullptr;
+  }
 
-  if (callee_func->arg_size() != args_.size())
-    return ErrorV("argument length mismatch");
+  if (callee_func->arg_size() != args_.size()) {
+    Error("argument length mismatch");
+    return nullptr;
+  }
 
   std::vector<llvm::Value*> argv;
   for (const auto& arg : args_) {
@@ -336,8 +343,10 @@ llvm::Value* Var::Codegen() const {
   builder.CreateStore(init_value, alloca);
 
   // TODO: warn on shadowing
-  if (named_values.back().count(name_) != 0)
-    return ErrorV("variable of that name already exists");
+  if (named_values.back().count(name_) != 0) {
+    Error("variable of that name already exists");
+    return nullptr;
+  }
   
   named_values.back().insert(std::make_pair(name_, alloca));
 
@@ -358,12 +367,12 @@ llvm::Function* Prototype::Codegen() const {
     f = engine::module->getFunction(name_);
 
     if (!f->empty()) {
-      ErrorV("redefinition of function");
+      Error("redefinition of function");
       return nullptr;
     }
 
     if (f->arg_size() != args_.size()) {
-      ErrorV("redefinition of function with different arg length");
+      Error("redefinition of function with different arg length");
       return nullptr;
     }
   }

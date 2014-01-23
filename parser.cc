@@ -5,6 +5,7 @@
 #include <map>
 
 #include "ast.h"
+#include "error.h"
 #include "lexer.h"
 
 namespace parser {
@@ -52,16 +53,6 @@ int GetTokenPrecedence() {
       binary_op_precedence.find(lexer::op_str);
   if (prec_it == binary_op_precedence.end()) return -1;
   return prec_it->second;
-}
-
-void Error() {
-  std::cerr << "\n";
-}
-
-template <typename H, typename ...T>
-void Error(const H& err, T&&... t) {
-  std::cerr << err;
-  Error(std::forward<T>(t)...);
 }
 
 ast::Expression* Expression();
