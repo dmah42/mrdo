@@ -1,17 +1,17 @@
 identifier = alpha, {alpha, digit, "_", "-"};
-collection = coll | seq;
-constant = real | collection | "stdin" | "stdout";
 coll = "[", constant, {",", constant}, "]";
 seq = "<", constant, {",", constant}, "]";
 real = digit, [".", {digit}];
+collection = coll | seq;
+constant = real | collection;
 builtin = "map" | "fold" | "filter" | "zip" | "read" | "write" | "length";
-rvalue = (identifier | real);
+rvalue = (identifier | real | '(', expr, ')');
 arith = rvalue, ("+" | "-" | "*" | "/"), rvalue;
 logic = rvalue, ("or" | "and", "xor");
 condition = rvalue, ("<" | ">" | "==" | "<=" | ">="), rvalue; (* could be eq, ne, gt, etc *)
 binop = arith | logic | condition;
 unop = "not" | "-";
-expr = assign | ([unop] (identifier | real), [ binop, expr ] ('\n' | ';')); 
+expr = assign | ([unop] rvalue, [ binop, expr ] ('\n' | ';')); 
 if = "if", expr, {state}, ["elif", expr, {state}], ["else", {state}], "done";
 while = "while", expr, {state}, "done";
 state = expr | if | while;
@@ -19,5 +19,12 @@ fndef = builtin, ["(", {identifier},")"], ["{", {state}, "}"]];
 fn = identifier | fndef;
 call = "do", "(", fn, {",", identifier | constant}, ")";
 assign = identifier, "=", (call | constant | fn | expr);
+program = {state}
 
-(* no support for nested expressions *)
+(* missing return *)
+
+(* CURRENTLY UNSUPPORTED *)
+coll
+seq
+collection
+unary-
