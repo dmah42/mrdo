@@ -107,7 +107,7 @@ int GetToken() {
   // operators
   if (!isalpha(lastch)) {
     std::string s;
-    while (lastch != EOF && !isalpha(lastch) && !isspace(lastch)) {
+    while (lastch != EOF && !isalnum(lastch) && !isspace(lastch)) {
       s += lastch;
       lastch = getchar();
     }
