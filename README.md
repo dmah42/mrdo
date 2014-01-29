@@ -1,5 +1,7 @@
 do
 ===
+[![Build Status](https://drone.io/github.com/dominichamon/do/status.png)](https://drone.io/github.com/dominichamon/do/latest)
+
 do is a language in which variables may be either a:
 
 * real (mutable 64-bit floating point)
