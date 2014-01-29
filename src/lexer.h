@@ -3,7 +3,6 @@
 
 #include <string>
 
-namespace dolib {
 namespace lexer {
 enum Token {
   TOKEN_EOF = -1,
@@ -31,7 +30,6 @@ extern double real_value;
 
 void Initialize();
 int NextToken();
-}  // end lexer
-}  // end dolib
+}  // end namespace lexer
 
 #endif  // _DO_LEXER_H_

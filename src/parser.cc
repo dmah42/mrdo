@@ -9,7 +9,6 @@
 #include "error.h"
 #include "lexer.h"
 
-namespace dolib {
 namespace parser {
 namespace {
 ast::Expression* Expression();
@@ -179,6 +178,4 @@ ast::Program* Program() {
 
   return new ast::Program(state_list);
 }
-
 }  // end namespace parser
-}  // end namespace dolib

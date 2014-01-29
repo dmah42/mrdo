@@ -6,7 +6,6 @@
 #include <iostream>
 #include <vector>
 
-namespace dolib {
 namespace builtin {
 // TODO: support map and filter over collections of collections
 // TODO: might be easier to allow collections of size 1 to be referenced as
@@ -44,4 +43,3 @@ void do_write(std::vector<double> input) {
       input.begin(), input.end(), [] (double v) { std::cout << v << "\n"; });
 }
 }  // end namespace builtin
-}  // end namespace dolib

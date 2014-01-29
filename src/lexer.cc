@@ -4,7 +4,6 @@
 #include <map>
 #include <string>
 
-namespace dolib {
 namespace lexer {
 namespace {
 char lastch = ' ';
@@ -130,4 +129,3 @@ void Initialize() { NextToken(); }
 int NextToken() { return current_token = GetToken(); }
 
 }  // end namespace lexer
-}  // end namespace dolib

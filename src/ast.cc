@@ -12,7 +12,6 @@
 #include "error.h"
 #include "engine.h"
 
-namespace dolib {
 namespace ast {
 namespace {
 llvm::IRBuilder<> builder(llvm::getGlobalContext());
@@ -203,4 +202,3 @@ llvm::Function* Program::Codegen() const {
   return f;
 }
 }  // end namespace ast
-}  // end namespace dolib

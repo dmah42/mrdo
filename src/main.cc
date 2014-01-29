@@ -3,7 +3,8 @@
 #include "engine.h"
 
 int main(int argc, const char* argv[]) {
-  dolib::engine::Initialize();
-  dolib::engine::Run();
+  // TODO: pass stream 'stdin' or named from args.
+  engine::Initialize();
+  engine::Run();
   return 0;
 }

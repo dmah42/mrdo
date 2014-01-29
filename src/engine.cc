@@ -17,7 +17,6 @@
 #include "lexer.h"
 #include "parser.h"
 
-namespace dolib {
 namespace engine {
 namespace {
 llvm::ExecutionEngine* execution_engine = nullptr;
@@ -80,4 +79,3 @@ void Run() {
   module->dump();
 }
 }  // end namespace engine
-}  // end namespace dolib

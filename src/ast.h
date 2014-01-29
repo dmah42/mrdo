@@ -10,7 +10,6 @@ class Function;
 class Value;
 }
 
-namespace dolib {
 namespace ast {
 class Expression {
  public:
@@ -80,6 +79,5 @@ class Program {
   std::vector<const ast::Expression*> body_;
 };
 }  // end namespace ast
-}  // end namespace dolib
 
 #endif
