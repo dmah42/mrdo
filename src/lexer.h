@@ -20,7 +20,7 @@ enum Token {
   TOKEN_LOGIC = -12,
   TOKEN_ARITH = -13,
   TOKEN_COMPARE = -14,
-  TOKEN_STREAM = -15,
+  TOKEN_STREAM = -15
 };
 
 extern int current_token;
