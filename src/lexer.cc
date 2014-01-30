@@ -16,7 +16,7 @@ double real_value = 0.0;
 
 namespace {
 // TODO: split token map to allow extra data (ie, binop precedence)
-const std::map<std::string, lexer::Token> token_map = {
+const std::map<std::string, Token> token_map = {
   { "do", TOKEN_DO },
   { "if", TOKEN_IF },
   { "elif", TOKEN_ELIF },
@@ -24,30 +24,51 @@ const std::map<std::string, lexer::Token> token_map = {
   { "done", TOKEN_DONE },
   { "while", TOKEN_WHILE },
   { "not", TOKEN_UNOP },
+};
+
+const std::map<std::string, Token> builtin_map = {
   { "map", TOKEN_BUILTIN },
   { "fold", TOKEN_BUILTIN },
   { "filter", TOKEN_BUILTIN },
   { "zip", TOKEN_BUILTIN },
   { "read", TOKEN_BUILTIN },
   { "write", TOKEN_BUILTIN },
-  { "length", TOKEN_BUILTIN },
-  { "or", TOKEN_LOGIC },
-  { "and", TOKEN_LOGIC },
-  { "xor", TOKEN_LOGIC },
-  { "=", TOKEN_ASSIGN },
-  { "+", TOKEN_ARITH },
-  { "-", TOKEN_ARITH },
-  { "*", TOKEN_ARITH },
-  { "/", TOKEN_ARITH },
-  { "<", TOKEN_COMPARE },
-  { ">", TOKEN_COMPARE },
-  { "<=", TOKEN_COMPARE },
-  { ">=", TOKEN_COMPARE },
-  { "==", TOKEN_COMPARE },
-  { "!=", TOKEN_COMPARE },
-  { "stdin", TOKEN_STREAM },
-  { "stdout", TOKEN_STREAM },
+  { "length", TOKEN_BUILTIN }
 };
+
+// TODO: add precedence and remove from src/parser.cc
+const std::map<std::string, std::pair<Token, int>> binop_map = {
+  { "=",   { TOKEN_ASSIGN,   2 }},
+  { "or",  { TOKEN_LOGIC,    5 }},
+  { "xor", { TOKEN_LOGIC,    5 }},
+  { "and", { TOKEN_LOGIC,    6 }},
+  { "==",  { TOKEN_COMPARE,  9 }},
+  { "!=",  { TOKEN_COMPARE,  9 }},
+  { "<",   { TOKEN_COMPARE, 10 }},
+  { ">",   { TOKEN_COMPARE, 10 }},
+  { "<=",  { TOKEN_COMPARE, 10 }},
+  { ">=",  { TOKEN_COMPARE, 10 }},
+  { "+",   { TOKEN_ARITH,   20 }},
+  { "-",   { TOKEN_ARITH,   20 }},
+  { "*",   { TOKEN_ARITH,   40 }},
+  { "/",   { TOKEN_ARITH,   40 }}
+};
+
+bool ValidToken(const std::string& s, Token* token) {
+  if (token_map.count(s)) {
+    *token = token_map.at(s);
+    return true;
+  }
+  if (builtin_map.count(s)) {
+    *token = builtin_map.at(s);
+    return true;
+  }
+  if (binop_map.count(s)) {
+    *token = binop_map.at(s).first;
+    return true;
+  }
+  return false;
+}
 
 int GetToken() {
   ident_str.clear();
@@ -65,9 +86,8 @@ int GetToken() {
       lastch = getchar();
     } while (isalnum(lastch) || lastch == '_' || lastch == '-');
 
-    if (token_map.count(s)) {
-      return token_map.at(s);
-    }
+    Token t;
+    if (ValidToken(s, &t)) return t;
     ident_str = s;
     return TOKEN_IDENT;
   }
@@ -111,9 +131,11 @@ int GetToken() {
       lastch = getchar();
     }
 
-    if (token_map.count(s)) {
+    // TODO: only check operator map?
+    Token t;
+    if (ValidToken(s, &t)) {
       op_str = s;
-      return token_map.at(s);
+      return t;
     }
     return lastch;
   }
@@ -128,4 +150,11 @@ void Initialize() { NextToken(); }
 
 int NextToken() { return current_token = GetToken(); }
 
+bool BinOpPrecedence(int* precedence) {
+  if (binop_map.count(op_str)) {
+    *precedence = binop_map.at(op_str).second;
+    return true;
+  }
+  return false;
+}
 }  // end namespace lexer

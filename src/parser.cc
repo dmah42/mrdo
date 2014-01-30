@@ -16,38 +16,6 @@ ast::Expression* Ident();
 ast::Expression* Real();
 ast::Expression* Nested();
 
-// TODO: keep this in sync with lexer. maybe add a second map from op to
-// binary_op_details
-const std::map<std::string, int> binary_op_precedence = {
-  {"=", 2},
-  {"or", 5},
-  {"xor", 5},
-  {"and", 6},
-  {"==", 9},
-  {"!=", 9},
-  {"<", 10},
-  {">", 10},
-  {"<=", 10},
-  {">=", 10},
-  {"+", 20},
-  {"-", 20},
-  {"*", 40},
-  {"/", 40}
-};
-
-bool IsValidBinop() {
-  return lexer::current_token == lexer::TOKEN_LOGIC ||
-    lexer::current_token == lexer::TOKEN_ARITH ||
-    lexer::current_token == lexer::TOKEN_COMPARE ||
-    lexer::current_token == lexer::TOKEN_ASSIGN;
-}
-
-int GetTokenPrecedence() {
-  if (!IsValidBinop()) return -1;
-  return binary_op_precedence.count(lexer::op_str) ?
-      binary_op_precedence.at(lexer::op_str) : -1;
-}
-
 ast::Expression* Ident() {
   assert(lexer::current_token == lexer::TOKEN_IDENT);
   std::string name = lexer::ident_str;
@@ -109,16 +77,9 @@ ast::Expression* Unary() {
 ast::Expression* BinaryRHS(
     int precedence, ast::Expression* lhs) {
   while (true) {
-    int token_prec = GetTokenPrecedence();
-    if (token_prec < precedence) return lhs;
-
-    if (lexer::current_token != lexer::TOKEN_LOGIC &&
-        lexer::current_token != lexer::TOKEN_ARITH &&
-        lexer::current_token != lexer::TOKEN_COMPARE &&
-        lexer::current_token != lexer::TOKEN_ASSIGN) {
-      Error("Unknown operator ", lexer::current_token);
-      return nullptr;
-    }
+    int token_prec;
+    bool valid_binop = lexer::BinOpPrecedence(&token_prec);
+    if (!valid_binop || token_prec < precedence) return lhs;
 
     std::string op = lexer::op_str;
     lexer::NextToken();
@@ -126,8 +87,9 @@ ast::Expression* BinaryRHS(
     ast::Expression* rhs = Unary();
     if (!rhs) return nullptr;
 
-    int next_prec = GetTokenPrecedence();
-    if (token_prec < next_prec) {
+    int next_prec;
+    valid_binop = lexer::BinOpPrecedence(&next_prec);
+    if (valid_binop && token_prec < next_prec) {
       rhs = BinaryRHS(token_prec + 1, rhs);
       if (!rhs) return nullptr;
     }

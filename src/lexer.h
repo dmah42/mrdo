@@ -19,8 +19,7 @@ enum Token {
   TOKEN_ASSIGN = -11,
   TOKEN_LOGIC = -12,
   TOKEN_ARITH = -13,
-  TOKEN_COMPARE = -14,
-  TOKEN_STREAM = -15
+  TOKEN_COMPARE = -14
 };
 
 extern int current_token;
@@ -30,6 +29,7 @@ extern double real_value;
 
 void Initialize();
 int NextToken();
+bool BinOpPrecedence(int* precedence);
 }  // end namespace lexer
 
 #endif  // _DO_LEXER_H_
