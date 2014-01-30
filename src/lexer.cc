@@ -1,5 +1,6 @@
 #include "lexer.h"
 
+#include <cassert>
 #include <iostream>
 #include <map>
 #include <string>
@@ -137,7 +138,8 @@ int GetToken() {
       op_str = s;
       return t;
     }
-    return lastch;
+    assert(s.length() == 1);
+    return s[0];
   }
 
   int ch = lastch;
