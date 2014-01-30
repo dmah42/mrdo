@@ -70,6 +70,20 @@ class UnaryOp : public Expression {
   const Expression* expr_;
 };
 
+class If : public Expression {
+ public:
+  // TODO: elif
+  If(const Expression* condition,
+     std::vector<const Expression*>& if_body,
+     std::vector<const Expression*>& else_body)
+    : condition_(condition), if_(if_body), else_(else_body) {}
+  virtual llvm::Value* Codegen() const;
+ private:
+  const Expression* condition_;
+  std::vector<const Expression*> if_;
+  std::vector<const Expression*> else_;
+};
+
 class Program {
  public:
   explicit Program(const std::vector<const ast::Expression*> body)

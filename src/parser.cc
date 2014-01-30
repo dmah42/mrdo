@@ -15,6 +15,7 @@ ast::Expression* Expression();
 ast::Expression* Ident();
 ast::Expression* Real();
 ast::Expression* Nested();
+ast::Expression* Statement();
 
 ast::Expression* Ident() {
   assert(lexer::current_token == lexer::TOKEN_IDENT);
@@ -99,8 +100,40 @@ ast::Expression* BinaryRHS(
 }
 
 ast::Expression* If() {
-  // TODO: implement
-  return nullptr;
+  assert(lexer::current_token == lexer::TOKEN_IF);
+  lexer::NextToken();
+
+  const ast::Expression* condition = Expression();
+  if (!condition) return nullptr;
+
+  std::vector<const ast::Expression*> if_body;
+  while (lexer::current_token != lexer::TOKEN_ELIF &&
+         lexer::current_token != lexer::TOKEN_ELSE &&
+         lexer::current_token != lexer::TOKEN_DONE) {
+    const ast::Expression* if_state = Statement();
+    if (!if_state) return nullptr;
+    if_body.push_back(if_state);
+  }
+
+  // TODO: elif
+
+  std::vector<const ast::Expression*> else_body;
+  if (lexer::current_token == lexer::TOKEN_ELSE) {
+    lexer::NextToken();
+    while (lexer::current_token != lexer::TOKEN_DONE) {
+      const ast::Expression* else_state = Statement();
+      if (!else_state) return nullptr;
+      else_body.push_back(else_state);
+    }
+  }
+
+  if (lexer::current_token != lexer::TOKEN_DONE) {
+    Error("expected 'done' at end of 'if', got ", lexer::current_token);
+    return nullptr;
+  }
+  lexer::NextToken();
+
+  return new ast::If(condition, if_body, else_body);
 }
 
 ast::Expression* While() {
