@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include <llvm/Analysis/Passes.h>
+#include <llvm/Bitcode/ReaderWriter.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/JIT.h>
 #include <llvm/IR/DataLayout.h>
@@ -23,8 +24,11 @@ llvm::ExecutionEngine* execution_engine = nullptr;
 llvm::FunctionPassManager* fpm = nullptr;
 }
 llvm::Module* module = nullptr;
+std::istream* file = nullptr;
 
-void Initialize() {
+void Initialize(std::istream& f) {
+  file = &f;
+
   llvm::InitializeNativeTarget();
 
   module = new llvm::Module("do jit", llvm::getGlobalContext());
@@ -52,6 +56,9 @@ void Initialize() {
   fpm->doInitialization();
 #endif
 
+  if (engine::file == &std::cin) {
+    std::cerr << "do] ";
+  }
   lexer::Initialize();
 }
 
@@ -60,10 +67,10 @@ void Run() {
     if (llvm::Function* lf = p->Codegen()) {
 
       if (fpm) {
-        lf->dump();
+        //    lf->dump();
         std::cerr << "Optimizing...\n";
         fpm->run(*lf);
-        lf->dump();
+        //     lf->dump();
       }
 
       void* fptr = engine::execution_engine->getPointerToFunction(lf);
@@ -76,6 +83,10 @@ void Run() {
   } else {
     std::cerr << "Failed to parse\n";
   }
-  module->dump();
+  // TODO: write out to 
+  // raw_fd_ostream f(outpath...);
+  //llvm::WriteBitcodeToFile(module, f);
+  // TODO: add flag to dump module
+  //module->dump();
 }
 }  // end namespace engine

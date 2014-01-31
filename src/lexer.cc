@@ -5,6 +5,8 @@
 #include <map>
 #include <string>
 
+#include "engine.h"
+
 namespace lexer {
 namespace { char lastch = ' '; }
 
@@ -75,14 +77,14 @@ int GetToken() {
   real_value = 0.0;
 
   while (isspace(lastch))
-    lastch = getchar();
+    lastch = engine::file->get();
 
   // ident
   if (isalpha(lastch)) {
     std::string s;
     do {
       s += lastch;
-      lastch = getchar();
+      lastch = engine::file->get();
     } while (isalnum(lastch) || lastch == '_' || lastch == '-');
 
     Token t;
@@ -97,7 +99,7 @@ int GetToken() {
     std::string s;
     do {
       s += lastch;
-      lastch = getchar();
+      lastch = engine::file->get();
       if (lastch == '.') {
         if (!has_decimal)
           has_decimal = true;
@@ -114,11 +116,11 @@ int GetToken() {
   // comment
   if (lastch == '#') {
     do
-      lastch = getchar();
+      lastch = engine::file->get();
     while (lastch != EOF && lastch != '\n');
     if (lastch != EOF) {
       // eat the newline too
-      lastch = getchar();
+      lastch = engine::file->get();
       return GetToken();
     }
   }
@@ -130,7 +132,7 @@ int GetToken() {
     std::string s;
     while (lastch != EOF && !isalnum(lastch) && !isspace(lastch)) {
       s += lastch;
-      lastch = getchar();
+      lastch = engine::file->get();
     }
 
     // TODO: only check operator map?
@@ -144,7 +146,7 @@ int GetToken() {
   }
 
   int ch = lastch;
-  lastch = getchar();
+  lastch = engine::file->get();
   return ch;
 }
 }  // end namespace

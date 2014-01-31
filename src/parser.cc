@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "ast.h"
+#include "engine.h"
 #include "error.h"
 #include "lexer.h"
 
@@ -164,6 +165,9 @@ ast::Expression* Statement() {
 ast::Program* Program() {
   std::vector<const ast::Expression*> state_list;
   while (lexer::current_token != lexer::TOKEN_EOF) {
+    if (engine::file == &std::cin) {
+      std::cerr << "do] ";
+    }
     const ast::Expression* s = Statement();
     if (!s) return nullptr;
     state_list.push_back(s);
