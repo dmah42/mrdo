@@ -27,6 +27,8 @@ extern std::string ident_str;
 extern std::string op_str;
 extern double real_value;
 
+extern int line, col;
+
 void Initialize();
 int NextToken();
 bool BinOpPrecedence(int* precedence);

@@ -15,6 +15,8 @@ std::string ident_str;
 std::string op_str;
 double real_value = 0.0;
 
+int line = 1, col = 1;
+
 namespace {
 // TODO: split token map to allow extra data (ie, binop precedence)
 const std::map<std::string, Token> token_map = {
@@ -71,20 +73,30 @@ bool ValidToken(const std::string& s, Token* token) {
   return false;
 }
 
+int GetCh() {
+  int ch = engine::file->get();
+  if (ch == '\n') {
+    line++; col = 1;
+  } else {
+    col++;
+  }
+  return ch;
+}
+
 int GetToken() {
   ident_str.clear();
   op_str.clear();
   real_value = 0.0;
 
   while (isspace(lastch))
-    lastch = engine::file->get();
+    lastch = GetCh();
 
   // ident
   if (isalpha(lastch)) {
     std::string s;
     do {
       s += lastch;
-      lastch = engine::file->get();
+      lastch = GetCh();
     } while (isalnum(lastch) || lastch == '_' || lastch == '-');
 
     Token t;
@@ -99,7 +111,7 @@ int GetToken() {
     std::string s;
     do {
       s += lastch;
-      lastch = engine::file->get();
+      lastch = GetCh();
       if (lastch == '.') {
         if (!has_decimal)
           has_decimal = true;
@@ -116,11 +128,11 @@ int GetToken() {
   // comment
   if (lastch == '#') {
     do
-      lastch = engine::file->get();
+      lastch = GetCh();
     while (lastch != EOF && lastch != '\n');
     if (lastch != EOF) {
       // eat the newline too
-      lastch = engine::file->get();
+      lastch = GetCh();
       return GetToken();
     }
   }
@@ -132,7 +144,7 @@ int GetToken() {
     std::string s;
     while (lastch != EOF && !isalnum(lastch) && !isspace(lastch)) {
       s += lastch;
-      lastch = engine::file->get();
+      lastch = GetCh();
     }
 
     // TODO: only check operator map?
@@ -146,7 +158,7 @@ int GetToken() {
   }
 
   int ch = lastch;
-  lastch = engine::file->get();
+  lastch = GetCh();
   return ch;
 }
 }  // end namespace

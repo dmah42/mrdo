@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "lexer.h"
+
 namespace llvm {
 class Function;
 class Value;
@@ -13,9 +15,10 @@ class Value;
 namespace ast {
 class Expression {
  public:
+  Expression() : line(lexer::line), col(lexer::col) {}
   virtual ~Expression() {}
   virtual llvm::Value* Codegen() const = 0;
-  mutable int line_no;
+  const int line, col;
 };
 
 class Real : public Expression {

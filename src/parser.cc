@@ -12,8 +12,6 @@
 
 namespace parser {
 namespace {
-int line_no = 1;
-
 ast::Expression* Expression();
 ast::Expression* Ident();
 ast::Expression* Real();
@@ -43,7 +41,7 @@ ast::Expression* Nested() {
 
   if (lexer::current_token != ')') {
     Error("Expected ')', got '", (char) lexer::current_token, "' [",
-          lexer::current_token, "] at line ", line_no);
+          lexer::current_token, "] at ", lexer::line, "|", lexer::col);
     return nullptr;
   }
   lexer::NextToken();
@@ -63,9 +61,10 @@ ast::Expression* RValue() {
 
     default:
       Error("Expected identifier or real, got '", (char) lexer::current_token,
-            "' [", lexer::current_token, "] at line ", line_no);
+            "' [", lexer::current_token, "] at ", lexer::line, "|", lexer::col);
       return nullptr;
-  };
+  }
+  ;
 }
 
 ast::Expression* Unary() {
@@ -132,7 +131,7 @@ ast::Expression* If() {
 
   if (lexer::current_token != lexer::TOKEN_DONE) {
     Error("expected 'done' at end of 'if', got '", (char) lexer::current_token,
-          "' [", lexer::current_token, "] at line ", line_no);
+          "' [", lexer::current_token, "] at ", lexer::line, "|", lexer::col);
     return nullptr;
   }
   lexer::NextToken();
@@ -163,7 +162,8 @@ ast::Expression* Statement() {
 
     default:
       return Expression();
-  };
+  }
+  ;
 }
 }  // end namespace
 
@@ -175,10 +175,7 @@ ast::Program* Program() {
     }
     const ast::Expression* s = Statement();
     if (!s) return nullptr;
-    s->line_no = line_no;
     state_list.push_back(s);
-    // TODO: revisit when multiple statements per line are allowed.
-    ++line_no;
   }
 
   return new ast::Program(state_list);
