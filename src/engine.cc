@@ -67,7 +67,7 @@ void Run() {
       }
 
       void* fptr = engine::execution_engine->getPointerToFunction(lf);
-      double (*fp)() = (double (*)())(intptr_t)fptr;
+      double(*fp)() = (double(*)())(intptr_t) fptr;
 
       std::cerr << "Evaluates to: " << fp() << "\n";
     } else {

@@ -39,7 +39,8 @@ std::vector<double> do_read() {
 }
 
 void do_write(std::vector<double> input) {
-  std::for_each(
-      input.begin(), input.end(), [] (double v) { std::cout << v << "\n"; });
+  std::for_each(input.begin(), input.end(), [](double v) {
+    std::cout << v << "\n";
+  });
 }
 }  // end namespace builtin

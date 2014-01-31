@@ -6,9 +6,7 @@
 #include <string>
 
 namespace lexer {
-namespace {
-char lastch = ' ';
-}
+namespace { char lastch = ' '; }
 
 int current_token = TOKEN_EOF;
 std::string ident_str;
@@ -101,8 +99,10 @@ int GetToken() {
       s += lastch;
       lastch = getchar();
       if (lastch == '.') {
-        if (!has_decimal) has_decimal = true;
-        else break;
+        if (!has_decimal)
+          has_decimal = true;
+        else
+          break;
       }
     } while (isdigit(lastch) || lastch == '.');
 
@@ -113,7 +113,8 @@ int GetToken() {
 
   // comment
   if (lastch == '#') {
-    do lastch = getchar();
+    do
+      lastch = getchar();
     while (lastch != EOF && lastch != '\n');
     if (lastch != EOF) {
       // eat the newline too

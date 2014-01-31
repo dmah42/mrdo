@@ -33,26 +33,24 @@ void SetNamedValue(const std::string& name, llvm::AllocaInst* alloca) {
 }
 
 void PushNamedValueScope() {
-  named_values.push_back({});
+  named_values.push_back({
+  });
 }
 
-void PopNamedValueScope() {
-  named_values.pop_back();
-}
+void PopNamedValueScope() { named_values.pop_back(); }
 
-llvm::AllocaInst* CreateEntryBlockAlloca(
-    llvm::Function* function, const std::string& var) {
-  llvm::IRBuilder<> tmp(
-      &function->getEntryBlock(), function->getEntryBlock().begin());
+llvm::AllocaInst* CreateEntryBlockAlloca(llvm::Function* function,
+                                         const std::string& var) {
+  llvm::IRBuilder<> tmp(&function->getEntryBlock(),
+                        function->getEntryBlock().begin());
   // TODO: collections
-  return tmp.CreateAlloca(
-      llvm::Type::getDoubleTy(llvm::getGlobalContext()), 0, var.c_str());
+  return tmp.CreateAlloca(llvm::Type::getDoubleTy(llvm::getGlobalContext()), 0,
+                          var.c_str());
 }
 
 llvm::Value* ToBool(llvm::Value* val) {
   return builder.CreateFCmpUNE(
-      val,
-      llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0)),
+      val, llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0)),
       "booltmp");
 }
 }  // end namespace
@@ -221,10 +219,9 @@ llvm::Function* Program::Codegen() const {
   PushNamedValueScope();
   // prototype
   // TODO: return array of doubles
-  llvm::FunctionType* ft = llvm::FunctionType::get(
-      llvm::Type::getDoubleTy(llvm::getGlobalContext()),
-      std::vector<llvm::Type*>(),
-      false);
+  llvm::FunctionType* ft =
+      llvm::FunctionType::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),
+                              std::vector<llvm::Type*>(), false);
   llvm::Function* f = llvm::Function::Create(
       ft, llvm::Function::ExternalLinkage, "global", engine::module);
 
@@ -235,8 +232,8 @@ llvm::Function* Program::Codegen() const {
   }
 
   // function body
-  llvm::BasicBlock* bb = llvm::BasicBlock::Create(
-      llvm::getGlobalContext(), "entry", f);
+  llvm::BasicBlock* bb =
+      llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", f);
   builder.SetInsertPoint(bb);
 
   llvm::Value* return_value = nullptr;

@@ -64,8 +64,7 @@ ast::Expression* RValue() {
 }
 
 ast::Expression* Unary() {
-  if (lexer::current_token != lexer::TOKEN_UNOP)
-    return RValue();
+  if (lexer::current_token != lexer::TOKEN_UNOP) return RValue();
 
   std::string op = lexer::op_str;
   lexer::NextToken();
@@ -75,8 +74,7 @@ ast::Expression* Unary() {
   return new ast::UnaryOp(op, operand);
 }
 
-ast::Expression* BinaryRHS(
-    int precedence, ast::Expression* lhs) {
+ast::Expression* BinaryRHS(int precedence, ast::Expression* lhs) {
   while (true) {
     int token_prec;
     bool valid_binop = lexer::BinOpPrecedence(&token_prec);

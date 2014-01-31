@@ -25,6 +25,7 @@ class Real : public Expression {
 #endif
   }
   virtual llvm::Value* Codegen() const;
+
  private:
   double value_;
 };
@@ -38,6 +39,7 @@ class Variable : public Expression {
   }
   virtual llvm::Value* Codegen() const;
   const std::string& name() const { return name_; }
+
  private:
   std::string name_;
 };
@@ -51,9 +53,10 @@ class BinaryOp : public Expression {
 #endif
   }
   virtual llvm::Value* Codegen() const;
+
  private:
   const std::string op_;
-  const Expression *lhs_, *rhs_;
+  const Expression* lhs_, *rhs_;
 };
 
 class UnaryOp : public Expression {
@@ -65,6 +68,7 @@ class UnaryOp : public Expression {
 #endif
   }
   virtual llvm::Value* Codegen() const;
+
  private:
   const std::string op_;
   const Expression* expr_;
@@ -73,11 +77,11 @@ class UnaryOp : public Expression {
 class If : public Expression {
  public:
   // TODO: elif
-  If(const Expression* condition,
-     std::vector<const Expression*>& if_body,
+  If(const Expression* condition, std::vector<const Expression*>& if_body,
      std::vector<const Expression*>& else_body)
-    : condition_(condition), if_(if_body), else_(else_body) {}
+      : condition_(condition), if_(if_body), else_(else_body) {}
   virtual llvm::Value* Codegen() const;
+
  private:
   const Expression* condition_;
   std::vector<const Expression*> if_;
@@ -89,6 +93,7 @@ class Program {
   explicit Program(const std::vector<const ast::Expression*> body)
       : body_(body) {}
   llvm::Function* Codegen() const;
+
  private:
   std::vector<const ast::Expression*> body_;
 };

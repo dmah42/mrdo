@@ -5,8 +5,7 @@
 
 void Error();
 
-template <typename H, typename ...T>
-void Error(const H& err, T&&... t) {
+template <typename H, typename... T> void Error(const H& err, T&& ... t) {
   std::cerr << err;
   Error(std::forward<T>(t)...);
 }
