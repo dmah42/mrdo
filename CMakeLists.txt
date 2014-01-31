@@ -18,3 +18,10 @@ FILE(GLOB SOURCE_FILES "src/*.cc")
 add_executable(do ${SOURCE_FILES})
 set_target_properties(do PROPERTIES LINK_FLAGS ${LLVM_LFLAGS})
 target_link_libraries(do ${LLVM_MODULE_LIBS} dl pthread)
+
+add_custom_command(TARGET do POST_BUILD
+		   COMMAND bin/do ARGS < test/basic.do
+		   MAIN_DEPENDENCY test/basic.do
+		   DEPENDS bin/do
+		   COMMENT Running basic test
+		   VERBATIM)
