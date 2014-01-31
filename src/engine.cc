@@ -68,7 +68,7 @@ void Run() {
 
       if (fpm) {
         //    lf->dump();
-        std::cerr << "Optimizing...\n";
+        //    std::cerr << "Optimizing...\n";
         fpm->run(*lf);
         //     lf->dump();
       }
@@ -78,10 +78,10 @@ void Run() {
 
       std::cerr << "Evaluates to: " << fp() << "\n";
     } else {
-      std::cerr << "Failed to codegen\n";
+      std::cerr << "Failed to codegen.\n";
     }
   } else {
-    std::cerr << "Failed to parse\n";
+    std::cerr << "Failed to parse.\n";
   }
   // TODO: write out to 
   // raw_fd_ostream f(outpath...);

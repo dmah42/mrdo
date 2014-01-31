@@ -62,7 +62,7 @@ llvm::Value* Real::Codegen() const {
 llvm::Value* Variable::Codegen() const {
   llvm::AllocaInst* val = GetNamedValue(name_);
   if (!val) {
-    Error("Unknown variable name: ", name_);
+    Error("Unknown variable name: ", name_, " at line ", line_no);
     return nullptr;
   }
   return builder.CreateLoad(val, name_.c_str());
@@ -73,7 +73,7 @@ llvm::Value* BinaryOp::Codegen() const {
   if (op_ == "=") {
     const Variable* lhs_expression = dynamic_cast<const Variable*>(lhs_);
     if (!lhs_expression) {
-      Error("LHS of assignment must be a variable");
+      Error("LHS of assignment must be a variable", " at line ", line_no);
       return nullptr;
     }
 
@@ -142,7 +142,7 @@ llvm::Value* BinaryOp::Codegen() const {
         builder.CreateXor(ToBool(l), ToBool(r), "xortmp"),
         llvm::Type::getDoubleTy(llvm::getGlobalContext()), "booltmp");
 
-  Error("unknown binary operator");
+  Error("unknown binary operator", " at line ", line_no);
   return nullptr;
 }
 
@@ -155,7 +155,7 @@ llvm::Value* UnaryOp::Codegen() const {
     return builder.CreateUIToFP(
         builder.CreateNot(ToBool(expr), "nottmp"),
         llvm::Type::getDoubleTy(llvm::getGlobalContext()), "booltmp");
-  Error("unknown unary operator");
+  Error("unknown unary operator", " at line ", line_no);
   return nullptr;
 }
 

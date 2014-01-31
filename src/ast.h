@@ -15,6 +15,7 @@ class Expression {
  public:
   virtual ~Expression() {}
   virtual llvm::Value* Codegen() const = 0;
+  mutable int line_no;
 };
 
 class Real : public Expression {
