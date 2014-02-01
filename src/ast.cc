@@ -62,7 +62,7 @@ llvm::Value* Real::Codegen() const {
 llvm::Value* Variable::Codegen() const {
   llvm::AllocaInst* val = GetNamedValue(name_);
   if (!val) {
-    Error("Unknown variable name: ", name_, " at ", line, "|", col);
+    Error(line, col, "Unknown variable name: ", name_);
     return nullptr;
   }
   return builder.CreateLoad(val, name_.c_str());
@@ -73,7 +73,7 @@ llvm::Value* BinaryOp::Codegen() const {
   if (op_ == "=") {
     const Variable* lhs_expression = dynamic_cast<const Variable*>(lhs_);
     if (!lhs_expression) {
-      Error("LHS of assignment must be a variable at ", line, "|", col);
+      Error(line, col, "LHS of assignment must be a variable.");
       return nullptr;
     }
 
@@ -142,7 +142,7 @@ llvm::Value* BinaryOp::Codegen() const {
         builder.CreateXor(ToBool(l), ToBool(r), "xortmp"),
         llvm::Type::getDoubleTy(llvm::getGlobalContext()), "booltmp");
 
-  Error("unknown binary operator at ", line, "|", col);
+  Error(line, col, "Unknown binary operator: ", op_, ".");
   return nullptr;
 }
 
@@ -155,7 +155,7 @@ llvm::Value* UnaryOp::Codegen() const {
     return builder.CreateUIToFP(
         builder.CreateNot(ToBool(expr), "nottmp"),
         llvm::Type::getDoubleTy(llvm::getGlobalContext()), "booltmp");
-  Error("unknown unary operator at ", line, "|", col);
+  Error(line, col, "Unknown unary operator: ", op_, ".");
   return nullptr;
 }
 
@@ -227,7 +227,7 @@ llvm::Function* Program::Codegen() const {
 
   if (f->getName() != "global") {
     f->eraseFromParent();
-    Error("Failed to create function");
+    Error(lexer::line, lexer::col, "Failed to create function.");
     return nullptr;
   }
 

@@ -1,3 +1,3 @@
 #include "error.h"
 
-void Error() { std::cerr << '\n'; }
+void ErrorCont() { std::cerr << '\n'; }

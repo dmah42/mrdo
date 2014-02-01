@@ -1,6 +1,7 @@
 #include "engine.h"
 
 #include <iostream>
+#include <fstream>
 
 #include <llvm/Analysis/Passes.h>
 #include <llvm/Bitcode/ReaderWriter.h>
@@ -22,12 +23,19 @@ namespace engine {
 namespace {
 llvm::ExecutionEngine* execution_engine = nullptr;
 llvm::FunctionPassManager* fpm = nullptr;
+std::ifstream input_file;
 }
 llvm::Module* module = nullptr;
-std::istream* file = nullptr;
+std::string filename;
+std::istream* stream = &std::cin;
 
-void Initialize(std::istream& f) {
-  file = &f;
+void Initialize(const std::string& f) {
+  filename = f;
+  if (!f.empty()) {
+    input_file.open(f, std::ios::in);
+    assert(input_file.is_open());
+    stream = &input_file;
+  }
 
   llvm::InitializeNativeTarget();
 
@@ -56,7 +64,7 @@ void Initialize(std::istream& f) {
   fpm->doInitialization();
 #endif
 
-  if (engine::file == &std::cin) {
+  if (engine::filename.empty()) {
     std::cerr << "do] ";
   }
   lexer::Initialize();

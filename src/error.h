@@ -3,11 +3,20 @@
 
 #include <iostream>
 
-void Error();
+#include "engine.h"
 
-template <typename H, typename... T> void Error(const H& err, T&& ... t) {
+void ErrorCont();
+
+template <typename H, typename... T> void ErrorCont(const H& err, T&& ... t) {
   std::cerr << err;
-  Error(std::forward<T>(t)...);
+  ErrorCont(std::forward<T>(t)...);
+}
+
+template <typename H, typename... T>
+void Error(int line, int col, const H& err, T&& ... t) {
+  std::cerr << engine::filename << ":" << line << ":" << col
+            << ": error: " << err;
+  ErrorCont(std::forward<T>(t)...);
 }
 
 #endif

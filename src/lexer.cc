@@ -74,7 +74,7 @@ bool ValidToken(const std::string& s, Token* token) {
 }
 
 int GetCh() {
-  int ch = engine::file->get();
+  int ch = engine::stream->get();
   if (ch == '\n') {
     line++; col = 1;
   } else {

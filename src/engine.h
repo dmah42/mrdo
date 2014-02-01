@@ -1,15 +1,16 @@
 #ifndef _DO_ENGINE_H_
 #define _DO_ENGINE_H_
 
-#include <iostream>
+#include <string>
 
 namespace llvm { class Module; }
 
 namespace engine {
 extern llvm::Module* module;
-extern std::istream* file;
+extern std::string filename;
+extern std::istream* stream;
 
-void Initialize(std::istream& f);
+void Initialize(const std::string& f);
 void Run();
 }  // end namespace engine
 

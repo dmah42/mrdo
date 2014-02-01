@@ -40,8 +40,8 @@ ast::Expression* Nested() {
   if (!e) return nullptr;
 
   if (lexer::current_token != ')') {
-    Error("Expected ')', got '", (char) lexer::current_token, "' [",
-          lexer::current_token, "] at ", lexer::line, "|", lexer::col);
+    Error(lexer::line, lexer::col, "Expected ')', got '",
+          (char) lexer::current_token, "' [", lexer::current_token, "]");
     return nullptr;
   }
   lexer::NextToken();
@@ -60,8 +60,8 @@ ast::Expression* RValue() {
       return Nested();
 
     default:
-      Error("Expected identifier or real, got '", (char) lexer::current_token,
-            "' [", lexer::current_token, "] at ", lexer::line, "|", lexer::col);
+      Error(lexer::line, lexer::col, "Expected identifier or real, got '",
+            (char) lexer::current_token, "' [", lexer::current_token, "]");
       return nullptr;
   }
   ;
@@ -130,8 +130,8 @@ ast::Expression* If() {
   }
 
   if (lexer::current_token != lexer::TOKEN_DONE) {
-    Error("expected 'done' at end of 'if', got '", (char) lexer::current_token,
-          "' [", lexer::current_token, "] at ", lexer::line, "|", lexer::col);
+    Error(lexer::line, lexer::col, "expected 'done' at end of 'if', got '",
+          (char) lexer::current_token, "' [", lexer::current_token, "]");
     return nullptr;
   }
   lexer::NextToken();
@@ -170,7 +170,7 @@ ast::Expression* Statement() {
 ast::Program* Program() {
   std::vector<const ast::Expression*> state_list;
   while (lexer::current_token != lexer::TOKEN_EOF) {
-    if (engine::file == &std::cin) {
+    if (engine::filename.empty()) {
       std::cerr << "do] ";
     }
     const ast::Expression* s = Statement();
