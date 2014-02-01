@@ -33,7 +33,10 @@ void Initialize(const std::string& f) {
   filename = f;
   if (!f.empty()) {
     input_file.open(f, std::ios::in);
-    assert(input_file.is_open());
+    if (!input_file.is_open()) {
+      std::cerr << "Failed to open file: '" << f << "'.\n";
+      exit(1);
+    }
     stream = &input_file;
   }
 
