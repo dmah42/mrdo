@@ -40,12 +40,11 @@ void PushNamedValueScope() {
 void PopNamedValueScope() { named_values.pop_back(); }
 
 llvm::AllocaInst* CreateEntryBlockAlloca(llvm::Function* function,
+                                         llvm::Type* type,
                                          const std::string& var) {
   llvm::IRBuilder<> tmp(&function->getEntryBlock(),
                         function->getEntryBlock().begin());
-  // TODO: collections
-  return tmp.CreateAlloca(llvm::Type::getDoubleTy(llvm::getGlobalContext()), 0,
-                          var.c_str());
+  return tmp.CreateAlloca(type, nullptr, var.c_str());
 }
 
 llvm::Value* ToBool(llvm::Value* val) {
@@ -59,6 +58,31 @@ llvm::Value* Real::Codegen() const {
   return llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(value_));
 }
 
+llvm::Value* Collection::Codegen() const {
+  std::vector<llvm::Constant*> init_values;
+  for (const Expression* e : values_) {
+    llvm::Value* val = e->Codegen();
+    const Real* e_real = dynamic_cast<const Real*>(e);
+    const Collection* e_coll = dynamic_cast<const Collection*>(e);
+    if (e_real) {
+      init_values.push_back(llvm::cast<llvm::Constant>(val));
+    } else if (e_coll) {
+      // TODO
+      Error(line, col, "Unimplemented collection of collection.");
+      return nullptr;
+    } else {
+      Error(line, col, "Unimplemented expression type ", typeid(e).name(),
+            " in collection.");
+      return nullptr;
+    }
+  }
+
+  return llvm::ConstantArray::get(
+      llvm::ArrayType::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),
+                           init_values.size()),
+      init_values);
+}
+
 llvm::Value* Variable::Codegen() const {
   llvm::AllocaInst* val = GetNamedValue(name_);
   if (!val) {
@@ -69,29 +93,7 @@ llvm::Value* Variable::Codegen() const {
 }
 
 llvm::Value* BinaryOp::Codegen() const {
-  // assign
-  if (op_ == "=") {
-    const Variable* lhs_expression = dynamic_cast<const Variable*>(lhs_);
-    if (!lhs_expression) {
-      Error(line, col, "LHS of assignment must be a variable.");
-      return nullptr;
-    }
-
-    llvm::Value* v = rhs_->Codegen();
-    if (!v) return nullptr;
-
-    llvm::AllocaInst* var = GetNamedValue(lhs_expression->name());
-    if (!var) {
-      // create the variable
-      llvm::Function* f = builder.GetInsertBlock()->getParent();
-
-      var = CreateEntryBlockAlloca(f, lhs_expression->name());
-      SetNamedValue(lhs_expression->name(), var);
-    }
-
-    builder.CreateStore(v, var);
-    return v;
-  }
+  if (op_ == "=") return HandleAssign();
 
   llvm::Value* l = lhs_->Codegen();
   llvm::Value* r = rhs_->Codegen();
@@ -146,15 +148,53 @@ llvm::Value* BinaryOp::Codegen() const {
   return nullptr;
 }
 
+llvm::Value* BinaryOp::HandleAssign() const {
+  const Variable* lhs_variable = dynamic_cast<const Variable*>(lhs_);
+  if (!lhs_variable) {
+    Error(line, col, "LHS of assignment must be a variable.");
+    return nullptr;
+  }
+
+  llvm::Value* v = rhs_->Codegen();
+  if (!v) return nullptr;
+
+  llvm::AllocaInst* var = GetNamedValue(lhs_variable->name());
+  if (!var) {
+    // create the variable
+    llvm::Function* f = builder.GetInsertBlock()->getParent();
+    const Collection* rhs_c = dynamic_cast<const Collection*>(rhs_);
+    const Variable* rhs_v = dynamic_cast<const Variable*>(rhs_);
+    llvm::Type* alloca_type = llvm::Type::getDoubleTy(llvm::getGlobalContext());
+    if (rhs_c) {
+      alloca_type = llvm::ArrayType::get(
+          llvm::Type::getDoubleTy(llvm::getGlobalContext()), rhs_c->size());
+    } else if (rhs_v) {
+      alloca_type = v->getType();
+    }
+    var = CreateEntryBlockAlloca(f, alloca_type, lhs_variable->name());
+    SetNamedValue(lhs_variable->name(), var);
+  }
+
+  builder.CreateStore(v, var);
+  return v;
+}
+
 llvm::Value* UnaryOp::Codegen() const {
   llvm::Value* expr = expr_->Codegen();
   if (!expr) return nullptr;
 
-  // TODO: check that expr_ is either 'real' or variable of type 'double'
-  if (op_ == "not")
+  if (op_ == "not") {
+    const Real* expr_real = dynamic_cast<const Real*>(expr_);
+    const Variable* expr_var = dynamic_cast<const Variable*>(expr_);
+    // TODO: check var type is not collection.
+    if (!expr_real && !expr_var) {
+      Error(line, col, "Expected real or variable of type real after 'not'.");
+      return nullptr;
+    }
     return builder.CreateUIToFP(
         builder.CreateNot(ToBool(expr), "nottmp"),
         llvm::Type::getDoubleTy(llvm::getGlobalContext()), "booltmp");
+  }
   Error(line, col, "Unknown unary operator: ", op_, ".");
   return nullptr;
 }
@@ -217,10 +257,9 @@ llvm::Value* If::Codegen() const {
 
 llvm::Function* Program::Codegen() const {
   PushNamedValueScope();
-  // prototype
-  // TODO: return array of doubles
+  // No return type, no parameters.
   llvm::FunctionType* ft =
-      llvm::FunctionType::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),
+      llvm::FunctionType::get(llvm::Type::getVoidTy(llvm::getGlobalContext()),
                               std::vector<llvm::Type*>(), false);
   llvm::Function* f = llvm::Function::Create(
       ft, llvm::Function::ExternalLinkage, "global", engine::module);
@@ -236,18 +275,16 @@ llvm::Function* Program::Codegen() const {
       llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", f);
   builder.SetInsertPoint(bb);
 
-  llvm::Value* return_value = nullptr;
   for (const Expression* e : body_) {
     // TODO: find the return expressions.
-    return_value = e->Codegen();
-    if (!return_value) {
+    llvm::Value* v = e->Codegen();
+    if (!v) {
       f->eraseFromParent();
       return nullptr;
     }
   }
 
-  // TODO: return should be a statement that codegens to this.
-  builder.CreateRet(return_value);
+  builder.CreateRetVoid();
 
   PopNamedValueScope();
 

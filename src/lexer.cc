@@ -76,7 +76,8 @@ bool ValidToken(const std::string& s, Token* token) {
 int GetCh() {
   int ch = engine::stream->get();
   if (ch == '\n') {
-    line++; col = 1;
+    line++;
+    col = 1;
   } else {
     col++;
   }

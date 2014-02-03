@@ -12,6 +12,7 @@
 
 namespace parser {
 namespace {
+ast::Expression* Collection();
 ast::Expression* Expression();
 ast::Expression* Ident();
 ast::Expression* Real();
@@ -59,12 +60,40 @@ ast::Expression* RValue() {
     case '(':
       return Nested();
 
+    case '[':
+      // TODO: sequence
+      return Collection();
+
     default:
       Error(lexer::line, lexer::col, "Expected identifier or real, got '",
             (char) lexer::current_token, "' [", lexer::current_token, "]");
       return nullptr;
   }
   ;
+}
+
+ast::Expression* Collection() {
+  assert(lexer::current_token == '[');
+  lexer::NextToken();
+
+  std::vector<const ast::Expression*> members;
+  while (true) {
+    const ast::Expression* v = RValue();
+    if (!v) return nullptr;
+    members.push_back(v);
+
+    if (lexer::current_token == ']') break;
+    if (lexer::current_token != ',') {
+      Error(lexer::line, lexer::col,
+            "Expected ',' between values in collection, got ",
+            lexer::current_token);
+      return nullptr;
+    }
+    lexer::NextToken();
+  }
+  ast::Expression* e(new ast::Collection(members));
+  lexer::NextToken();
+  return e;
 }
 
 ast::Expression* Unary() {

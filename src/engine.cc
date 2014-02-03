@@ -76,12 +76,10 @@ void Initialize(const std::string& f) {
 void Run() {
   if (ast::Program* p = parser::Program()) {
     if (llvm::Function* lf = p->Codegen()) {
-
       if (fpm) {
-        //    lf->dump();
+        //lf->dump();
         //    std::cerr << "Optimizing...\n";
         fpm->run(*lf);
-        //     lf->dump();
       }
 
       void* fptr = engine::execution_engine->getPointerToFunction(lf);
@@ -94,10 +92,10 @@ void Run() {
   } else {
     std::cerr << "Failed to parse.\n";
   }
-  // TODO: write out to 
+  // TODO: write out to
   // raw_fd_ostream f(outpath...);
   //llvm::WriteBitcodeToFile(module, f);
   // TODO: add flag to dump module
-  //module->dump();
+  module->dump();
 }
 }  // end namespace engine

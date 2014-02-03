@@ -19,9 +19,6 @@ add_executable(do ${SOURCE_FILES})
 set_target_properties(do PROPERTIES LINK_FLAGS ${LLVM_LFLAGS})
 target_link_libraries(do ${LLVM_MODULE_LIBS} dl pthread)
 
-#enable_testing()
-#add_test(basic bin/do test/basic.do)
-#add_test(if bin/do test/if.do)
 FILE(GLOB TEST_FILES "test/*.do")
 foreach(TESTFILE ${TEST_FILES})
 	add_custom_command(TARGET do POST_BUILD

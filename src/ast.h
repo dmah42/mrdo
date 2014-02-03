@@ -34,6 +34,21 @@ class Real : public Expression {
   double value_;
 };
 
+class Collection : public Expression {
+ public:
+  explicit Collection(std::vector<const Expression*>& values)
+      : values_(values) {
+#ifdef DEBUG
+    std::cerr << "Collection: " << values.size() << "\n";
+#endif
+  }
+  virtual llvm::Value* Codegen() const;
+  size_t size() const { return values_.size(); }
+
+ private:
+  std::vector<const Expression*> values_;
+};
+
 class Variable : public Expression {
  public:
   explicit Variable(const std::string& name) : name_(name) {
@@ -59,6 +74,8 @@ class BinaryOp : public Expression {
   virtual llvm::Value* Codegen() const;
 
  private:
+  llvm::Value* HandleAssign() const;
+
   const std::string op_;
   const Expression* lhs_, *rhs_;
 };
