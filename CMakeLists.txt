@@ -7,19 +7,19 @@ find_package(LLVM REQUIRED)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 
-set(CMAKE_CXX_FLAGS "-Wall -Werror -pedantic-errors --std=c++0x -fvisibility-inlines-hidden ${LLVM_CFLAGS}")
+set(CMAKE_CXX_FLAGS "-Wall -Werror -pedantic-errors --std=c++0x -Isrc/ -fvisibility-inlines-hidden ${LLVM_CFLAGS}")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "-fno-strict-aliasing -O3 -DNDEBUG")
 
 include_directories(${LLVM_INCLUDE_DIR})
 
-FILE(GLOB SOURCE_FILES "src/*.cc")
+file(GLOB_RECURSE SOURCE_FILES "src/*.cc")
 
 add_executable(do ${SOURCE_FILES})
 set_target_properties(do PROPERTIES LINK_FLAGS ${LLVM_LFLAGS})
 target_link_libraries(do ${LLVM_MODULE_LIBS} dl pthread)
 
-FILE(GLOB TEST_FILES "test/*.do")
+file(GLOB TEST_FILES "test/*.do")
 foreach(TESTFILE ${TEST_FILES})
 	add_custom_command(TARGET do POST_BUILD
 			   COMMAND bin/do ARGS ${TESTFILE} > /dev/null

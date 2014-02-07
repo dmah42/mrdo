@@ -7,7 +7,7 @@ import ycm_core
 flags = [
 '-Wall',
 '-Werror',
-'-pendantic-errors',
+'-pedantic-errors',
 '-std=c++0x',
 '-fno-strict-aliasing',
 '-O3',
@@ -18,7 +18,7 @@ flags = [
 # For a C project, you would set this to 'c' instead of 'c++'.
 '-x', 'c++',
 '-isystem', '/usr/lib/llvm-3.4/include/',
-'-I', '.',
+'-I', './src/',
 '-isystem', '/usr/include',
 '-isystem', '/usr/local/include',
 ]
