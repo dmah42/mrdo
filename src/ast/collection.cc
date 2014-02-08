@@ -2,6 +2,8 @@
 
 #include <llvm/IR/Constant.h>
 #include <llvm/IR/Constants.h>
+#include <llvm/IR/GlobalValue.h>
+#include <llvm/IR/GlobalVariable.h>
 #include <llvm/IR/LLVMContext.h>
 
 #include "ast/real.h"
@@ -27,9 +29,12 @@ llvm::Value* Collection::Codegen() const {
     }
   }
 
-  return llvm::ConstantArray::get(
-      llvm::ArrayType::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),
-                           init_values.size()),
-      init_values);
+  llvm::ArrayType* array_type = llvm::ArrayType::get(
+      llvm::Type::getDoubleTy(llvm::getGlobalContext()), init_values.size());
+
+  return new llvm::GlobalVariable(
+      *engine::module, array_type, true /*isConstant*/,
+      llvm::GlobalValue::InternalLinkage,
+      llvm::ConstantArray::get(array_type, init_values), "coll");
 }
 }  // end namespace ast

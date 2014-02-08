@@ -16,6 +16,7 @@
 #include <llvm/Transforms/Scalar.h>
 
 #include "ast.h"
+#include "builtin.h"
 #include "lexer.h"
 #include "parser.h"
 
@@ -70,22 +71,28 @@ void Initialize(const std::string& f) {
   if (engine::filename.empty()) {
     std::cerr << "do] ";
   }
+  builtin::Initialize(execution_engine);
   lexer::Initialize();
 }
 
 void Run() {
   if (ast::Program* p = parser::Program()) {
     if (llvm::Function* lf = p->Codegen()) {
+      module->dump();
       if (fpm) {
         //lf->dump();
-        //    std::cerr << "Optimizing...\n";
+        std::cerr << "Optimizing...\n";
+        // TODO: module optimizations - ConstantMerge.
         fpm->run(*lf);
+        module->dump();
       }
 
       void* fptr = engine::execution_engine->getPointerToFunction(lf);
-      double(*fp)() = (double(*)())(intptr_t) fptr;
+      void(*fp)() = (void(*)())(intptr_t) fptr;
 
-      std::cerr << "Evaluates to: " << fp() << "\n";
+      std::cerr << "Running... \n";
+      fp();
+      std::cerr << "... done\n";
     } else {
       std::cerr << "Failed to codegen.\n";
     }
@@ -96,6 +103,5 @@ void Run() {
   // raw_fd_ostream f(outpath...);
   //llvm::WriteBitcodeToFile(module, f);
   // TODO: add flag to dump module
-  module->dump();
 }
 }  // end namespace engine

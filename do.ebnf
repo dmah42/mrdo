@@ -23,7 +23,5 @@ program = {state}
 (* missing return *)
 
 (* CURRENTLY UNSUPPORTED *)
-coll
 seq
-collection
 unary-

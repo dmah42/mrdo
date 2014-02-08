@@ -25,6 +25,7 @@ enum Token {
 extern int current_token;
 extern std::string ident_str;
 extern std::string op_str;
+extern std::string builtin_str;
 extern double real_value;
 
 extern int line, col;

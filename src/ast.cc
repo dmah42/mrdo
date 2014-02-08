@@ -33,5 +33,4 @@ llvm::Value* ToBool(llvm::Value* val) {
       val, llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0)),
       "booltmp");
 }
-
 }  // end namespace ast

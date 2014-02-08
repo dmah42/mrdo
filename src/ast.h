@@ -6,10 +6,12 @@
 #include <llvm/IR/IRBuilder.h>
 
 #include "ast/binary_op.h"
+#include "ast/call.h"
 #include "ast/collection.h"
 #include "ast/expression.h"
 #include "ast/if.h"
 #include "ast/program.h"
+#include "ast/prototype.h"
 #include "ast/real.h"
 #include "ast/unary_op.h"
 #include "ast/variable.h"

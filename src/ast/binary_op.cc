@@ -90,8 +90,8 @@ llvm::Value* BinaryOp::HandleAssign() const {
     const Variable* rhs_v = dynamic_cast<const Variable*>(rhs_);
     llvm::Type* alloca_type = llvm::Type::getDoubleTy(llvm::getGlobalContext());
     if (rhs_c) {
-      alloca_type = llvm::ArrayType::get(
-          llvm::Type::getDoubleTy(llvm::getGlobalContext()), rhs_c->size());
+      alloca_type = llvm::PointerType::getUnqual(llvm::ArrayType::get(
+          llvm::Type::getDoubleTy(llvm::getGlobalContext()), rhs_c->size()));
     } else if (rhs_v) {
       alloca_type = v->getType();
     }

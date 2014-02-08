@@ -13,6 +13,7 @@ namespace { char lastch = ' '; }
 int current_token = TOKEN_EOF;
 std::string ident_str;
 std::string op_str;
+std::string builtin_str;
 double real_value = 0.0;
 
 int line = 1, col = 1;
@@ -57,22 +58,6 @@ const std::map<std::string, std::pair<Token, int>> binop_map = {
   { "/",   { TOKEN_ARITH,   40 }}
 };
 
-bool ValidToken(const std::string& s, Token* token) {
-  if (token_map.count(s)) {
-    *token = token_map.at(s);
-    return true;
-  }
-  if (builtin_map.count(s)) {
-    *token = builtin_map.at(s);
-    return true;
-  }
-  if (binop_map.count(s)) {
-    *token = binop_map.at(s).first;
-    return true;
-  }
-  return false;
-}
-
 int GetCh() {
   int ch = engine::stream->get();
   if (ch == '\n') {
@@ -87,6 +72,7 @@ int GetCh() {
 int GetToken() {
   ident_str.clear();
   op_str.clear();
+  builtin_str.clear();
   real_value = 0.0;
 
   while (isspace(lastch))
@@ -100,8 +86,16 @@ int GetToken() {
       lastch = GetCh();
     } while (isalnum(lastch) || lastch == '_' || lastch == '-');
 
-    Token t;
-    if (ValidToken(s, &t)) return t;
+    if (token_map.count(s))
+      return token_map.at(s);
+    if (builtin_map.count(s)) {
+      builtin_str = s;
+      return builtin_map.at(s);
+    }
+    if (binop_map.count(s)) {
+      op_str = s;
+      return binop_map.at(s).first;
+    }
     ident_str = s;
     return TOKEN_IDENT;
   }
@@ -140,6 +134,18 @@ int GetToken() {
 
   if (lastch == EOF) return TOKEN_EOF;
 
+  // special chars
+  switch (lastch) {
+    case '[':
+    case '(':
+    case ']':
+    case ')': {
+      int ch = lastch;
+      lastch = GetCh();
+      return ch;
+    }
+  }
+
   // operators
   if (!isalpha(lastch)) {
     std::string s;
@@ -148,11 +154,9 @@ int GetToken() {
       lastch = GetCh();
     }
 
-    // TODO: only check operator map?
-    Token t;
-    if (ValidToken(s, &t)) {
+    if (binop_map.count(s)) {
       op_str = s;
-      return t;
+      return binop_map.at(s).first;
     }
     assert(s.length() == 1);
     return s[0];

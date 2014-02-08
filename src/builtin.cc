@@ -6,17 +6,24 @@
 #include <iostream>
 #include <vector>
 
+#include <llvm/ExecutionEngine/ExecutionEngine.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/GlobalValue.h>
+
+#include "ast.h"
+
 namespace builtin {
+namespace {
 // TODO: support map and filter over collections of collections
 // TODO: might be easier to allow collections of size 1 to be referenced as
 // reals.
 typedef std::function<double(double)> map_fn;
 typedef std::function<bool(double)> filter_fn;
-
+/*
 // TODO: input could be collection or sequence - different join behaviour on
 // each when threaded
 // TODO: input could be vector of vectors too
-std::vector<double> do_map(map_fn fn, std::vector<double> input) {
+std::vector<double> Map(map_fn fn, std::vector<double> input) {
   // TODO: thread
   std::vector<double> output;
   std::transform(input.begin(), input.end(), output.begin(), fn);
@@ -25,22 +32,41 @@ std::vector<double> do_map(map_fn fn, std::vector<double> input) {
 
 // TODO: input could be collection or sequence - different join behaviour on
 // each when threaded
-std::vector<double> do_filter(filter_fn fn, std::vector<double> input) {
+std::vector<double> Filter(filter_fn fn, std::vector<double> input) {
   // TODO: thread
   std::vector<double> output;
   std::copy_if(input.begin(), input.end(), output.begin(), fn);
   return output;
 }
 
-// TODO: how to read into collection vs seq?
-std::vector<double> do_read() {
+std::vector<double> Read() {
   // TODO: read array of arrays (potentially) from stdin, return collection
-  return std::vector<double>();
+  std::vector<double> input;
+  while (std::cin && std::cin.peek() != EOF) {
+    double v;
+    std::cin >> v;
+    input.push_back(v);
+  }
+  return input;
+}
+*/
+
+void Write(double* input, size_t input_len) {
+  std::cout << "[ ";
+  for (size_t i = 0; i < input_len; ++i) {
+    std::cout << input[i];
+    if (i != input_len - 1)
+      std::cout << ", ";
+  }
+  std::cout << " ]\n";
+}
+}  // end namespace
+
+void Initialize(llvm::ExecutionEngine* execution_engine) {
+  execution_engine->addGlobalMapping(
+      (new ast::Prototype("write", {"input", "input_len"}))->
+          Codegen<void, double*, size_t>(),
+      reinterpret_cast<void*>(&Write));
 }
 
-void do_write(std::vector<double> input) {
-  std::for_each(input.begin(), input.end(), [](double v) {
-    std::cout << v << "\n";
-  });
-}
 }  // end namespace builtin
