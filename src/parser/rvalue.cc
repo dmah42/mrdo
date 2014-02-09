@@ -24,7 +24,7 @@ ast::Expression* RValue() {
       return Nested();
 
     case '[':
-      // TODO: sequence
+    case '<':
       return Collection();
 
     default:

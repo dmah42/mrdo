@@ -35,6 +35,7 @@ llvm::Value* Collection::Codegen() const {
   return new llvm::GlobalVariable(
       *engine::module, array_type, true /*isConstant*/,
       llvm::GlobalValue::InternalLinkage,
-      llvm::ConstantArray::get(array_type, init_values), "coll");
+      llvm::ConstantArray::get(array_type, init_values),
+      is_sequence_ ? "seq" : "coll");
 }
 }  // end namespace ast

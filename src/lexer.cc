@@ -139,7 +139,9 @@ int GetToken() {
     case '[':
     case '(':
     case ']':
-    case ')': {
+    case ')':
+    case '<':
+    case '>': {
       int ch = lastch;
       lastch = GetCh();
       return ch;
