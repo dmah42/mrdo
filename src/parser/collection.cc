@@ -10,16 +10,18 @@
 
 namespace parser {
 ast::Expression* Collection() {
-  assert(lexer::current_token == '[');
+  assert(lexer::current_token == '[' || lexer::current_token == '<');
+  bool is_sequence = lexer::current_token == '<';
   lexer::NextToken();
 
+  const char end_token = is_sequence ? '>' : ']';
   std::vector<const ast::Expression*> members;
   while (true) {
     const ast::Expression* v = RValue();
     if (!v) return nullptr;
     members.push_back(v);
 
-    if (lexer::current_token == ']') break;
+    if (lexer::current_token == end_token) break;
     if (lexer::current_token != ',') {
       Error(lexer::line, lexer::col,
             "Expected ',' between values in collection, got ",
@@ -28,7 +30,7 @@ ast::Expression* Collection() {
     }
     lexer::NextToken();
   }
-  ast::Expression* e(new ast::Collection(members));
+  ast::Expression* e(new ast::Collection(is_sequence, members));
   lexer::NextToken();
   return e;
 }

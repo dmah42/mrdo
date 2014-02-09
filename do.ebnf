@@ -23,5 +23,4 @@ program = {state}
 (* missing return *)
 
 (* CURRENTLY UNSUPPORTED *)
-seq
 unary-
