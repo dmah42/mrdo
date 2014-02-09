@@ -17,3 +17,6 @@ Makefile
 cmake_install.cmake
 .ycm_extra_conf.pyc
 tags
+
+do
+install_manifest.txt
