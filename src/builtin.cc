@@ -55,8 +55,7 @@ void Write(double* input, size_t input_len) {
   std::cout << "[ ";
   for (size_t i = 0; i < input_len; ++i) {
     std::cout << input[i];
-    if (i != input_len - 1)
-      std::cout << ", ";
+    if (i != input_len - 1) std::cout << ", ";
   }
   std::cout << " ]\n";
 }

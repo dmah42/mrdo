@@ -26,7 +26,8 @@ llvm::Value* Call::Codegen() const {
     llvm::Value* v = arg->Codegen();
     if (!v) return nullptr;
     if (arg_collection || (arg_variable && v->getType()->isPointerTy())) {
-      llvm::Value* gep_v = builder.CreateConstInBoundsGEP2_32(v, 0, 0, "collptr");
+      llvm::Value* gep_v =
+          builder.CreateConstInBoundsGEP2_32(v, 0, 0, "collptr");
       if (!gep_v) {
         ErrorCont("failed to create GEP for collection in function call");
         return nullptr;
@@ -62,7 +63,7 @@ llvm::Value* Call::Codegen() const {
     } else {
       ErrorCont("unknown type for arg");
       return nullptr;
-    } 
+    }
   }
 
   if (func->arg_size() != argv.size()) {

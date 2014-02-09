@@ -3,8 +3,7 @@
 
 namespace llvm { class Type; }
 
-template<typename T>
-class TypeMap {
+template <typename T> class TypeMap {
  public:
   static llvm::Type* get();
 };

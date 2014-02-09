@@ -18,7 +18,7 @@
 #include "ast.h"
 #include "builtin.h"
 #include "lexer.h"
-#include "parser.h"
+#include "parser/program.h"
 
 namespace engine {
 namespace {
