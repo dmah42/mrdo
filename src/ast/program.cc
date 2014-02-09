@@ -4,6 +4,10 @@
 #include <llvm/IR/Function.h>
 
 #include "ast.h"
+#include "ast/expression.h"
+#include "engine.h"
+#include "error.h"
+#include "lexer.h"
 
 namespace ast {
 llvm::Function* Program::Codegen() const {

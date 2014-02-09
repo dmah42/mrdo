@@ -4,6 +4,9 @@
 #include <llvm/IR/IRBuilder.h>
 
 #include "ast.h"
+#include "ast/collection.h"
+#include "ast/variable.h"
+#include "error.h"
 
 namespace ast {
 namespace {

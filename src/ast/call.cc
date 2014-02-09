@@ -5,6 +5,9 @@
 #include <llvm/IR/Module.h>
 
 #include "ast.h"
+#include "ast/collection.h"
+#include "ast/real.h"
+#include "ast/variable.h"
 #include "engine.h"
 #include "error.h"
 

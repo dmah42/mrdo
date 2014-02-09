@@ -15,7 +15,7 @@
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Transforms/Scalar.h>
 
-#include "ast.h"
+#include "ast/program.h"
 #include "builtin.h"
 #include "lexer.h"
 #include "parser/program.h"

@@ -10,7 +10,7 @@
 #include <llvm/IR/Function.h>
 #include <llvm/IR/GlobalValue.h>
 
-#include "ast.h"
+#include "ast/prototype.h"
 
 namespace builtin {
 namespace {
