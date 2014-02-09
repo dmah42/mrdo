@@ -63,6 +63,9 @@ void Write(double* input, size_t input_len) {
 }  // end namespace
 
 void Initialize(llvm::ExecutionEngine* execution_engine) {
+#ifdef __GNUC__
+  __extension__
+#endif
   execution_engine->addGlobalMapping(
       (new ast::Prototype("write", {"input", "input_len"}))->
           Codegen<void, double*, size_t>(),
