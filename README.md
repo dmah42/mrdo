@@ -1,8 +1,8 @@
-do
+mrdo
 ===
-[![Build Status](https://drone.io/github.com/dominichamon/do/status.png)](https://drone.io/github.com/dominichamon/do/latest)
+[![Build Status](https://drone.io/github.com/dominichamon/mrdo/status.png)](https://drone.io/github.com/dominichamon/mrdo/latest)
 
-do is a language in which variables may be either a:
+mrdo is a language in which variables may be either a:
 
 * real (mutable 64-bit floating point)
 * coll (an immutable collection of reals)

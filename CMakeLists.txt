@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8)
-project(do)
+project(mrdo)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR} ${CMAKE_MODULE_PATH})
 
@@ -42,9 +42,9 @@ set(SOURCE_FILES "src/ast.cc"
 		 "src/parser/unary.cc"
 		 "src/parser/while.cc")
 
-add_executable(do ${SOURCE_FILES})
-set_target_properties(do PROPERTIES LINK_FLAGS ${LLVM_LFLAGS})
-target_link_libraries(do ${LLVM_MODULE_LIBS} dl pthread)
+add_executable(mrdo ${SOURCE_FILES})
+set_target_properties(mrdo PROPERTIES LINK_FLAGS ${LLVM_LFLAGS})
+target_link_libraries(mrdo ${LLVM_MODULE_LIBS} dl pthread)
 
 set(TEST_FILES "test/basic.do"
 	       "test/coll.do"
@@ -53,13 +53,13 @@ set(TEST_FILES "test/basic.do"
 	       "test/while.do")
 
 foreach(TESTFILE ${TEST_FILES})
-	add_custom_command(TARGET do POST_BUILD
-			   COMMAND do ARGS ${TESTFILE} > /dev/null
+	add_custom_command(TARGET mrdo POST_BUILD
+			   COMMAND mrdo ARGS ${TESTFILE} > /dev/null
 			   MAIN_DEPENDENCY ${TESTFILE}
-			   DEPENDS do
+			   DEPENDS mrdo
 			   COMMENT "Running test: ${TESTFILE}"
 			   VERBATIM)
 endforeach()
 
-install(TARGETS do
+install(TARGETS mrdo
 	RUNTIME DESTINATION bin)
