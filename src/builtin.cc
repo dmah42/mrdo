@@ -15,10 +15,9 @@
 namespace builtin {
 namespace {
 // TODO: support map and filter over collections of collections
-// TODO: might be easier to allow collections of size 1 to be referenced as
-// reals.
-typedef std::function<double(double)> map_fn;
-typedef std::function<bool(double)> filter_fn;
+typedef double (*map_fn)(double);
+typedef bool (*filter_fn)(double);
+
 /*
 // TODO: input could be collection or sequence - different join behaviour on
 // each when threaded
@@ -38,24 +37,32 @@ std::vector<double> Filter(filter_fn fn, std::vector<double> input) {
   std::copy_if(input.begin(), input.end(), output.begin(), fn);
   return output;
 }
+*/
 
-std::vector<double> Read() {
+Collection Read() {
   // TODO: read array of arrays (potentially) from stdin, return collection
   std::vector<double> input;
   while (std::cin && std::cin.peek() != EOF) {
     double v;
     std::cin >> v;
+    if (std::cin.get() == EOF) break;
     input.push_back(v);
   }
-  return input;
+  double* ret = new double[input.size()];
+  std::cerr << "-- " << input.size() << "\n";
+  for (size_t i = 0; i < input.size(); ++i) {
+    ret[i] = input[i];
+    std::cerr << "r[" << i << "]: " << ret[i] << "\n";
+  }
+  std::cerr << "--\n";
+  return {ret, input.size()};
 }
-*/
 
-void Write(double* input, size_t input_len) {
+void Write(Collection input) {
   std::cout << "[ ";
-  for (size_t i = 0; i < input_len; ++i) {
-    std::cout << input[i];
-    if (i != input_len - 1) std::cout << ", ";
+  for (size_t i = 0; i < input.length; ++i) {
+    std::cout << input.values[i];
+    if (i != input.length - 1) std::cout << ", ";
   }
   std::cout << " ]\n";
 }
@@ -66,9 +73,15 @@ void Initialize(llvm::ExecutionEngine* execution_engine) {
   __extension__
 #endif
   execution_engine->addGlobalMapping(
-      (new ast::Prototype("write", {"input", "input_len"}))->
-          Codegen<void, double*, size_t>(),
+      (new ast::Prototype("write", {"input"}))->Codegen<void, Collection>(),
       reinterpret_cast<void*>(&Write));
+
+#ifdef __GNUC__
+  __extension__
+#endif
+  execution_engine->addGlobalMapping(
+      (new ast::Prototype("read", {}))->Codegen<Collection>(),
+      reinterpret_cast<void*>(&Read));
 }
 
 }  // end namespace builtin

@@ -8,8 +8,10 @@
 #include "ast/collection.h"
 #include "ast/real.h"
 #include "ast/variable.h"
+#include "builtin.h"
 #include "engine.h"
 #include "error.h"
+#include "llvm_type.h"
 
 namespace ast {
 llvm::Value* Call::Codegen() const {
@@ -28,40 +30,7 @@ llvm::Value* Call::Codegen() const {
 
     llvm::Value* v = arg->Codegen();
     if (!v) return nullptr;
-    if (arg_collection || (arg_variable && v->getType()->isPointerTy())) {
-      llvm::Value* gep_v =
-          builder.CreateConstInBoundsGEP2_32(v, 0, 0, "collptr");
-      if (!gep_v) {
-        ErrorCont("failed to create GEP for collection in function call");
-        return nullptr;
-      }
-      argv.push_back(gep_v);
-
-      uint64_t num_elements = 0;
-      if (arg_collection) {
-        llvm::GlobalVariable* gv = dynamic_cast<llvm::GlobalVariable*>(v);
-        if (!gv) {
-          ErrorCont("expected global variable for collection");
-          return nullptr;
-        }
-        num_elements = gv->getInitializer()->getType()->getArrayNumElements();
-      } else {
-        llvm::Type* array_type = v->getType()->getPointerElementType();
-        if (!array_type) {
-          ErrorCont("Expected variable of collection to be pointer type");
-          return nullptr;
-        }
-        num_elements = array_type->getArrayNumElements();
-      }
-      llvm::Value* array_size_v = llvm::ConstantInt::get(
-          llvm::Type::getInt64Ty(llvm::getGlobalContext()), num_elements);
-      if (!array_size_v) {
-        ErrorCont("failed to get collection size for function call");
-        return nullptr;
-      }
-
-      argv.push_back(array_size_v);
-    } else if (arg_real || arg_variable) {
+    if (arg_collection || arg_variable || arg_real) {
       argv.push_back(v);
     } else {
       ErrorCont("unknown type for arg");
@@ -75,9 +44,15 @@ llvm::Value* Call::Codegen() const {
     return nullptr;
   }
 
-  return builder.CreateCall(
-      func, argv,
-      (func->getReturnType()->getTypeID() == llvm::Type::VoidTyID) ? ""
-                                                                   : "calltmp");
+  switch (func->getReturnType()->getTypeID()) {
+    case llvm::Type::VoidTyID:
+      return builder.CreateCall(func, argv, "");
+    case llvm::Type::StructTyID:
+      return builder.CreateCall(func, argv, "calltmp");
+    default:
+      Error(line, col, "Unknown return type: ");
+      func->getReturnType()->dump();
+      return nullptr;
+  }
 }
 }  // end namespace ast

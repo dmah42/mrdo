@@ -18,6 +18,8 @@ class Call : public Expression {
   }
   virtual llvm::Value* Codegen() const;
 
+  const std::string& name() const { return name_; }
+
  private:
   std::string name_;
   std::vector<const Expression*> args_;

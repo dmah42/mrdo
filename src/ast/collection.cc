@@ -4,10 +4,14 @@
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/GlobalValue.h>
 #include <llvm/IR/GlobalVariable.h>
+#include <llvm/IR/Instructions.h>
 #include <llvm/IR/LLVMContext.h>
 
+#include "ast.h"
 #include "ast/real.h"
+#include "builtin.h"
 #include "error.h"
+#include "llvm_type.h"
 
 namespace ast {
 llvm::Value* Collection::Codegen() const {
@@ -32,10 +36,36 @@ llvm::Value* Collection::Codegen() const {
   llvm::ArrayType* array_type = llvm::ArrayType::get(
       llvm::Type::getDoubleTy(llvm::getGlobalContext()), init_values.size());
 
-  return new llvm::GlobalVariable(
+  llvm::GlobalVariable* gv = new llvm::GlobalVariable(
       *engine::module, array_type, true /*isConstant*/,
       llvm::GlobalValue::InternalLinkage,
       llvm::ConstantArray::get(array_type, init_values),
       is_sequence_ ? "seq" : "coll");
+  if (!gv) {
+    Error(line, col, "failed to create global variable for collection");
+    return nullptr;
+  }
+
+  // TODO: make these internal errors.
+  llvm::Value* gep_v =
+      builder.CreateConstInBoundsGEP2_32(gv, 0, 0, "collptr");
+  if (!gep_v) {
+    Error(line, col, "failed to get pointer to global variable");
+    return nullptr;
+  }
+
+  llvm::Value* array_size_v = llvm::ConstantInt::get(
+      llvm::Type::getInt64Ty(llvm::getGlobalContext()), init_values.size());
+  if (!array_size_v) {
+    Error(line, col, "failed to get collection size");
+    return nullptr;
+  }
+
+  llvm::AllocaInst* struct_ai = builder.CreateAlloca(
+      TypeMap<builtin::Collection>::get(), nullptr, "colltmp");
+  llvm::Value* struct_v = builder.CreateLoad(struct_ai, "collval");
+  struct_v = builder.CreateInsertValue(struct_v, gep_v, {0}, "collval");
+  struct_v = builder.CreateInsertValue(struct_v, array_size_v, {1}, "collval");
+  return struct_v;
 }
 }  // end namespace ast
