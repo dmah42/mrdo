@@ -84,7 +84,7 @@ int GetToken() {
     do {
       s += lastch;
       lastch = GetCh();
-    } while (isalnum(lastch) || lastch == '_' || lastch == '-');
+    } while (isalnum(lastch) || lastch == '_');
 
     if (token_map.count(s))
       return token_map.at(s);

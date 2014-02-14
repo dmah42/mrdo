@@ -1,15 +1,15 @@
-identifier = alpha, {alpha, digit, "_", "-"};
+identifier = alpha, {alpha, digit, "_"};
 coll = "[", rvalue, {",", rvalue}, "]";
 seq = "|", rvalue, {",", rvalue}, "|";
 real = digit, [".", {digit}];
 collection = coll | seq;
 builtin = "map" | "fold" | "filter" | "zip" | "read" | "write" | "length";
-rvalue = (identifier | real | '(', expr, ')' | collection);
+rvalue = ({"-"}, (identifier | real | '(', expr, ')') | collection;
 arith = rvalue, ("+" | "-" | "*" | "/"), rvalue;
 logic = rvalue, ("or" | "and", "xor");
 condition = rvalue, ("<" | ">" | "==" | "<=" | ">="), rvalue; (* could be eq, ne, gt, etc *)
 binop = arith | logic | condition;
-unop = "not" | "-";
+unop = "not";
 expr = assign | ([unop] rvalue, [ binop, expr ] ('\n' | ';')); 
 if = "if", expr, {state}, ["elif", expr, {state}], ["else", {state}], "done";
 while = "while", expr, {state}, "done";
@@ -21,6 +21,3 @@ assign = identifier, "=", (call | rvalue | fn | expr);
 program = {state}
 
 (* missing return *)
-
-(* CURRENTLY UNSUPPORTED *)
-unary-
