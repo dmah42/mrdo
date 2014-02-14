@@ -42,19 +42,23 @@ std::vector<double> Filter(filter_fn fn, std::vector<double> input) {
 Collection Read() {
   // TODO: read array of arrays (potentially) from stdin, return collection
   std::vector<double> input;
-  while (std::cin && std::cin.peek() != EOF) {
-    double v;
-    std::cin >> v;
-    if (std::cin.get() == EOF) break;
+  double v;
+  while (std::cin >> v)
     input.push_back(v);
-  }
+  std::cin.clear();
   double* ret = new double[input.size()];
+#ifdef DEBUG
   std::cerr << "-- " << input.size() << "\n";
+#endif
   for (size_t i = 0; i < input.size(); ++i) {
     ret[i] = input[i];
+#ifdef DEBUG
     std::cerr << "r[" << i << "]: " << ret[i] << "\n";
+#endif
   }
+#ifdef DEBUG
   std::cerr << "--\n";
+#endif
   return {ret, input.size()};
 }
 

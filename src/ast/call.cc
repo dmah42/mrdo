@@ -27,13 +27,14 @@ llvm::Value* Call::Codegen() const {
     const Variable* arg_variable = dynamic_cast<const Variable*>(arg);
     const Collection* arg_collection = dynamic_cast<const Collection*>(arg);
     const Real* arg_real = dynamic_cast<const Real*>(arg);
+    const Call* arg_call = dynamic_cast<const Call*>(arg);
 
     llvm::Value* v = arg->Codegen();
     if (!v) return nullptr;
-    if (arg_collection || arg_variable || arg_real) {
+    if (arg_collection || arg_variable || arg_real || arg_call) {
       argv.push_back(v);
     } else {
-      ErrorCont("unknown type for arg");
+      Error(line, col, "unknown type for arg.");
       return nullptr;
     }
   }

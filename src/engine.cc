@@ -95,9 +95,11 @@ void Run() {
       std::cerr << "... done\n";
     } else {
       std::cerr << "Failed to codegen.\n";
+      exit(1);
     }
   } else {
     std::cerr << "Failed to parse.\n";
+    exit(1);
   }
   // TODO: write out to
   // raw_fd_ostream f(outpath...);

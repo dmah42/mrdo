@@ -52,14 +52,12 @@ set(TEST_FILES "test/basic.do"
 	       "test/if.do"
 	       "test/while.do")
 
-foreach(TESTFILE ${TEST_FILES})
-	add_custom_command(TARGET mrdo POST_BUILD
-			   COMMAND mrdo ARGS ${TESTFILE} > /dev/null
-			   MAIN_DEPENDENCY ${TESTFILE}
-			   DEPENDS mrdo
-			   COMMENT "Running test: ${TESTFILE}"
-			   VERBATIM)
-endforeach()
+add_custom_command(TARGET mrdo POST_BUILD
+		   COMMAND ./run_tests.sh > /dev/null
+		   MAIN_DEPENDENCY ${TESTFILE}
+		   DEPENDS mrdo run_tests.sh
+		   COMMENT "Running tests"
+		   VERBATIM)
 
 install(TARGETS mrdo
 	RUNTIME DESTINATION bin)

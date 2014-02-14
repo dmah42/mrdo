@@ -16,7 +16,7 @@ while = "while", expr, {state}, "done";
 state = expr | if | while;
 fndef = builtin, ["(", {identifier},")"], ["{", {state}, "}"]];
 fn = identifier | fndef;
-call = "do", "(", fn, {",", rvalue}, ")";
+call = "do", "(", fn, {",", (rvalue|call)}, ")";
 assign = identifier, "=", (call | rvalue | fn | expr);
 program = {state}
 
