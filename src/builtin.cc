@@ -39,6 +39,10 @@ std::vector<double> Filter(filter_fn fn, std::vector<double> input) {
 }
 */
 
+double Length(Collection input) {
+  return input.length;
+}
+
 Collection Read() {
   // TODO: read array of arrays (potentially) from stdin, return collection
   std::vector<double> input;
@@ -86,6 +90,13 @@ void Initialize(llvm::ExecutionEngine* execution_engine) {
   execution_engine->addGlobalMapping(
       (new ast::Prototype("read", {}))->Codegen<Collection>(),
       reinterpret_cast<void*>(&Read));
+
+#ifdef __GNUC__
+  __extension__
+#endif
+  execution_engine->addGlobalMapping(
+      (new ast::Prototype("length", {"input"}))->Codegen<double, Collection>(),
+      reinterpret_cast<void*>(&Length));
 }
 
 }  // end namespace builtin
