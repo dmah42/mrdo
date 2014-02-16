@@ -3,6 +3,7 @@
 #include "lexer.h"
 #include "parser/expression.h"
 #include "parser/if.h"
+#include "parser/return.h"
 #include "parser/while.h"
 
 namespace parser {
@@ -13,6 +14,9 @@ ast::Expression* Statement() {
 
     case lexer::TOKEN_WHILE:
       return While();
+
+    case lexer::TOKEN_RETURN:
+      return Return();
 
     default:
       return Expression();

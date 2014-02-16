@@ -28,6 +28,8 @@ const std::map<std::string, Token> token_map = {
   { "done", TOKEN_DONE },
   { "while", TOKEN_WHILE },
   { "not", TOKEN_UNOP },
+  { "return", TOKEN_RETURN },
+  { "func", TOKEN_FUNC }
 };
 
 const std::map<std::string, Token> builtin_map = {

@@ -54,6 +54,10 @@ ast::Expression* RValue() {
       rvalue_expr = Collection();
       break;
 
+    case lexer::TOKEN_FUNC:
+      Error(lexer::line, lexer::col, "func not yet implemented");
+      return nullptr;
+
     default:
       Error(lexer::line, lexer::col, "Expected identifier or real, got '",
             (char) lexer::current_token, "' [", lexer::current_token, "]");

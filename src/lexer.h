@@ -19,7 +19,9 @@ enum Token {
   TOKEN_ASSIGN = -11,
   TOKEN_LOGIC = -12,
   TOKEN_ARITH = -13,
-  TOKEN_COMPARE = -14
+  TOKEN_COMPARE = -14,
+  TOKEN_RETURN = -15,
+  TOKEN_FUNC = -16
 };
 
 extern int current_token;
