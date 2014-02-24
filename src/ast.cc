@@ -20,7 +20,8 @@
 
 namespace ast {
 namespace {
-std::vector<std::map<std::string, llvm::AllocaInst*>> named_values;
+typedef std::map<std::string, llvm::AllocaInst*> NamedValues;
+std::vector<NamedValues> named_values;
 
 llvm::AllocaInst* CreateEntryBlockAlloca(llvm::Function* function,
                                          llvm::Type* type,
@@ -82,7 +83,7 @@ void SetNamedValue(const std::string& name, llvm::AllocaInst* alloca) {
   named_values.back().insert(std::make_pair(name, alloca));
 }
 
-void PushNamedValueScope() { named_values.push_back({}); }
+void PushNamedValueScope() { named_values.push_back(NamedValues()); }
 void PopNamedValueScope() { named_values.pop_back(); }
 
 llvm::Value* ToBool(llvm::Value* val) {
