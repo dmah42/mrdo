@@ -12,6 +12,9 @@ mean = do(fold, sum_fn, input) / do(length, input)
 
 #do(write, [mean, mean2])
 
+# simple map
+sq = do(map, func(in) { return in * in }, input)
+
 # map example with extra args
 # sqdiff = do(map, func(in, mean) {
 # 	diff = in - mean
