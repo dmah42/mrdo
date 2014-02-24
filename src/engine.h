@@ -3,7 +3,10 @@
 
 #include <string>
 
-namespace llvm { class Module; }
+namespace llvm {
+  class Function;
+  class Module;
+}
 
 namespace engine {
 extern llvm::Module* module;
@@ -11,6 +14,7 @@ extern std::string filename;
 extern std::istream* stream;
 
 void Initialize(const std::string& f);
+void Optimize(llvm::Function* f);
 void Run();
 }  // end namespace engine
 

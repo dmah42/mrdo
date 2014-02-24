@@ -6,6 +6,7 @@
 
 #include "ast.h"
 #include "ast/collection.h"
+#include "ast/func.h"
 #include "ast/real.h"
 #include "ast/variable.h"
 #include "builtin.h"
@@ -28,10 +29,11 @@ llvm::Value* Call::Codegen() const {
     const Collection* arg_collection = dynamic_cast<const Collection*>(arg);
     const Real* arg_real = dynamic_cast<const Real*>(arg);
     const Call* arg_call = dynamic_cast<const Call*>(arg);
+    const Func* arg_func = dynamic_cast<const Func*>(arg);
 
     llvm::Value* v = arg->Codegen();
     if (!v) return nullptr;
-    if (arg_collection || arg_variable || arg_real || arg_call) {
+    if (arg_collection || arg_variable || arg_real || arg_call || arg_func) {
       argv.push_back(v);
     } else {
       Error(line, col, "unknown type for arg.");
@@ -40,8 +42,8 @@ llvm::Value* Call::Codegen() const {
   }
 
   if (func->arg_size() != argv.size()) {
-    Error(line, col, "expected ", func->arg_size(), " arguments, got ",
-          argv.size());
+    Error(line, col, "expected ", func->arg_size(), " arguments to ", name_,
+          ", got ", argv.size());
     return nullptr;
   }
 
@@ -49,6 +51,7 @@ llvm::Value* Call::Codegen() const {
     case llvm::Type::VoidTyID:
       return builder.CreateCall(func, argv, "");
     case llvm::Type::StructTyID:
+    case llvm::Type::DoubleTyID:
       return builder.CreateCall(func, argv, "calltmp");
     default:
       Error(line, col, "Unknown return type: ");

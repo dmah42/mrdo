@@ -8,7 +8,7 @@ fn = "func", "(", [ident, {",", ident}], ")", "{", {state}, "}";
 rvalue = ({"-"}, (identifier | real | '(', expr, ')') | collection | fn;
 arith = rvalue, ("+" | "-" | "*" | "/"), rvalue;
 logic = rvalue, ("or" | "and", "xor");
-condition = rvalue, ("<" | ">" | "==" | "<=" | ">="), rvalue; (* could be eq, ne, gt, etc *)
+condition = rvalue, ("<" | ">" | "==" | "<=" | ">="), rvalue;
 binop = arith | logic | condition;
 unop = "not";
 expr = assign | ([unop] rvalue, [ binop, expr ] ('\n' | ';')); 
@@ -16,8 +16,9 @@ if = "if", expr, {state}, ["elif", expr, {state}], ["else", {state}], "done";
 while = "while", expr, {state}, "done";
 state = expr | if | while;
 call = "do", "(", builtin, {",", rvalue}, ")";
-assign = identifier, "=", (call | rvalue | fn | expr);
+assign = identifier, "=", (call | rvalue | expr);
 program = {state}
 
 (* missing return *)
-(* no support for ';' yet)
+(* no support for ';' yet *)
+(* no support for 'elif' yet *)

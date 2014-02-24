@@ -14,7 +14,7 @@
 namespace ast {
 class Prototype {
  public:
-  Prototype(const std::string& name, std::vector<std::string> args)
+  Prototype(const std::string& name, const std::vector<std::string>& args)
       : name_(name), args_(args) {
 #ifdef DEBUG
     std::cerr << "Prototype: " << name_ << "\n";

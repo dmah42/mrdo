@@ -21,3 +21,15 @@ template <> llvm::Type* TypeMap<builtin::Collection>::get() {
       nullptr);
 }
 
+template <> llvm::Type* TypeMap<builtin::FoldFn>::get() {
+  return llvm::PointerType::getUnqual(llvm::FunctionType::get(
+      TypeMap<double>::get(),
+      std::vector<llvm::Type*>(2, TypeMap<double>::get()), false));
+}
+
+template <> llvm::Type* TypeMap<builtin::MapFn>::get() {
+  return llvm::PointerType::getUnqual(llvm::FunctionType::get(
+      TypeMap<double>::get(),
+      std::vector<llvm::Type*>(1, TypeMap<double>::get()), false));
+}
+

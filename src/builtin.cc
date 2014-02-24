@@ -14,15 +14,11 @@
 
 namespace builtin {
 namespace {
-// TODO: support map and filter over collections of collections
-typedef double (*map_fn)(double);
-typedef bool (*filter_fn)(double);
-
 /*
 // TODO: input could be collection or sequence - different join behaviour on
 // each when threaded
 // TODO: input could be vector of vectors too
-std::vector<double> Map(map_fn fn, std::vector<double> input) {
+std::vector<double> Map(MapFn fn, std::vector<double> input) {
   // TODO: thread
   std::vector<double> output;
   std::transform(input.begin(), input.end(), output.begin(), fn);
@@ -31,13 +27,20 @@ std::vector<double> Map(map_fn fn, std::vector<double> input) {
 
 // TODO: input could be collection or sequence - different join behaviour on
 // each when threaded
-std::vector<double> Filter(filter_fn fn, std::vector<double> input) {
+std::vector<double> Filter(FilterFn fn, std::vector<double> input) {
   // TODO: thread
   std::vector<double> output;
   std::copy_if(input.begin(), input.end(), output.begin(), fn);
   return output;
 }
 */
+
+double Fold(FoldFn fn, Collection input) {
+  double cum = 0.0;
+  for (size_t i = 0; i < input.length; ++i)
+    cum = fn(cum, input.values[i]);
+  return cum;
+}
 
 double Length(Collection input) {
   return input.length;
@@ -97,6 +100,14 @@ void Initialize(llvm::ExecutionEngine* execution_engine) {
   execution_engine->addGlobalMapping(
       (new ast::Prototype("length", {"input"}))->Codegen<double, Collection>(),
       reinterpret_cast<void*>(&Length));
+
+#ifdef __GNUC__
+  __extension__
+#endif
+    execution_engine->addGlobalMapping(
+        (new ast::Prototype("fold", {"fn", "input"}))->
+            Codegen<double, FoldFn, Collection>(),
+        reinterpret_cast<void*>(&Fold));
 }
 
 }  // end namespace builtin

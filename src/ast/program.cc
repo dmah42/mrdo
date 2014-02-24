@@ -31,7 +31,6 @@ llvm::Function* Program::Codegen() const {
   builder.SetInsertPoint(bb);
 
   for (const Expression* e : body_) {
-    // TODO: find the return expressions.
     llvm::Value* v = e->Codegen();
     if (!v) {
       f->eraseFromParent();
@@ -44,6 +43,8 @@ llvm::Function* Program::Codegen() const {
   PopNamedValueScope();
 
   llvm::verifyFunction(*f);
+  engine::Optimize(f);
+
   return f;
 }
 }  // end namespace ast

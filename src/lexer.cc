@@ -138,10 +138,9 @@ int GetToken() {
 
   // special chars
   switch (lastch) {
-    case '[':
-    case '(':
-    case ']':
-    case ')':
+    case '[': case ']':
+    case '(': case ')':
+    case '{': case '}':
     case '|': {
       int ch = lastch;
       lastch = GetCh();

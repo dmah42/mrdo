@@ -8,7 +8,9 @@
 #include <llvm/IR/LLVMContext.h>
 
 #include "ast.h"
+#include "ast/collection.h"
 #include "ast/real.h"
+#include "ast/variable.h"
 #include "builtin.h"
 #include "error.h"
 #include "llvm_type.h"
@@ -20,7 +22,10 @@ llvm::Value* Collection::Codegen() const {
     llvm::Value* val = e->Codegen();
     const Real* e_real = dynamic_cast<const Real*>(e);
     const Collection* e_coll = dynamic_cast<const Collection*>(e);
-    if (e_real) {
+    const Variable* e_var = dynamic_cast<const Variable*>(e);
+    // TODO: variable should not be cast to a constant, it should be loaded and
+    // the collection should be non-const.
+    if (e_real || e_var) {
       init_values.push_back(llvm::cast<llvm::Constant>(val));
     } else if (e_coll) {
       // TODO

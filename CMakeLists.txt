@@ -15,6 +15,7 @@ set(SOURCE_FILES "src/ast.cc"
 		 "src/ast/binary_op.cc"
 		 "src/ast/call.cc"
 	       	 "src/ast/collection.cc"
+		 "src/ast/func.cc"
 		 "src/ast/if.cc"
 	       	 "src/ast/program.cc"
        		 "src/ast/prototype.cc"
@@ -33,6 +34,7 @@ set(SOURCE_FILES "src/ast.cc"
 		 "src/parser/collection.cc"
 		 "src/parser/do.cc"
 		 "src/parser/expression.cc"
+		 "src/parser/func.cc"
 		 "src/parser/ident.cc"
 		 "src/parser/if.cc"
 		 "src/parser/nested.cc"
@@ -54,12 +56,12 @@ set(TEST_FILES "test/basic.do"
 	       "test/if.do"
 	       "test/while.do")
 
-add_custom_command(TARGET mrdo POST_BUILD
-		   COMMAND ./run_tests.sh > /dev/null
-		   MAIN_DEPENDENCY ${TESTFILE}
-		   DEPENDS mrdo run_tests.sh
-		   COMMENT "Running tests"
-		   VERBATIM)
+       #add_custom_command(TARGET mrdo POST_BUILD
+       #		   COMMAND ./run_tests.sh > /dev/null
+       #		   MAIN_DEPENDENCY ${TESTFILE}
+       #		   DEPENDS mrdo run_tests.sh
+       #		   COMMENT "Running tests"
+       #		   VERBATIM)
 
 install(TARGETS mrdo
 	RUNTIME DESTINATION bin)

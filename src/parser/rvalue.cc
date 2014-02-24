@@ -6,6 +6,7 @@
 #include "ast/real.h"
 #include "error.h"
 #include "lexer.h"
+#include "parser/func.h"
 #include "parser/ident.h"
 #include "parser/real.h"
 #include "parser/do.h"
@@ -55,8 +56,12 @@ ast::Expression* RValue() {
       break;
 
     case lexer::TOKEN_FUNC:
-      Error(lexer::line, lexer::col, "func not yet implemented");
-      return nullptr;
+      if (mult_expr) {
+        Error(lexer::line, lexer::col, "Unexpected unary - before func");
+        return nullptr;
+      }
+      rvalue_expr = Func();
+      break;
 
     default:
       Error(lexer::line, lexer::col, "Expected identifier or real, got '",

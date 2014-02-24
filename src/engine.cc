@@ -75,18 +75,18 @@ void Initialize(const std::string& f) {
   lexer::Initialize();
 }
 
+void Optimize(llvm::Function* f) {
+  if (fpm) {
+    std::cerr << "Optimizing '" << f->getName().str() << "'\n";
+    fpm->run(*f);
+  }
+}
+
 void Run() {
   if (ast::Program* p = parser::Program()) {
     if (llvm::Function* lf = p->Codegen()) {
+      // TODO: module optimizations - ConstantMerge.
       module->dump();
-      if (fpm) {
-        //lf->dump();
-        std::cerr << "Optimizing...\n";
-        // TODO: module optimizations - ConstantMerge.
-        fpm->run(*lf);
-        module->dump();
-      }
-
       void* fptr = engine::execution_engine->getPointerToFunction(lf);
       void(*fp)() = (void(*)())(intptr_t) fptr;
 
