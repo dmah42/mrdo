@@ -15,8 +15,9 @@ class Expression;
 
 extern llvm::IRBuilder<> builder;
 
-std::pair<llvm::AllocaInst*, llvm::Value*> CreateNamedVariable(
-    llvm::Function* f, const std::string& var_name, const Expression* e);
+llvm::AllocaInst* CreateNamedVariable(llvm::Function* f,
+                                      const std::string& var_name,
+                                      const Expression* e);
 llvm::AllocaInst* GetNamedValue(const std::string& name);
 void SetNamedValue(const std::string& name, llvm::AllocaInst* alloca);
 

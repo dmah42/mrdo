@@ -3,7 +3,10 @@
 
 #include "lexer.h"
 
-namespace llvm { class Value; }
+namespace llvm {
+  class Type;
+  class Value;
+}
 
 namespace ast {
 class Expression {
@@ -11,6 +14,7 @@ class Expression {
   Expression() : line(lexer::line), col(lexer::col) {}
   virtual ~Expression() {}
   virtual llvm::Value* Codegen() const = 0;
+  virtual llvm::Type* Type() const { return nullptr; }
   const int line, col;
 };
 }  // end namespace ast

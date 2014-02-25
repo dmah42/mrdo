@@ -12,7 +12,7 @@ class If : public Expression {
   If(const Expression* condition, std::vector<const Expression*>& if_body,
      std::vector<const Expression*>& else_body)
       : condition_(condition), if_(if_body), else_(else_body) {}
-  virtual llvm::Value* Codegen() const;
+  llvm::Value* Codegen() const override;
 
  private:
   const Expression* condition_;

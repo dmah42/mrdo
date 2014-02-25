@@ -59,4 +59,13 @@ llvm::Value* Call::Codegen() const {
       return nullptr;
   }
 }
+
+llvm::Type* Call::Type() const {
+  llvm::Function* func = engine::module->getFunction(name_);
+  if (!func) {
+    ErrorCont("Unknown function: ", name_);
+    return nullptr;
+  }
+  return func->getReturnType();
+}
 }  // end namespace ast

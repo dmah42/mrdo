@@ -16,7 +16,8 @@ class Collection : public Expression {
               << values.size() << "\n";
 #endif
   }
-  virtual llvm::Value* Codegen() const;
+  llvm::Value* Codegen() const override;
+  llvm::Type* Type() const override;
 
   bool is_sequence() const { return is_sequence_; }
   size_t size() const { return values_.size(); }

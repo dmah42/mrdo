@@ -13,7 +13,8 @@ class Real : public Expression {
     std::cerr << "Real: " << value_ << "\n";
 #endif
   }
-  virtual llvm::Value* Codegen() const;
+  llvm::Value* Codegen() const override;
+  llvm::Type* Type() const override;
 
  private:
   double value_;

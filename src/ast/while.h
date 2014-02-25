@@ -10,7 +10,7 @@ class While : public ast::Expression {
  public:
   While(const Expression* condition, std::vector<const Expression*>& body)
       : condition_(condition), body_(body) {}
-  virtual llvm::Value* Codegen() const;
+  llvm::Value* Codegen() const override;
 
  private:
   const Expression* condition_;

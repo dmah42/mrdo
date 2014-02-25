@@ -16,7 +16,8 @@ class Call : public Expression {
     std::cerr << "Call: " << name_ << "\n";
 #endif
   }
-  virtual llvm::Value* Codegen() const;
+  llvm::Value* Codegen() const override;
+  llvm::Type* Type() const override;
 
   const std::string& name() const { return name_; }
 

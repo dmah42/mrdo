@@ -20,35 +20,36 @@ int Func::uid_ = 0;
 llvm::Value* Func::Codegen() const {
   Prototype p(name_, args_);
   // TODO: non-real arguments
-  llvm::Function* f = nullptr;
+  f_ = nullptr;
   switch (args_.size()) {
     case 0:
-      f = p.Codegen<double>();
+      f_ = p.Codegen<double>();
       break;
     case 1:
-      f = p.Codegen<double, double>();
+      f_ = p.Codegen<double, double>();
       break;
     case 2:
-      f = p.Codegen<double, double, double>();
+      f_ = p.Codegen<double, double, double>();
       break;
     default:
       Error(line, col, "Unsupported number of args: ", args_.size());
       return nullptr;
   }
-  if (!f) return nullptr;
+  if (!f_) return nullptr;
 
   llvm::BasicBlock* bb =
-      llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", f);
+      llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", f_);
   llvm::BasicBlock* orig_bb = builder.GetInsertBlock();
   builder.SetInsertPoint(bb);
 
   PushNamedValueScope();
-  CreateArgumentAllocas(f);
+  CreateArgumentAllocas(f_);
 
   for (const Expression* e : body_) {
     llvm::Value* v = e->Codegen();
     if (!v) {
-      f->eraseFromParent();
+      f_->eraseFromParent();
+      f_ = nullptr;
       PopNamedValueScope();
       return nullptr;
     }
@@ -57,22 +58,32 @@ llvm::Value* Func::Codegen() const {
 
   builder.SetInsertPoint(orig_bb);
 
-  llvm::verifyFunction(*f);
-  engine::Optimize(f);
+  llvm::verifyFunction(*f_);
+  engine::Optimize(f_);
 
-  llvm::AllocaInst* func_ai =
-      builder.CreateAlloca(f->getType(), nullptr, "functmp");
-  builder.CreateStore(f, func_ai);
+  llvm::AllocaInst* func_ai = builder.CreateAlloca(Type(), nullptr, "functmp");
+  builder.CreateStore(f_, func_ai);
   return builder.CreateLoad(func_ai, "funcval");
+}
+
+llvm::Type* Func::Type() const {
+  assert(f_);
+  return f_->getType();
 }
 
 void Func::CreateArgumentAllocas(llvm::Function* f) const {
   llvm::Function::arg_iterator ai = f->arg_begin();
   for (const std::string& arg : args_) {
     // TODO: non-real argument types
-    std::pair<llvm::AllocaInst*, llvm::Value*> alloca_v =
-        CreateNamedVariable(f, arg, new ast::Real(0.0));
-    builder.CreateStore(ai, alloca_v.first);
+    ast::Real* default_arg = new ast::Real(0.0);
+    llvm::Value* v = default_arg->Codegen();
+    if (!v) {
+      ErrorCont("Failed to create default for argument '", arg,
+                "' for function '", name_, "'");
+      return;
+    }
+    llvm::AllocaInst* alloca_v = CreateNamedVariable(f, arg, default_arg);
+    builder.CreateStore(ai, alloca_v);
     ++ai;
   }
 }

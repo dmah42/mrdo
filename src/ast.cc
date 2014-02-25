@@ -34,39 +34,18 @@ llvm::AllocaInst* CreateEntryBlockAlloca(llvm::Function* function,
 
 llvm::IRBuilder<> builder(llvm::getGlobalContext());
 
-std::pair<llvm::AllocaInst*, llvm::Value*> CreateNamedVariable(
-    llvm::Function* f, const std::string& var_name, const Expression* e) {
-  // TODO: get type from Expression*
-  llvm::Value* v = e->Codegen();
-  const Collection* rhs_coll = dynamic_cast<const Collection*>(e);
-  const Variable* rhs_v = dynamic_cast<const Variable*>(e);
-  const Real* rhs_r = dynamic_cast<const Real*>(e);
-  const BinaryOp* rhs_binop = dynamic_cast<const BinaryOp*>(e);
-  const Call* rhs_call = dynamic_cast<const Call*>(e);
-  const Func* rhs_func = dynamic_cast<const Func*>(e);
-  llvm::Type* alloca_type = nullptr;
-  if (rhs_coll) {
-    alloca_type = TypeMap<builtin::Collection>::get();
-  } else if (rhs_v || rhs_func) {
-    // TODO: varargs for func
-    alloca_type = v->getType();
-  } else if (rhs_r || rhs_binop) {
-    alloca_type = TypeMap<double>::get();
-  } else if (rhs_call) {
-    llvm::Function* func = engine::module->getFunction(rhs_call->name());
-    if (!func) {
-      ErrorCont("Unknown function: ", rhs_call->name());
-      return std::make_pair(nullptr, nullptr);
-    }
-    alloca_type = func->getReturnType();
-  } else {
-    ErrorCont("Unknown rhs type: ");
-    v->dump();
-    return std::make_pair(nullptr, nullptr);
+llvm::AllocaInst* CreateNamedVariable(llvm::Function* f,
+                                      const std::string& var_name,
+                                      const Expression* e) {
+  llvm::Type* alloca_type = e->Type();
+
+  if (!alloca_type) {
+    ErrorCont("Unknown rhs type in assignment to '", var_name, "'");
+    return nullptr;
   }
   llvm::AllocaInst* alloca = CreateEntryBlockAlloca(f, alloca_type, var_name);
   SetNamedValue(var_name, alloca);
-  return std::make_pair(alloca, v);
+  return alloca;
 }
 
 llvm::AllocaInst* GetNamedValue(const std::string& name) {

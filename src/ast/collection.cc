@@ -66,11 +66,15 @@ llvm::Value* Collection::Codegen() const {
     return nullptr;
   }
 
-  llvm::AllocaInst* struct_ai = builder.CreateAlloca(
-      TypeMap<builtin::Collection>::get(), nullptr, "colltmp");
+  llvm::AllocaInst* struct_ai =
+      builder.CreateAlloca(Type(), nullptr, "colltmp");
   llvm::Value* struct_v = builder.CreateLoad(struct_ai, "collval");
   struct_v = builder.CreateInsertValue(struct_v, gep_v, {0}, "collval");
   struct_v = builder.CreateInsertValue(struct_v, array_size_v, {1}, "collval");
   return struct_v;
+}
+
+llvm::Type* Collection::Type() const {
+  return TypeMap<builtin::Collection>::get();
 }
 }  // end namespace ast

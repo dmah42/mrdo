@@ -9,6 +9,12 @@ llvm::Value* Variable::Codegen() const {
     Error(line, col, "Unknown variable name: ", name_);
     return nullptr;
   }
-  return builder.CreateLoad(val, name_.c_str());
+  v_ = builder.CreateLoad(val, name_.c_str());
+  return v_;
+}
+
+llvm::Type* Variable::Type() const {
+  assert(v_);
+  return v_->getType();
 }
 }  // end namespace ast

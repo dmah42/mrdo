@@ -11,16 +11,20 @@
 namespace ast {
 class Variable : public Expression {
  public:
-  explicit Variable(const std::string& name) : name_(name) {
+  explicit Variable(const std::string& name) : name_(name), v_(nullptr) {
 #ifdef DEBUG
     std::cerr << "Variable: " << name_ << "\n";
 #endif
   }
-  virtual llvm::Value* Codegen() const;
+  llvm::Value* Codegen() const override;
+  llvm::Type* Type() const override;
+
   const std::string& name() const { return name_; }
 
  private:
   std::string name_;
+
+  mutable llvm::Value* v_;
 };
 }  // end namespace ast
 

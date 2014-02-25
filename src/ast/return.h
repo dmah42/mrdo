@@ -13,7 +13,7 @@ class Return : public Expression {
     std::cerr << "Return.\n";
 #endif
   }
-  virtual llvm::Value* Codegen() const;
+  llvm::Value* Codegen() const override;
 
  private:
   const ast::Expression* expression_;

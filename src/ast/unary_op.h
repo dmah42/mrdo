@@ -15,7 +15,8 @@ class UnaryOp : public Expression {
     std::cerr << "UnaryOp: " << op_ << "\n";
 #endif
   }
-  virtual llvm::Value* Codegen() const;
+  llvm::Value* Codegen() const override;
+  llvm::Type* Type() const override;
 
  private:
   const std::string op_;

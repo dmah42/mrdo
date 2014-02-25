@@ -15,7 +15,8 @@ class BinaryOp : public Expression {
     std::cerr << "BinaryOp: " << op_ << "\n";
 #endif
   }
-  virtual llvm::Value* Codegen() const;
+  llvm::Value* Codegen() const override;
+  llvm::Type* Type() const override;
 
  private:
   llvm::Value* HandleAssign() const;

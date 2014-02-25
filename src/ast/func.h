@@ -17,7 +17,7 @@ class Func : public Expression {
  public:
   explicit Func(const std::vector<std::string>& args,
                 const std::vector<const ast::Expression*>& body)
-      : args_(args), body_(body) {
+      : args_(args), body_(body), f_(nullptr) {
     std::stringstream str;
     str << uid_++;
     name_ = "func" + str.str();
@@ -25,7 +25,8 @@ class Func : public Expression {
     std::cerr << "Func: " << name_ << "\n";
 #endif
   }
-  virtual llvm::Value* Codegen() const;
+  llvm::Value* Codegen() const override;
+  llvm::Type* Type() const override;
 
   size_t num_args() const { return args_.size(); }
 
@@ -36,6 +37,8 @@ class Func : public Expression {
   std::string name_;
   std::vector<std::string> args_;
   std::vector<const ast::Expression*> body_;
+
+  mutable llvm::Function* f_;
 };
 }  // end namespace ast
 
