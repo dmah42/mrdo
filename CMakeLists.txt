@@ -52,8 +52,12 @@ target_link_libraries(mrdo ${LLVM_MODULE_LIBS} dl pthread)
 
 set(TEST_FILES "test/basic.do"
 	       "test/coll.do"
+	       "test/filter.do"
 	       "test/func.do"
+	       "test/ident.do"
 	       "test/if.do"
+	       "test/io.do"
+	       "test/real.do"
 	       "test/while.do")
 
        #add_custom_command(TARGET mrdo POST_BUILD

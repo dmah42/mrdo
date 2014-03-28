@@ -33,3 +33,9 @@ template <> llvm::Type* TypeMap<builtin::MapFn>::get() {
       std::vector<llvm::Type*>(1, TypeMap<double>::get()), false));
 }
 
+// No need to define this as MapFn == FilterFn.
+// template <> llvm::Type* TypeMap<builtin::FilterFn>::get() {
+//   return llvm::PointerType::getUnqual(llvm::FunctionType::get(
+//       TypeMap<double>::get(),
+//       std::vector<llvm::Type*>(1, TypeMap<double>::get()), false));
+// }

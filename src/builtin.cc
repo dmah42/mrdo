@@ -28,6 +28,22 @@ std::vector<double> Filter(FilterFn fn, std::vector<double> input) {
 }
 */
 
+Collection Filter(FilterFn fn, Collection input) {
+  // TODO: thread
+  std::vector<double> filtered;
+  for (size_t i = 0; i < input.length; ++i) {
+    double filter = fn(input.values[i]);
+    if (fabs(filter) > 0)
+      filtered.push_back(input.values[i]);
+  }
+
+  double* output = new double[filtered.size()];
+  for (size_t i = 0; i < filtered.size(); ++i)
+    output[i] = filtered[i];
+
+  return {output, filtered.size()};
+}
+
 Collection Map(MapFn fn, Collection input) {
   // TODO: thread
   double* output = new double[input.length];
@@ -119,6 +135,14 @@ void Initialize(llvm::ExecutionEngine* execution_engine) {
         (new ast::Prototype("map", {"fn", "input"}))->
             Codegen<Collection, MapFn, Collection>(),
         reinterpret_cast<void*>(&Map));
+
+#ifdef __GNUC__
+  __extension__
+#endif
+    execution_engine->addGlobalMapping(
+        (new ast::Prototype("filter", {"fn", "input"}))->
+            Codegen<Collection, FilterFn, Collection>(),
+        reinterpret_cast<void*>(&Filter));
 }
 
 }  // end namespace builtin
