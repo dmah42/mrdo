@@ -11,9 +11,12 @@
 #include <llvm/IR/GlobalValue.h>
 
 #include "ast/prototype.h"
+#include "threadpool.h"
 
 namespace builtin {
 namespace {
+ThreadPool* thread_pool = nullptr;
+
 /*
 // TODO: input could be collection or sequence - different join behaviour on
 // each when threaded
@@ -29,11 +32,16 @@ std::vector<double> Filter(FilterFn fn, std::vector<double> input) {
 */
 
 Collection Filter(FilterFn fn, Collection input) {
-  // TODO: thread
-  std::vector<double> filtered;
+  std::vector<std::future<double>> to_filter;
   for (size_t i = 0; i < input.length; ++i) {
-    double filter = fn(input.values[i]);
-    if (fabs(filter) > 0)
+    to_filter.push_back(thread_pool->enqueue([fn, &input, i] {
+      return fn(input.values[i]);
+    }));
+  }
+
+  std::vector<double> filtered;
+  for (size_t i = 0; i < to_filter.size(); ++i) {
+    if (fabs(to_filter[i].get()) > 0)
       filtered.push_back(input.values[i]);
   }
 
@@ -45,10 +53,16 @@ Collection Filter(FilterFn fn, Collection input) {
 }
 
 Collection Map(MapFn fn, Collection input) {
-  // TODO: thread
+  std::vector<std::future<double>> results;
+  for (size_t i = 0; i < input.length; ++i) {
+    results.push_back(thread_pool->enqueue([fn, &input, i] {
+      return fn(input.values[i]);
+    }));
+  }
+
   double* output = new double[input.length];
-  for (size_t i = 0; i < input.length; ++i)
-    output[i] = fn(input.values[i]);
+  for (size_t i = 0; i < results.size(); ++i)
+    output[i] = results[i].get();
 
   return {output, input.length};
 }
@@ -98,6 +112,8 @@ void Write(Collection input) {
 }  // end namespace
 
 void Initialize(llvm::ExecutionEngine* execution_engine) {
+  thread_pool = new ThreadPool();
+
   // TODO: macro?
 #ifdef __GNUC__
   __extension__

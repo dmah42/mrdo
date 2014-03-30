@@ -44,7 +44,8 @@ set(SOURCE_FILES "src/ast.cc"
 		 "src/parser/rvalue.cc"
 		 "src/parser/statement.cc"
 		 "src/parser/unary.cc"
-		 "src/parser/while.cc")
+		 "src/parser/while.cc"
+		 "src/threadpool.cc")
 
 add_executable(mrdo ${SOURCE_FILES})
 set_target_properties(mrdo PROPERTIES LINK_FLAGS ${LLVM_LFLAGS})
