@@ -6,7 +6,7 @@
 #  LLVM_LFLAGS      - llvm linker flags
 #  LLVM_MODULE_LIBS - list of llvm libs for working with modules.
 
-set(LLVM_VERSION "3.3")
+set(LLVM_VERSION "3.4")
 
 find_program(LLVM_CONFIG_EXECUTABLE NAMES llvm-config-${LLVM_VERSION} DOC "llvm-config executable")
 
