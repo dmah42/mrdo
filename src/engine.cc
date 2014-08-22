@@ -1,5 +1,7 @@
 #include "engine.h"
+#include "stopwatch.h"
 
+#include <chrono>
 #include <iostream>
 #include <fstream>
 
@@ -25,7 +27,8 @@ namespace {
 llvm::ExecutionEngine* execution_engine = nullptr;
 llvm::FunctionPassManager* fpm = nullptr;
 std::ifstream input_file;
-}
+}  // namespace
+
 llvm::Module* module = nullptr;
 std::string filename;
 std::istream* stream = &std::cin;
@@ -91,8 +94,12 @@ void Run() {
       void(*fp)() = (void(*)())(intptr_t) fptr;
 
       std::cerr << "Running... \n";
+        
+      Stopwatch sw;
+      sw.Start();
       fp();
-      std::cerr << "... done\n";
+      sw.End();
+      std::cerr << "... done in " << sw.Elapsed() << "\n";
     } else {
       std::cerr << "Failed to codegen.\n";
       exit(1);
