@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 2.8)
 project(mrdo)
 
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR} ${CMAKE_MODULE_PATH})
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 
 find_package(LLVM REQUIRED)
 find_package(gflags REQUIRED)
