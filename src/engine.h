@@ -13,7 +13,7 @@ extern llvm::Module* module;
 extern std::string filename;
 extern std::istream* stream;
 
-void Initialize(const std::string& f);
+void Initialize(const std::string& f, bool optimize);
 void Optimize(llvm::Function* f);
 bool Run(bool dump);
 }  // end namespace engine

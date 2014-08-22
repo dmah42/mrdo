@@ -25,16 +25,19 @@
 namespace engine {
 namespace {
 llvm::ExecutionEngine* execution_engine = nullptr;
-llvm::FunctionPassManager* fpm = nullptr;
+std::unique_ptr<llvm::FunctionPassManager> fpm;
 std::ifstream input_file;
 }  // namespace
 
 llvm::Module* module = nullptr;
 std::string filename;
+bool optimize = false;
+
 std::istream* stream = &std::cin;
 
-void Initialize(const std::string& f) {
+void Initialize(const std::string& f, bool o) {
   filename = f;
+  optimize = o;
   if (!f.empty()) {
     input_file.open(f, std::ios::in);
     if (!input_file.is_open()) {
@@ -59,17 +62,17 @@ void Initialize(const std::string& f) {
     exit(1);
   }
 
-#ifndef DEBUG
-  fpm = new llvm::FunctionPassManager(module);
-  fpm->add(new llvm::DataLayout(*(execution_engine->getDataLayout())));
-  fpm->add(llvm::createBasicAliasAnalysisPass());
-  fpm->add(llvm::createCFGSimplificationPass());
-  fpm->add(llvm::createGVNPass());
-  fpm->add(llvm::createInstructionCombiningPass());
-  fpm->add(llvm::createPromoteMemoryToRegisterPass());
-  fpm->add(llvm::createReassociatePass());
-  fpm->doInitialization();
-#endif
+  if (optimize) {
+    fpm.reset(new llvm::FunctionPassManager(module));
+    fpm->add(new llvm::DataLayout(*(execution_engine->getDataLayout())));
+    fpm->add(llvm::createBasicAliasAnalysisPass());
+    fpm->add(llvm::createCFGSimplificationPass());
+    fpm->add(llvm::createGVNPass());
+    fpm->add(llvm::createInstructionCombiningPass());
+    fpm->add(llvm::createPromoteMemoryToRegisterPass());
+    fpm->add(llvm::createReassociatePass());
+    fpm->doInitialization();
+  }
 
   if (engine::filename.empty()) {
     std::cerr << "do] ";
@@ -79,7 +82,7 @@ void Initialize(const std::string& f) {
 }
 
 void Optimize(llvm::Function* f) {
-  if (fpm) {
+  if (optimize) {
     std::cerr << "Optimizing '" << f->getName().str() << "'\n";
     fpm->run(*f);
   }

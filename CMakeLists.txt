@@ -4,6 +4,7 @@ project(mrdo)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR} ${CMAKE_MODULE_PATH})
 
 find_package(LLVM REQUIRED)
+find_package(gflags REQUIRED)
 
 set(CMAKE_CXX_FLAGS "-Wall -Werror -pedantic-errors --std=c++11 -Isrc/ -fvisibility-inlines-hidden ${LLVM_CFLAGS}")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG")
@@ -21,7 +22,7 @@ else()
   message(FATAL_ERROR "${PROJECT_NAME} requires g++ 4.7 or greater or clang.")
 endif()
 
-include_directories(${LLVM_INCLUDE_DIR})
+include_directories(${LLVM_INCLUDE_DIR} ${gflags_INCLUDE_DIR})
 
 set(SOURCE_FILES "src/ast.cc"
 		 "src/ast/binary_op.cc"
@@ -62,7 +63,7 @@ set(SOURCE_FILES "src/ast.cc"
 
 add_executable(mrdo ${SOURCE_FILES})
 set_target_properties(mrdo PROPERTIES LINK_FLAGS ${LLVM_LFLAGS})
-target_link_libraries(mrdo ${LLVM_MODULE_LIBS} dl pthread)
+target_link_libraries(mrdo ${LLVM_MODULE_LIBS} gflags dl pthread)
 
 set(TEST_FILES "test/basic.do"
 	       "test/coll.do"
