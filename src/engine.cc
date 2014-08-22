@@ -85,11 +85,14 @@ void Optimize(llvm::Function* f) {
   }
 }
 
-void Run() {
+bool Run(bool dump) {
   if (ast::Program* p = parser::Program()) {
     if (llvm::Function* lf = p->Codegen()) {
+      Optimize(lf);
+
       // TODO: module optimizations - ConstantMerge.
-      module->dump();
+      if (dump)
+        module->dump();
       void* fptr = engine::execution_engine->getPointerToFunction(lf);
       void(*fp)() = (void(*)())(intptr_t) fptr;
 
@@ -100,17 +103,18 @@ void Run() {
       fp();
       sw.End();
       std::cerr << "... done in " << sw.Elapsed() << "\n";
+
+      // TODO: write out to
+      // raw_fd_ostream f(outpath...);
+      //llvm::WriteBitcodeToFile(module, f);
+
+      return true;
     } else {
       std::cerr << "Failed to codegen.\n";
-      exit(1);
+      return false;
     }
-  } else {
-    std::cerr << "Failed to parse.\n";
-    exit(1);
   }
-  // TODO: write out to
-  // raw_fd_ostream f(outpath...);
-  //llvm::WriteBitcodeToFile(module, f);
-  // TODO: add flag to dump module
+  std::cerr << "Failed to parse.\n";
+  return false;
 }
 }  // end namespace engine

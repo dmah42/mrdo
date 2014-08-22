@@ -7,6 +7,5 @@
 int main(int argc, const char* argv[]) {
   std::string file = argc > 1 ? argv[1] : std::string();
   engine::Initialize(file);
-  engine::Run();
-  return 0;
+  return engine::Run(true) ? 0 : 1;
 }

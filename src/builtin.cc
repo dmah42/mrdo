@@ -15,7 +15,7 @@
 
 namespace builtin {
 namespace {
-ThreadPool* thread_pool = nullptr;
+std::unique_ptr<ThreadPool> thread_pool;
 
 /*
 // TODO: input could be collection or sequence - different join behaviour on
@@ -30,6 +30,10 @@ std::vector<double> Filter(FilterFn fn, std::vector<double> input) {
   return output;
 }
 */
+
+// TODO: Each of these shards the work into shards of size 1. An alternative is
+// to shard the work into size 'input.length / thread_pool.size()' and have the
+// task contain a loop over the shard. This should reduce some overhead.
 
 Collection Filter(FilterFn fn, Collection input) {
   std::vector<std::future<double>> to_filter;
@@ -112,7 +116,7 @@ void Write(Collection input) {
 }  // end namespace
 
 void Initialize(llvm::ExecutionEngine* execution_engine) {
-  thread_pool = new ThreadPool();
+  thread_pool.reset(new ThreadPool());
 
   // TODO: macro?
 #ifdef __GNUC__

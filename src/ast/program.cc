@@ -43,7 +43,6 @@ llvm::Function* Program::Codegen() const {
   PopNamedValueScope();
 
   llvm::verifyFunction(*f);
-  engine::Optimize(f);
 
   return f;
 }

@@ -15,7 +15,7 @@ extern std::istream* stream;
 
 void Initialize(const std::string& f);
 void Optimize(llvm::Function* f);
-void Run();
+bool Run(bool dump);
 }  // end namespace engine
 
 #endif
