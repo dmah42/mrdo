@@ -1,16 +1,35 @@
 #!/bin/bash
 
+exec 6>&2         # save stderr to fd6
+exec 2> /dev/null # redirect stderr to null
+
+while getopts ":dh" opt; do
+  case $opt in
+    d)
+      exec 2>&6 6>&-  # restore stderr and close fd6
+      ;;
+    h)
+      echo "Usage: $0 [-d]"
+      echo "  -d: show debug output from mrdo"
+      exit 0
+      ;;
+    \?)
+      echo "unknown option: -$OPTARG"
+      exec 2>&6 6>&-  # restore stderr and close fd6
+      exit 1
+      ;;
+  esac
+done
+
 for t in test/*.do; do
 	echo "Running $t"
 
   INPUT_FILE=${t%.*}.in
-  OUTPUT=""
   if [ -e $INPUT_FILE ]; then
     # echo "using '$INPUT_FILE'"
-    OUTPUT=`./mrdo --optimize=true --dump_module=false $t < $INPUT_FILE 2> /dev/null`
-  else
-    OUTPUT=`./mrdo --optimize=true --dump_module=false $t 2> /dev/null`
+    exec < $INPUT_FILE
   fi
+  OUTPUT=`./mrdo --optimize=true --dump_module=false $t`
 
 	if [ $? -ne 0 ]; then
     echo "non-zero error code"
