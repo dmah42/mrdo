@@ -82,6 +82,7 @@ double Length(Collection input) {
   return input.length;
 }
 
+// TODO: use lexer/parser to parse a collection from a stream
 Collection Read() {
   // TODO: read array of arrays (potentially) from stdin, return collection
   std::vector<double> input;
