@@ -7,7 +7,8 @@
 namespace ast {
 llvm::Value* If::Codegen() const {
   llvm::Value* condition_value = condition_->Codegen();
-  if (!condition_value) return nullptr;
+  if (!condition_value)
+    return nullptr;
   condition_value = ToBool(condition_value);
 
   llvm::Function* parent = builder.GetInsertBlock()->getParent();
@@ -31,7 +32,8 @@ llvm::Value* If::Codegen() const {
   PushNamedValueScope();
   for (const Expression* e : if_) {
     llvm::Value* value = e->Codegen();
-    if (!value) return nullptr;
+    if (!value)
+      return nullptr;
   }
   PopNamedValueScope();
 
@@ -46,7 +48,8 @@ llvm::Value* If::Codegen() const {
     PushNamedValueScope();
     for (const Expression* e : else_) {
       llvm::Value* value = e->Codegen();
-      if (!value) return nullptr;
+      if (!value)
+        return nullptr;
     }
     PopNamedValueScope();
 

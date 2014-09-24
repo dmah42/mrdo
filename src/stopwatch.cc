@@ -14,4 +14,3 @@ std::string Stopwatch::Elapsed() const {
   }
   return std::to_string(elapsed.count() * 1000000000) + " ns";
 }
-

@@ -97,10 +97,10 @@ bool Run(bool dump) {
       if (dump)
         module->dump();
       void* fptr = engine::execution_engine->getPointerToFunction(lf);
-      void(*fp)() = (void(*)())(intptr_t) fptr;
+      void (*fp)() = (void (*)())(intptr_t)fptr;
 
       std::cerr << "Running... \n";
-        
+
       Stopwatch sw;
       sw.Start();
       fp();
@@ -109,7 +109,7 @@ bool Run(bool dump) {
 
       // TODO: write out to
       // raw_fd_ostream f(outpath...);
-      //llvm::WriteBitcodeToFile(module, f);
+      // llvm::WriteBitcodeToFile(module, f);
 
       return true;
     } else {

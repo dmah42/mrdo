@@ -3,7 +3,9 @@
 
 #include <cstdlib>
 
-namespace llvm { class ExecutionEngine; }
+namespace llvm {
+class ExecutionEngine;
+}
 
 namespace builtin {
 // TODO: support map and filter over collections of collections

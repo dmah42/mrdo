@@ -6,31 +6,38 @@
 
 #include "builtin.h"
 
-template <> llvm::Type* TypeMap<void>::get() {
+template <>
+llvm::Type* TypeMap<void>::get() {
   return llvm::Type::getVoidTy(llvm::getGlobalContext());
 }
 
-template <> llvm::Type* TypeMap<double>::get() {
+template <>
+llvm::Type* TypeMap<double>::get() {
   return llvm::Type::getDoubleTy(llvm::getGlobalContext());
 }
 
-template <> llvm::Type* TypeMap<builtin::Collection>::get() {
+template <>
+llvm::Type* TypeMap<builtin::Collection>::get() {
   return llvm::StructType::get(
       llvm::PointerType::getUnqual(TypeMap<double>::get()),
       llvm::Type::getInt64Ty(llvm::getGlobalContext()),
       nullptr);
 }
 
-template <> llvm::Type* TypeMap<builtin::FoldFn>::get() {
+template <>
+llvm::Type* TypeMap<builtin::FoldFn>::get() {
   return llvm::PointerType::getUnqual(llvm::FunctionType::get(
       TypeMap<double>::get(),
-      std::vector<llvm::Type*>(2, TypeMap<double>::get()), false));
+      std::vector<llvm::Type*>(2, TypeMap<double>::get()),
+      false));
 }
 
-template <> llvm::Type* TypeMap<builtin::MapFn>::get() {
+template <>
+llvm::Type* TypeMap<builtin::MapFn>::get() {
   return llvm::PointerType::getUnqual(llvm::FunctionType::get(
       TypeMap<double>::get(),
-      std::vector<llvm::Type*>(1, TypeMap<double>::get()), false));
+      std::vector<llvm::Type*>(1, TypeMap<double>::get()),
+      false));
 }
 
 // No need to define this as MapFn == FilterFn.

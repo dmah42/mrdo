@@ -12,8 +12,8 @@ class Collection : public Expression {
   explicit Collection(bool is_sequence, std::vector<const Expression*>& values)
       : is_sequence_(is_sequence), values_(values) {
 #ifdef DEBUG
-    std::cerr << (is_sequence ? "Sequence: " : "Collection: ")
-              << values.size() << "\n";
+    std::cerr << (is_sequence ? "Sequence: " : "Collection: ") << values.size()
+              << "\n";
 #endif
   }
   llvm::Value* Codegen() const override;

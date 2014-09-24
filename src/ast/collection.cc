@@ -32,7 +32,10 @@ llvm::Value* Collection::Codegen() const {
       Error(line, col, "Unimplemented collection of collection.");
       return nullptr;
     } else {
-      Error(line, col, "Unimplemented expression type ", typeid(e).name(),
+      Error(line,
+            col,
+            "Unimplemented expression type ",
+            typeid(e).name(),
             " in collection.");
       return nullptr;
     }
@@ -42,7 +45,9 @@ llvm::Value* Collection::Codegen() const {
       llvm::Type::getDoubleTy(llvm::getGlobalContext()), init_values.size());
 
   llvm::GlobalVariable* gv = new llvm::GlobalVariable(
-      *engine::module, array_type, true /*isConstant*/,
+      *engine::module,
+      array_type,
+      true /*isConstant*/,
       llvm::GlobalValue::InternalLinkage,
       llvm::ConstantArray::get(array_type, init_values),
       is_sequence_ ? "seq" : "coll");
@@ -52,8 +57,7 @@ llvm::Value* Collection::Codegen() const {
   }
 
   // TODO: make these internal errors.
-  llvm::Value* gep_v =
-      builder.CreateConstInBoundsGEP2_32(gv, 0, 0, "collptr");
+  llvm::Value* gep_v = builder.CreateConstInBoundsGEP2_32(gv, 0, 0, "collptr");
   if (!gep_v) {
     Error(line, col, "failed to get pointer to global variable");
     return nullptr;

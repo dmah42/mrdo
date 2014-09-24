@@ -8,7 +8,9 @@
 #include "engine.h"
 
 namespace lexer {
-namespace { char lastch = ' '; }
+namespace {
+char lastch = ' ';
+}
 
 int current_token = TOKEN_EOF;
 std::string ident_str;
@@ -20,45 +22,40 @@ int line = 1, col = 1;
 
 namespace {
 // TODO: split token map to allow extra data (ie, binop precedence)
-const std::map<std::string, Token> token_map = {
-  { "do", TOKEN_DO },
-  { "if", TOKEN_IF },
-  { "elif", TOKEN_ELIF },
-  { "else", TOKEN_ELSE },
-  { "done", TOKEN_DONE },
-  { "while", TOKEN_WHILE },
-  { "not", TOKEN_UNOP },
-  { "return", TOKEN_RETURN },
-  { "func", TOKEN_FUNC }
-};
+const std::map<std::string, Token> token_map = {{"do", TOKEN_DO},
+                                                {"if", TOKEN_IF},
+                                                {"elif", TOKEN_ELIF},
+                                                {"else", TOKEN_ELSE},
+                                                {"done", TOKEN_DONE},
+                                                {"while", TOKEN_WHILE},
+                                                {"not", TOKEN_UNOP},
+                                                {"return", TOKEN_RETURN},
+                                                {"func", TOKEN_FUNC}};
 
-const std::map<std::string, Token> builtin_map = {
-  { "map", TOKEN_BUILTIN },
-  { "fold", TOKEN_BUILTIN },
-  { "filter", TOKEN_BUILTIN },
-  { "zip", TOKEN_BUILTIN },
-  { "read", TOKEN_BUILTIN },
-  { "write", TOKEN_BUILTIN },
-  { "length", TOKEN_BUILTIN }
-};
+const std::map<std::string, Token> builtin_map = {{"map", TOKEN_BUILTIN},
+                                                  {"fold", TOKEN_BUILTIN},
+                                                  {"filter", TOKEN_BUILTIN},
+                                                  {"zip", TOKEN_BUILTIN},
+                                                  {"read", TOKEN_BUILTIN},
+                                                  {"write", TOKEN_BUILTIN},
+                                                  {"length", TOKEN_BUILTIN}};
 
 // TODO: add precedence and remove from src/parser.cc
 const std::map<std::string, std::pair<Token, int>> binop_map = {
-  { "=",   { TOKEN_ASSIGN,   2 }},
-  { "or",  { TOKEN_LOGIC,    5 }},
-  { "xor", { TOKEN_LOGIC,    5 }},
-  { "and", { TOKEN_LOGIC,    6 }},
-  { "==",  { TOKEN_COMPARE,  9 }},
-  { "!=",  { TOKEN_COMPARE,  9 }},
-  { "<",   { TOKEN_COMPARE, 10 }},
-  { ">",   { TOKEN_COMPARE, 10 }},
-  { "<=",  { TOKEN_COMPARE, 10 }},
-  { ">=",  { TOKEN_COMPARE, 10 }},
-  { "+",   { TOKEN_ARITH,   20 }},
-  { "-",   { TOKEN_ARITH,   20 }},
-  { "*",   { TOKEN_ARITH,   40 }},
-  { "/",   { TOKEN_ARITH,   40 }}
-};
+    {"=", {TOKEN_ASSIGN, 2}},
+    {"or", {TOKEN_LOGIC, 5}},
+    {"xor", {TOKEN_LOGIC, 5}},
+    {"and", {TOKEN_LOGIC, 6}},
+    {"==", {TOKEN_COMPARE, 9}},
+    {"!=", {TOKEN_COMPARE, 9}},
+    {"<", {TOKEN_COMPARE, 10}},
+    {">", {TOKEN_COMPARE, 10}},
+    {"<=", {TOKEN_COMPARE, 10}},
+    {">=", {TOKEN_COMPARE, 10}},
+    {"+", {TOKEN_ARITH, 20}},
+    {"-", {TOKEN_ARITH, 20}},
+    {"*", {TOKEN_ARITH, 40}},
+    {"/", {TOKEN_ARITH, 40}}};
 
 int GetCh() {
   int ch = engine::stream->get();
@@ -134,13 +131,17 @@ int GetToken() {
     }
   }
 
-  if (lastch == EOF) return TOKEN_EOF;
+  if (lastch == EOF)
+    return TOKEN_EOF;
 
   // special chars
   switch (lastch) {
-    case '[': case ']':
-    case '(': case ')':
-    case '{': case '}':
+    case '[':
+    case ']':
+    case '(':
+    case ')':
+    case '{':
+    case '}':
     case '|': {
       int ch = lastch;
       lastch = GetCh();

@@ -5,7 +5,8 @@
 namespace ast {
 llvm::Value* Return::Codegen() const {
   llvm::Value* v = expression_->Codegen();
-  if (!v) return nullptr;
+  if (!v)
+    return nullptr;
   return builder.CreateRet(v);
 }
 }  // end namespace ast

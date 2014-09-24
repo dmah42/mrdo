@@ -67,7 +67,8 @@ void PopNamedValueScope() { named_values.pop_back(); }
 
 llvm::Value* ToBool(llvm::Value* val) {
   return builder.CreateFCmpUNE(
-      val, llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0)),
+      val,
+      llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0)),
       "booltmp");
 }
 }  // end namespace ast

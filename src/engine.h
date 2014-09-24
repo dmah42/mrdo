@@ -4,8 +4,8 @@
 #include <string>
 
 namespace llvm {
-  class Function;
-  class Module;
+class Function;
+class Module;
 }
 
 namespace engine {

@@ -14,12 +14,14 @@ ast::Expression* While() {
   lexer::NextToken();
 
   const ast::Expression* cond = Expression();
-  if (!cond) return nullptr;
+  if (!cond)
+    return nullptr;
 
   std::vector<const ast::Expression*> body;
   while (lexer::current_token != lexer::TOKEN_DONE) {
     const ast::Expression* state = Statement();
-    if (!state) return nullptr;
+    if (!state)
+      return nullptr;
     body.push_back(state);
   }
   lexer::NextToken();

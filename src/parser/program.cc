@@ -16,7 +16,8 @@ ast::Program* Program() {
       std::cerr << "do] ";
     }
     const ast::Expression* s = Statement();
-    if (!s) return nullptr;
+    if (!s)
+      return nullptr;
     state_list.push_back(s);
   }
 

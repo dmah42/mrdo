@@ -9,11 +9,13 @@
 
 namespace ast {
 llvm::Value* BinaryOp::Codegen() const {
-  if (op_ == "=") return HandleAssign();
+  if (op_ == "=")
+    return HandleAssign();
 
   llvm::Value* l = lhs_->Codegen();
   llvm::Value* r = rhs_->Codegen();
-  if (!l || !r) return nullptr;
+  if (!l || !r)
+    return nullptr;
 
   if (op_ == "+")
     return builder.CreateFAdd(l, r, "addtmp");
@@ -24,26 +26,26 @@ llvm::Value* BinaryOp::Codegen() const {
   else if (op_ == "/")
     return builder.CreateFDiv(l, r, "divtmp");
   else if (op_ == "<")
-    return builder.CreateUIToFP(builder.CreateFCmpULT(l, r, "cmptmp"), Type(),
-                                "booltmp");
+    return builder.CreateUIToFP(
+        builder.CreateFCmpULT(l, r, "cmptmp"), Type(), "booltmp");
   else if (op_ == "<=")
-    return builder.CreateUIToFP(builder.CreateFCmpULE(l, r, "cmptmp"), Type(),
-                                "booltmp");
+    return builder.CreateUIToFP(
+        builder.CreateFCmpULE(l, r, "cmptmp"), Type(), "booltmp");
   else if (op_ == ">")
-    return builder.CreateUIToFP(builder.CreateFCmpUGT(l, r, "cmptmp"), Type(),
-                                "booltmp");
+    return builder.CreateUIToFP(
+        builder.CreateFCmpUGT(l, r, "cmptmp"), Type(), "booltmp");
   else if (op_ == ">=")
-    return builder.CreateUIToFP(builder.CreateFCmpUGE(l, r, "cmptmp"), Type(),
-                                "booltmp");
+    return builder.CreateUIToFP(
+        builder.CreateFCmpUGE(l, r, "cmptmp"), Type(), "booltmp");
   else if (op_ == "==")
-    return builder.CreateUIToFP(builder.CreateFCmpUEQ(l, r, "cmptmp"), Type(),
-                                "booltmp");
+    return builder.CreateUIToFP(
+        builder.CreateFCmpUEQ(l, r, "cmptmp"), Type(), "booltmp");
   else if (op_ == "!=")
-    return builder.CreateUIToFP(builder.CreateFCmpUNE(l, r, "cmptmp"), Type(),
-                                "booltmp");
+    return builder.CreateUIToFP(
+        builder.CreateFCmpUNE(l, r, "cmptmp"), Type(), "booltmp");
   else if (op_ == "or")
-    return builder.CreateUIToFP(builder.CreateOr(ToBool(l), ToBool(r), "ortmp"),
-                                Type(), "booltmp");
+    return builder.CreateUIToFP(
+        builder.CreateOr(ToBool(l), ToBool(r), "ortmp"), Type(), "booltmp");
   else if (op_ == "and")
     return builder.CreateUIToFP(
         builder.CreateAnd(ToBool(l), ToBool(r), "andtmp"), Type(), "booltmp");
@@ -55,9 +57,7 @@ llvm::Value* BinaryOp::Codegen() const {
   return nullptr;
 }
 
-llvm::Type* BinaryOp::Type() const {
-  return TypeMap<double>::get();
-}
+llvm::Type* BinaryOp::Type() const { return TypeMap<double>::get(); }
 
 llvm::Value* BinaryOp::HandleAssign() const {
   // TODO: test reassignment to same variable
@@ -68,7 +68,8 @@ llvm::Value* BinaryOp::HandleAssign() const {
   }
 
   llvm::Value* v = rhs_->Codegen();
-  if (!v) return nullptr;
+  if (!v)
+    return nullptr;
 
   llvm::AllocaInst* var = GetNamedValue(lhs_variable->name());
   if (!var) {
@@ -83,8 +84,13 @@ llvm::Value* BinaryOp::HandleAssign() const {
 
   if (var->getAllocatedType()->getTypeID() != v->getType()->getTypeID()) {
     // TODO: better error message to catch type mismatch on reassignment.
-    Error(line, col, "Attempting to store ", v->getType()->getTypeID(),
-          " in variable of type ", var->getAllocatedType()->getTypeID(), ": ");
+    Error(line,
+          col,
+          "Attempting to store ",
+          v->getType()->getTypeID(),
+          " in variable of type ",
+          var->getAllocatedType()->getTypeID(),
+          ": ");
     v->getType()->dump();
     var->getAllocatedType()->getTypeID();
     return nullptr;

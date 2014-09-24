@@ -12,9 +12,9 @@ ast::Expression* Return() {
   lexer::NextToken();
 
   ast::Expression* e = Expression();
-  if (e == nullptr) return nullptr;
+  if (e == nullptr)
+    return nullptr;
 
   return new ast::Return(e);
 }
 }  // end namespace parser
-

@@ -4,8 +4,8 @@
 #include "lexer.h"
 
 namespace llvm {
-  class Type;
-  class Value;
+class Type;
+class Value;
 }
 
 namespace ast {

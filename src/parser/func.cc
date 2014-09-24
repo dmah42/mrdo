@@ -21,7 +21,8 @@ ast::Expression* Func() {
   if (lexer::current_token != ')') {
     while (true) {
       if (lexer::current_token != lexer::TOKEN_IDENT) {
-        Error(lexer::line, lexer::col,
+        Error(lexer::line,
+              lexer::col,
               "Expected identifier as function argument, got ",
               lexer::current_token);
         return nullptr;
@@ -29,10 +30,13 @@ ast::Expression* Func() {
       args.push_back(lexer::ident_str);
       lexer::NextToken();
 
-      if (lexer::current_token == ')') break;
+      if (lexer::current_token == ')')
+        break;
 
       if (lexer::current_token != ',') {
-        Error(lexer::line, lexer::col, "Expected ',' between args in func, got ",
+        Error(lexer::line,
+              lexer::col,
+              "Expected ',' between args in func, got ",
               lexer::current_token);
         return nullptr;
       }
@@ -42,7 +46,9 @@ ast::Expression* Func() {
   lexer::NextToken();
 
   if (lexer::current_token != '{') {
-    Error(lexer::line, lexer::col, "Expected '{' after arg list in func, got ",
+    Error(lexer::line,
+          lexer::col,
+          "Expected '{' after arg list in func, got ",
           lexer::current_token);
     return nullptr;
   }
@@ -50,10 +56,12 @@ ast::Expression* Func() {
 
   std::vector<const ast::Expression*> body;
   while (true) {
-    if (lexer::current_token == '}') break;
+    if (lexer::current_token == '}')
+      break;
 
     const ast::Expression* state = Statement();
-    if (!state) return nullptr;
+    if (!state)
+      return nullptr;
     body.push_back(state);
   }
   lexer::NextToken();

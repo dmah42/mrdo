@@ -15,7 +15,8 @@ llvm::Function* Program::Codegen() const {
   // No return type, no parameters.
   llvm::FunctionType* ft =
       llvm::FunctionType::get(llvm::Type::getVoidTy(llvm::getGlobalContext()),
-                              std::vector<llvm::Type*>(), false);
+                              std::vector<llvm::Type*>(),
+                              false);
   llvm::Function* f = llvm::Function::Create(
       ft, llvm::Function::ExternalLinkage, "global", engine::module);
 

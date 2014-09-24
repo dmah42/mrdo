@@ -35,7 +35,8 @@ llvm::Value* Func::Codegen() const {
       Error(line, col, "Unsupported number of args: ", args_.size());
       return nullptr;
   }
-  if (!f_) return nullptr;
+  if (!f_)
+    return nullptr;
 
   llvm::BasicBlock* bb =
       llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", f_);
@@ -78,8 +79,11 @@ void Func::CreateArgumentAllocas(llvm::Function* f) const {
     ast::Real* default_arg = new ast::Real(0.0);
     llvm::Value* v = default_arg->Codegen();
     if (!v) {
-      ErrorCont("Failed to create default for argument '", arg,
-                "' for function '", name_, "'");
+      ErrorCont("Failed to create default for argument '",
+                arg,
+                "' for function '",
+                name_,
+                "'");
       return;
     }
     llvm::AllocaInst* alloca_v = CreateNamedVariable(f, arg, default_arg);

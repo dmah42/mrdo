@@ -14,13 +14,17 @@ ast::Expression* Do() {
   assert(lexer::current_token == lexer::TOKEN_DO);
   lexer::NextToken();
   if (lexer::current_token != '(') {
-    Error(lexer::line, lexer::col, "Expected '(' after 'do', got ",
+    Error(lexer::line,
+          lexer::col,
+          "Expected '(' after 'do', got ",
           lexer::current_token);
     return nullptr;
   }
   lexer::NextToken();
   if (lexer::current_token != lexer::TOKEN_BUILTIN) {
-    Error(lexer::line, lexer::col, "Expected function name after '(', got ",
+    Error(lexer::line,
+          lexer::col,
+          "Expected function name after '(', got ",
           lexer::current_token);
     return nullptr;
   }
@@ -29,17 +33,21 @@ ast::Expression* Do() {
 
   std::vector<const ast::Expression*> args;
   while (true) {
-    if (lexer::current_token == ')') break;
+    if (lexer::current_token == ')')
+      break;
 
     if (lexer::current_token != ',') {
-      Error(lexer::line, lexer::col, "Expected ',' between args in do, got ",
+      Error(lexer::line,
+            lexer::col,
+            "Expected ',' between args in do, got ",
             lexer::current_token);
       return nullptr;
     }
     lexer::NextToken();
 
     const ast::Expression* v = RValue();
-    if (!v) return nullptr;
+    if (!v)
+      return nullptr;
     args.push_back(v);
   }
   lexer::NextToken();

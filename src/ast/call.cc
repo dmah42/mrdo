@@ -32,7 +32,8 @@ llvm::Value* Call::Codegen() const {
     const Func* arg_func = dynamic_cast<const Func*>(arg);
 
     llvm::Value* v = arg->Codegen();
-    if (!v) return nullptr;
+    if (!v)
+      return nullptr;
     if (arg_collection || arg_variable || arg_real || arg_call || arg_func) {
       argv.push_back(v);
     } else {
@@ -42,8 +43,14 @@ llvm::Value* Call::Codegen() const {
   }
 
   if (func->arg_size() != argv.size()) {
-    Error(line, col, "expected ", func->arg_size(), " arguments to ", name_,
-          ", got ", argv.size());
+    Error(line,
+          col,
+          "expected ",
+          func->arg_size(),
+          " arguments to ",
+          name_,
+          ", got ",
+          argv.size());
     return nullptr;
   }
 

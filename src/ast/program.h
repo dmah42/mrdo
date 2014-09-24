@@ -3,7 +3,9 @@
 
 #include <vector>
 
-namespace llvm { class Function; }
+namespace llvm {
+class Function;
+}
 
 namespace ast {
 class Expression;

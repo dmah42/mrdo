@@ -9,7 +9,8 @@
 namespace ast {
 llvm::Value* UnaryOp::Codegen() const {
   llvm::Value* expr = expr_->Codegen();
-  if (!expr) return nullptr;
+  if (!expr)
+    return nullptr;
 
   if (op_ == "not") {
     const Real* expr_real = dynamic_cast<const Real*>(expr_);
@@ -19,14 +20,12 @@ llvm::Value* UnaryOp::Codegen() const {
       Error(line, col, "Expected real or variable of type real after 'not'.");
       return nullptr;
     }
-    return builder.CreateUIToFP(builder.CreateNot(ToBool(expr), "nottmp"),
-                                Type(), "booltmp");
+    return builder.CreateUIToFP(
+        builder.CreateNot(ToBool(expr), "nottmp"), Type(), "booltmp");
   }
   Error(line, col, "Unknown unary operator: ", op_, ".");
   return nullptr;
 }
 
-llvm::Type* UnaryOp::Type() const {
-  return TypeMap<double>::get();
-}
+llvm::Type* UnaryOp::Type() const { return TypeMap<double>::get(); }
 }  // end namespace ast

@@ -18,12 +18,15 @@ ast::Expression* Collection() {
   std::vector<const ast::Expression*> members;
   while (true) {
     const ast::Expression* v = RValue();
-    if (!v) return nullptr;
+    if (!v)
+      return nullptr;
     members.push_back(v);
 
-    if (lexer::current_token == end_token) break;
+    if (lexer::current_token == end_token)
+      break;
     if (lexer::current_token != ',') {
-      Error(lexer::line, lexer::col,
+      Error(lexer::line,
+            lexer::col,
             "Expected ',' between values in collection, got ",
             lexer::current_token);
       return nullptr;

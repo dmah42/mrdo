@@ -14,7 +14,7 @@ class ThreadPool {
   ~ThreadPool();
 
   template <class F, class... Args>
-  auto enqueue(F&& f, Args&& ... args)
+  auto enqueue(F&& f, Args&&... args)
       -> std::future<typename std::result_of<F(Args...)>::type>;
 
  private:
@@ -27,20 +27,19 @@ class ThreadPool {
 };
 
 template <class F, class... Args>
-auto ThreadPool::enqueue(F&& f, Args&& ... args)
+auto ThreadPool::enqueue(F&& f, Args&&... args)
     -> std::future<typename std::result_of<F(Args...)>::type> {
   typedef typename std::result_of<F(Args...)>::type return_type;
 
   assert(!stop_);
 
   auto task = std::make_shared<std::packaged_task<return_type()>>(
-      std::bind(std::forward<F>(f), std::forward<Args>(args)...)
-  );
+      std::bind(std::forward<F>(f), std::forward<Args>(args)...));
 
   std::future<return_type> res = task->get_future();
   {
     std::unique_lock<std::mutex> lock(queue_mutex_);
-    tasks_.push([task](){ (*task)(); });
+    tasks_.push([task]() { (*task)(); });
   }
   condition_.notify_one();
   return res;

@@ -15,14 +15,16 @@ ast::Expression* If() {
   lexer::NextToken();
 
   const ast::Expression* condition = Expression();
-  if (!condition) return nullptr;
+  if (!condition)
+    return nullptr;
 
   std::vector<const ast::Expression*> if_body;
   while (lexer::current_token != lexer::TOKEN_ELIF &&
          lexer::current_token != lexer::TOKEN_ELSE &&
          lexer::current_token != lexer::TOKEN_DONE) {
     const ast::Expression* if_state = Statement();
-    if (!if_state) return nullptr;
+    if (!if_state)
+      return nullptr;
     if_body.push_back(if_state);
   }
 
@@ -33,14 +35,20 @@ ast::Expression* If() {
     lexer::NextToken();
     while (lexer::current_token != lexer::TOKEN_DONE) {
       const ast::Expression* else_state = Statement();
-      if (!else_state) return nullptr;
+      if (!else_state)
+        return nullptr;
       else_body.push_back(else_state);
     }
   }
 
   if (lexer::current_token != lexer::TOKEN_DONE) {
-    Error(lexer::line, lexer::col, "expected 'done' at end of 'if', got '",
-          (char) lexer::current_token, "' [", lexer::current_token, "]");
+    Error(lexer::line,
+          lexer::col,
+          "expected 'done' at end of 'if', got '",
+          (char)lexer::current_token,
+          "' [",
+          lexer::current_token,
+          "]");
     return nullptr;
   }
   lexer::NextToken();

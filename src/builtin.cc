@@ -38,9 +38,8 @@ std::vector<double> Filter(FilterFn fn, std::vector<double> input) {
 Collection Filter(FilterFn fn, Collection input) {
   std::vector<std::future<double>> to_filter;
   for (size_t i = 0; i < input.length; ++i) {
-    to_filter.push_back(thread_pool->enqueue([fn, &input, i] {
-      return fn(input.values[i]);
-    }));
+    to_filter.push_back(
+        thread_pool->enqueue([fn, &input, i] { return fn(input.values[i]); }));
   }
 
   std::vector<double> filtered;
@@ -59,9 +58,8 @@ Collection Filter(FilterFn fn, Collection input) {
 Collection Map(MapFn fn, Collection input) {
   std::vector<std::future<double>> results;
   for (size_t i = 0; i < input.length; ++i) {
-    results.push_back(thread_pool->enqueue([fn, &input, i] {
-      return fn(input.values[i]);
-    }));
+    results.push_back(
+        thread_pool->enqueue([fn, &input, i] { return fn(input.values[i]); }));
   }
 
   double* output = new double[input.length];
@@ -78,9 +76,7 @@ double Fold(FoldFn fn, Collection input) {
   return cum;
 }
 
-double Length(Collection input) {
-  return input.length;
-}
+double Length(Collection input) { return input.length; }
 
 // TODO: use lexer/parser to parse a collection from a stream
 Collection Read() {
@@ -110,7 +106,8 @@ void Write(Collection input) {
   std::cout << "[ ";
   for (size_t i = 0; i < input.length; ++i) {
     std::cout << input.values[i];
-    if (i != input.length - 1) std::cout << ", ";
+    if (i != input.length - 1)
+      std::cout << ", ";
   }
   std::cout << " ]\n";
 }
@@ -119,51 +116,52 @@ void Write(Collection input) {
 void Initialize(llvm::ExecutionEngine* execution_engine) {
   thread_pool.reset(new ThreadPool());
 
-  // TODO: macro?
+// TODO: macro?
 #ifdef __GNUC__
   __extension__
 #endif
-  execution_engine->addGlobalMapping(
-      (new ast::Prototype("write", {"input"}))->Codegen<void, Collection>(),
-      reinterpret_cast<void*>(&Write));
+      execution_engine->addGlobalMapping(
+          (new ast::Prototype("write", {"input"}))->Codegen<void, Collection>(),
+          reinterpret_cast<void*>(&Write));
 
 #ifdef __GNUC__
   __extension__
 #endif
-  execution_engine->addGlobalMapping(
-      (new ast::Prototype("read", {}))->Codegen<Collection>(),
-      reinterpret_cast<void*>(&Read));
+      execution_engine->addGlobalMapping(
+          (new ast::Prototype("read", {}))->Codegen<Collection>(),
+          reinterpret_cast<void*>(&Read));
 
 #ifdef __GNUC__
   __extension__
 #endif
-  execution_engine->addGlobalMapping(
-      (new ast::Prototype("length", {"input"}))->Codegen<double, Collection>(),
-      reinterpret_cast<void*>(&Length));
+      execution_engine->addGlobalMapping(
+          (new ast::Prototype("length", {"input"}))
+              ->Codegen<double, Collection>(),
+          reinterpret_cast<void*>(&Length));
 
 #ifdef __GNUC__
   __extension__
 #endif
-    execution_engine->addGlobalMapping(
-        (new ast::Prototype("fold", {"fn", "input"}))->
-            Codegen<double, FoldFn, Collection>(),
-        reinterpret_cast<void*>(&Fold));
+      execution_engine->addGlobalMapping(
+          (new ast::Prototype("fold", {"fn", "input"}))
+              ->Codegen<double, FoldFn, Collection>(),
+          reinterpret_cast<void*>(&Fold));
 
 #ifdef __GNUC__
   __extension__
 #endif
-    execution_engine->addGlobalMapping(
-        (new ast::Prototype("map", {"fn", "input"}))->
-            Codegen<Collection, MapFn, Collection>(),
-        reinterpret_cast<void*>(&Map));
+      execution_engine->addGlobalMapping(
+          (new ast::Prototype("map", {"fn", "input"}))
+              ->Codegen<Collection, MapFn, Collection>(),
+          reinterpret_cast<void*>(&Map));
 
 #ifdef __GNUC__
   __extension__
 #endif
-    execution_engine->addGlobalMapping(
-        (new ast::Prototype("filter", {"fn", "input"}))->
-            Codegen<Collection, FilterFn, Collection>(),
-        reinterpret_cast<void*>(&Filter));
+      execution_engine->addGlobalMapping(
+          (new ast::Prototype("filter", {"fn", "input"}))
+              ->Codegen<Collection, FilterFn, Collection>(),
+          reinterpret_cast<void*>(&Filter));
 }
 
 }  // end namespace builtin

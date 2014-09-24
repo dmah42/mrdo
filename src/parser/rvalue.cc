@@ -20,7 +20,8 @@ ast::Expression* RValue() {
     assert(lexer::op_str == "-" || lexer::op_str == "+");
     std::string op = lexer::op_str;
     lexer::NextToken();
-    if (op == "-") mult_expr = new ast::Real(-1.0);
+    if (op == "-")
+      mult_expr = new ast::Real(-1.0);
   }
 
   ast::Expression* rvalue_expr = nullptr;
@@ -64,8 +65,13 @@ ast::Expression* RValue() {
       break;
 
     default:
-      Error(lexer::line, lexer::col, "Expected identifier or real, got '",
-            (char) lexer::current_token, "' [", lexer::current_token, "]");
+      Error(lexer::line,
+            lexer::col,
+            "Expected identifier or real, got '",
+            (char)lexer::current_token,
+            "' [",
+            lexer::current_token,
+            "]");
       return nullptr;
   };
 

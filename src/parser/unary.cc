@@ -8,13 +8,15 @@
 
 namespace parser {
 ast::Expression* Unary() {
-  if (lexer::current_token != lexer::TOKEN_UNOP) return RValue();
+  if (lexer::current_token != lexer::TOKEN_UNOP)
+    return RValue();
 
   std::string op = lexer::op_str;
   lexer::NextToken();
 
   ast::Expression* operand = Unary();
-  if (!operand) return nullptr;
+  if (!operand)
+    return nullptr;
   return new ast::UnaryOp(op, operand);
 }
 }  // end namespace parser

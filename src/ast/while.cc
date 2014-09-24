@@ -27,14 +27,16 @@ llvm::Value* While::Codegen() const {
   builder.SetInsertPoint(loopstart_block);
 
   llvm::Value* cond = condition_->Codegen();
-  if (!cond) return nullptr;
+  if (!cond)
+    return nullptr;
   cond = ToBool(cond);
   builder.CreateCondBr(cond, loop_block, after_block);
 
   builder.SetInsertPoint(loop_block);
 
   for (const ast::Expression* e : body_)
-    if (!e->Codegen()) return nullptr;
+    if (!e->Codegen())
+      return nullptr;
 
   builder.CreateBr(loopstart_block);
   builder.SetInsertPoint(after_block);

@@ -21,8 +21,12 @@ class Prototype {
 #endif
   }
 
-  template <typename R> llvm::Function* Codegen() const;
-  template <typename R, typename A0> llvm::Function* Codegen() const;
+  template <typename R>
+  llvm::Function* Codegen() const;
+
+  template <typename R, typename A0>
+  llvm::Function* Codegen() const;
+
   template <typename R, typename A0, typename A1>
   llvm::Function* Codegen() const;
 
@@ -34,10 +38,11 @@ class Prototype {
   std::vector<std::string> args_;
 };
 
-template <typename R> llvm::Function* Prototype::Codegen() const {
+template <typename R>
+llvm::Function* Prototype::Codegen() const {
   assert(args_.empty());
 
-  std::vector<llvm::Type*> arg_types { };
+  std::vector<llvm::Type*> arg_types{};
   llvm::Type* rt = TypeMap<R>::get();
   if (!rt) {
     ErrorCont("Failed to get type for return type for prototype ", name_);
@@ -46,7 +51,8 @@ template <typename R> llvm::Function* Prototype::Codegen() const {
   return CodegenImpl(rt, arg_types);
 }
 
-template <typename R, typename A0> llvm::Function* Prototype::Codegen() const {
+template <typename R, typename A0>
+llvm::Function* Prototype::Codegen() const {
   assert(args_.size() == 1);
 
   llvm::Type* t = TypeMap<A0>::get();
@@ -54,7 +60,7 @@ template <typename R, typename A0> llvm::Function* Prototype::Codegen() const {
     ErrorCont("Failed to get llvm type for arg in prototype ", name_);
     return nullptr;
   }
-  std::vector<llvm::Type*> arg_types { t };
+  std::vector<llvm::Type*> arg_types{t};
   llvm::Type* rt = TypeMap<R>::get();
   if (!rt) {
     ErrorCont("Failed to get type for return type for prototype ", name_);
@@ -77,7 +83,7 @@ llvm::Function* Prototype::Codegen() const {
     ErrorCont("Failed to get llvm type for arg1 in prototype ", name_);
     return nullptr;
   }
-  std::vector<llvm::Type*> arg_types { t0, t1 };
+  std::vector<llvm::Type*> arg_types{t0, t1};
   llvm::Type* rt = TypeMap<R>::get();
   if (!rt) {
     ErrorCont("Failed to get type for return type for prototype ", name_);

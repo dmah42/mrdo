@@ -10,7 +10,5 @@ llvm::Value* Real::Codegen() const {
   return llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(value_));
 }
 
-llvm::Type* Real::Type() const {
-  return TypeMap<double>::get();
-}
+llvm::Type* Real::Type() const { return TypeMap<double>::get(); }
 }  // end namespace ast

@@ -6,13 +6,9 @@
 
 class Stopwatch {
  public:
-  void Start() {
-    start_ = std::chrono::system_clock::now();
-  }
+  void Start() { start_ = std::chrono::system_clock::now(); }
 
-  void End() {
-    end_ = std::chrono::system_clock::now();
-  }
+  void End() { end_ = std::chrono::system_clock::now(); }
 
   std::string Elapsed() const;
 
@@ -22,4 +18,3 @@ class Stopwatch {
 };
 
 #endif  // _DO_STOPWATCH_H_
-

@@ -19,8 +19,8 @@ llvm::Function* Prototype::CodegenImpl(llvm::Type* ret,
     }
 
     if (f->arg_size() != args_.size()) {
-      ErrorCont("redefinition of function ", name_,
-                " with mismatch arg length");
+      ErrorCont(
+          "redefinition of function ", name_, " with mismatch arg length");
       return nullptr;
     }
   }
@@ -30,8 +30,11 @@ llvm::Function* Prototype::CodegenImpl(llvm::Type* ret,
     const llvm::Type::TypeID ai_type_id = ai->getType()->getTypeID();
     const llvm::Type::TypeID arg_type_id = args[i]->getTypeID();
     if (ai_type_id != arg_type_id) {
-      ErrorCont("redefinition of function ", name_,
-                " with mismatched types for arg ", i, ": ");
+      ErrorCont("redefinition of function ",
+                name_,
+                " with mismatched types for arg ",
+                i,
+                ": ");
       ai->getType()->dump();
       args[i]->dump();
     }

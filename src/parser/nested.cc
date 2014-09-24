@@ -11,11 +11,17 @@ ast::Expression* Nested() {
   assert(lexer::current_token == '(');
   lexer::NextToken();
   ast::Expression* e = Expression();
-  if (!e) return nullptr;
+  if (!e)
+    return nullptr;
 
   if (lexer::current_token != ')') {
-    Error(lexer::line, lexer::col, "Expected ')', got '",
-          (char) lexer::current_token, "' [", lexer::current_token, "]");
+    Error(lexer::line,
+          lexer::col,
+          "Expected ')', got '",
+          (char)lexer::current_token,
+          "' [",
+          lexer::current_token,
+          "]");
     return nullptr;
   }
   lexer::NextToken();
