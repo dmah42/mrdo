@@ -1,0 +1,18 @@
+language: cpp
+before_install:
+  sudo apt-get update -qq
+install:
+  sudo apt-get install libgflags-dev llvm-3.5-dev
+script: cmake
+after_script: ./run_tests.sh
+compiler: clang
+notifications:
+  recipients:
+    - dma+github@stripysock.com
+  email:
+    on_success: change
+    on_failure: always
+os:
+  - linux
+  - osx
+
