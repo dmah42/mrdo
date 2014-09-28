@@ -3,14 +3,14 @@
 exec 6>&2         # save stderr to fd6
 exec 2> /dev/null # redirect stderr to null
 
-while getopts ":dh" opt; do
+while getopts ":vh" opt; do
   case $opt in
-    d)
+    v)
       exec 2>&6 6>&-  # restore stderr and close fd6
       ;;
     h)
-      echo "Usage: $0 [-d]"
-      echo "  -d: show debug output from mrdo"
+      echo "Usage: $0 [-v]"
+      echo "  -v: show verbose output from mrdo"
       exit 0
       ;;
     \?)
