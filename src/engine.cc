@@ -74,10 +74,10 @@ void Initialize(const std::string& f, bool o) {
     fpm->doInitialization();
   }
 
+  builtin::Initialize(execution_engine);
   if (engine::filename.empty()) {
     std::cerr << "do] ";
   }
-  builtin::Initialize(execution_engine);
   lexer::Initialize();
 }
 
