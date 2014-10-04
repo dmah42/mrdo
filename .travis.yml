@@ -1,9 +1,11 @@
 language: cpp
 before_install:
-  sudo apt-get update -qq
+  - sudo sh -c "echo 'deb http://llvm.org/apt/precise/ llvm-toolchain-precise main' >> /etc/apt/sources.list"
+  - wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key | sudo apt-key add -
+  - sudo add-apt-repository ppa:yjwong/gflags
+  - sudo apt-get update -qq
 install:
-  sudo apt-cache search llvm && sudo apt-cache search gflags
-  # sudo apt-get install libgflags-dev llvm-3.5-dev
+  - sudo apt-get install -qq llvm-3.4-dev libgflags-dev
 script: cmake . && make -j
 after_script: ./run_tests.sh
 compiler: clang
