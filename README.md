@@ -1,6 +1,6 @@
 mrdo
 ===
-[![Build Status](https://drone.io/github.com/dominichamon/mrdo/status.png)](https://drone.io/github.com/dominichamon/mrdo/latest)
+[![Build Status](https://travis-ci.org/dominichamon/mrdo.svg?branch=master)](https://travis-ci.org/dominichamon/mrdo)
 
 mrdo is a language in which variables may be either a:
 
