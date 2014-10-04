@@ -63,7 +63,7 @@ set(SOURCE_FILES "src/ast.cc"
 
 add_executable(mrdo ${SOURCE_FILES})
 set_target_properties(mrdo PROPERTIES LINK_FLAGS ${LLVM_LFLAGS})
-target_link_libraries(mrdo ${LLVM_MODULE_LIBS} ${GFLAGS_LIBRARY} dl pthread)
+target_link_libraries(mrdo ${LLVM_MODULE_LIBS} ${GFLAGS_LIBRARY} dl pthread tinfo)
 
 set(TEST_FILES "test/basic.do"
 	       "test/coll.do"
