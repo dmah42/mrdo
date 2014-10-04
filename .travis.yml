@@ -1,9 +1,8 @@
 language: cpp
 before_install:
-  sudo apt-get update
+  sudo apt-get update -qq
 install:
-  sudo apt-cache search llvm
-  sudo apt-cache search gflags
+  sudo apt-cache search llvm && sudo apt-cache search gflags
   # sudo apt-get install libgflags-dev llvm-3.5-dev
 script: cmake . && make -j
 after_script: ./run_tests.sh
