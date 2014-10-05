@@ -8,8 +8,10 @@
 namespace ast {
 class While : public ast::Expression {
  public:
-  While(const Expression* condition, std::vector<const Expression*>& body)
-      : condition_(condition), body_(body) {}
+  While(lexer::Position position,
+        const Expression* condition,
+        std::vector<const Expression*>& body)
+      : Expression(position), condition_(condition), body_(body) {}
   llvm::Value* Codegen() const override;
 
  private:

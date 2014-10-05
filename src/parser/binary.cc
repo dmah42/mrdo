@@ -15,6 +15,8 @@ ast::Expression* Binary(int precedence, ast::Expression* lhs) {
       return lhs;
 
     std::string op = lexer::op_str;
+    // Label the binary op position as the position of the operator.
+    lexer::Position op_position = lexer::position;
     lexer::NextToken();
 
     ast::Expression* rhs = Unary();
@@ -29,7 +31,7 @@ ast::Expression* Binary(int precedence, ast::Expression* lhs) {
         return nullptr;
     }
 
-    lhs = new ast::BinaryOp(op, lhs, rhs);
+    lhs = new ast::BinaryOp(op_position, op, lhs, rhs);
   }
 }
 }  // end namespace parser

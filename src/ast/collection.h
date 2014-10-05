@@ -2,6 +2,7 @@
 #define _DO_AST_COLLECTION_H_
 
 #include "ast/expression.h"
+#include "debug_log.h"
 
 #include <iostream>
 #include <vector>
@@ -9,12 +10,12 @@
 namespace ast {
 class Collection : public Expression {
  public:
-  explicit Collection(bool is_sequence, std::vector<const Expression*>& values)
-      : is_sequence_(is_sequence), values_(values) {
-#ifdef DEBUG
-    std::cerr << (is_sequence ? "Sequence: " : "Collection: ") << values.size()
-              << "\n";
-#endif
+  Collection(lexer::Position position,
+             bool is_sequence,
+             std::vector<const Expression*>& values)
+      : Expression(position), is_sequence_(is_sequence), values_(values) {
+    DebugLog(
+        position, (is_sequence ? "Sequence: " : "Collection: "), values.size());
   }
   llvm::Value* Codegen() const override;
   llvm::Type* Type() const override;

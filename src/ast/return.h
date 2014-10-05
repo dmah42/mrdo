@@ -1,17 +1,18 @@
 #ifndef _DO_AST_RETURN_H_
 #define _DO_AST_RETURN_H_
 
-#include "ast/expression.h"
-
 #include <iostream>
+
+#include "ast/expression.h"
+#include "debug_log.h"
+
 
 namespace ast {
 class Return : public Expression {
  public:
-  explicit Return(const ast::Expression* e) : expression_(e) {
-#ifdef DEBUG
-    std::cerr << "Return.\n";
-#endif
+  Return(lexer::Position position, const ast::Expression* e)
+      : Expression(position), expression_(e) {
+    DebugLog(position, "Return");
   }
   llvm::Value* Codegen() const override;
 

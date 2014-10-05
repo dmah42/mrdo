@@ -53,7 +53,7 @@ llvm::Value* BinaryOp::Codegen() const {
     return builder.CreateUIToFP(
         builder.CreateXor(ToBool(l), ToBool(r), "xortmp"), Type(), "booltmp");
 
-  Error(line, col, "Unknown binary operator: ", op_, ".");
+  Error(position, "Unknown binary operator: ", op_, ".");
   return nullptr;
 }
 
@@ -63,7 +63,7 @@ llvm::Value* BinaryOp::HandleAssign() const {
   // TODO: test reassignment to same variable
   const Variable* lhs_variable = dynamic_cast<const Variable*>(lhs_);
   if (!lhs_variable) {
-    Error(line, col, "LHS of assignment must be a variable.");
+    Error(position, "LHS of assignment must be a variable.");
     return nullptr;
   }
 
@@ -77,15 +77,14 @@ llvm::Value* BinaryOp::HandleAssign() const {
     llvm::Function* f = builder.GetInsertBlock()->getParent();
     var = CreateNamedVariable(f, lhs_variable->name(), rhs_);
     if (!var) {
-      Error(line, col, "Failed to create variable ", lhs_variable->name());
+      Error(position, "Failed to create variable ", lhs_variable->name());
       return nullptr;
     }
   }
 
   if (var->getAllocatedType()->getTypeID() != v->getType()->getTypeID()) {
     // TODO: better error message to catch type mismatch on reassignment.
-    Error(line,
-          col,
+    Error(position,
           "Attempting to store ",
           v->getType()->getTypeID(),
           " in variable of type ",

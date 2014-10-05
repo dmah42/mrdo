@@ -6,7 +6,7 @@ namespace ast {
 llvm::Value* Variable::Codegen() const {
   llvm::AllocaInst* val = GetNamedValue(name_);
   if (!val) {
-    Error(line, col, "Unknown variable name: ", name_);
+    Error(position, "Unknown variable name: ", name_);
     return nullptr;
   }
   v_ = builder.CreateLoad(val, name_.c_str());

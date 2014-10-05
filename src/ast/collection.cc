@@ -29,11 +29,10 @@ llvm::Value* Collection::Codegen() const {
       init_values.push_back(llvm::cast<llvm::Constant>(val));
     } else if (e_coll) {
       // TODO
-      Error(line, col, "Unimplemented collection of collection.");
+      Error(position, "Unimplemented collection of collection.");
       return nullptr;
     } else {
-      Error(line,
-            col,
+      Error(position,
             "Unimplemented expression type ",
             typeid(e).name(),
             " in collection.");
@@ -52,21 +51,21 @@ llvm::Value* Collection::Codegen() const {
       llvm::ConstantArray::get(array_type, init_values),
       is_sequence_ ? "seq" : "coll");
   if (!gv) {
-    Error(line, col, "failed to create global variable for collection");
+    Error(position, "failed to create global variable for collection");
     return nullptr;
   }
 
   // TODO: make these internal errors.
   llvm::Value* gep_v = builder.CreateConstInBoundsGEP2_32(gv, 0, 0, "collptr");
   if (!gep_v) {
-    Error(line, col, "failed to get pointer to global variable");
+    Error(position, "failed to get pointer to global variable");
     return nullptr;
   }
 
   llvm::Value* array_size_v = llvm::ConstantInt::get(
       llvm::Type::getInt64Ty(llvm::getGlobalContext()), init_values.size());
   if (!array_size_v) {
-    Error(line, col, "failed to get collection size");
+    Error(position, "failed to get collection size");
     return nullptr;
   }
 

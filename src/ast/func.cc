@@ -32,7 +32,7 @@ llvm::Value* Func::Codegen() const {
       f_ = p.Codegen<double, double, double>();
       break;
     default:
-      Error(line, col, "Unsupported number of args: ", args_.size());
+      Error(position, "Unsupported number of args: ", args_.size());
       return nullptr;
   }
   if (!f_)
@@ -76,7 +76,7 @@ void Func::CreateArgumentAllocas(llvm::Function* f) const {
   llvm::Function::arg_iterator ai = f->arg_begin();
   for (const std::string& arg : args_) {
     // TODO: non-real argument types
-    ast::Real* default_arg = new ast::Real(0.0);
+    ast::Real* default_arg = new ast::Real(position, 0.0);
     llvm::Value* v = default_arg->Codegen();
     if (!v) {
       ErrorCont("Failed to create default for argument '",

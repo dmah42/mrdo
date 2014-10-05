@@ -1,17 +1,17 @@
 #ifndef _DO_AST_REAL_H_
 #define _DO_AST_REAL_H_
 
-#include "ast/expression.h"
-
 #include <iostream>
+
+#include "ast/expression.h"
+#include "debug_log.h"
 
 namespace ast {
 class Real : public Expression {
  public:
-  explicit Real(double value) : value_(value) {
-#ifdef DEBUG
-    std::cerr << "Real: " << value_ << "\n";
-#endif
+  Real(lexer::Position position, double value)
+      : Expression(position), value_(value) {
+    DebugLog(position, "Real: ", value_);
   }
   llvm::Value* Codegen() const override;
   llvm::Type* Type() const override;

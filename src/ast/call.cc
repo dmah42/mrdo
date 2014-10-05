@@ -18,7 +18,7 @@ namespace ast {
 llvm::Value* Call::Codegen() const {
   llvm::Function* func = engine::module->getFunction(name_);
   if (!func) {
-    Error(line, col, "attempt to call unknown function: ", name_);
+    Error(position, "attempt to call unknown function: ", name_);
     return nullptr;
   }
 
@@ -37,14 +37,13 @@ llvm::Value* Call::Codegen() const {
     if (arg_collection || arg_variable || arg_real || arg_call || arg_func) {
       argv.push_back(v);
     } else {
-      Error(line, col, "unknown type for arg.");
+      Error(position, "unknown type for arg.");
       return nullptr;
     }
   }
 
   if (func->arg_size() != argv.size()) {
-    Error(line,
-          col,
+    Error(position,
           "expected ",
           func->arg_size(),
           " arguments to ",
@@ -61,7 +60,7 @@ llvm::Value* Call::Codegen() const {
     case llvm::Type::DoubleTyID:
       return builder.CreateCall(func, argv, "calltmp");
     default:
-      Error(line, col, "Unknown return type: ");
+      Error(position, "Unknown return type: ");
       func->getReturnType()->dump();
       return nullptr;
   }

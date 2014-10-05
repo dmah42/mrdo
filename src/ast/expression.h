@@ -11,11 +11,11 @@ class Value;
 namespace ast {
 class Expression {
  public:
-  Expression() : line(lexer::line), col(lexer::col) {}
+  Expression(lexer::Position position) : position(position) {}
   virtual ~Expression() {}
   virtual llvm::Value* Codegen() const = 0;
   virtual llvm::Type* Type() const { return nullptr; }
-  const int line, col;
+  const lexer::Position position;
 };
 }  // end namespace ast
 

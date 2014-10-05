@@ -12,6 +12,7 @@
 namespace parser {
 ast::Expression* If() {
   assert(lexer::current_token == lexer::TOKEN_IF);
+  lexer::Position if_position = lexer::position;
   lexer::NextToken();
 
   const ast::Expression* condition = Expression();
@@ -42,8 +43,7 @@ ast::Expression* If() {
   }
 
   if (lexer::current_token != lexer::TOKEN_DONE) {
-    Error(lexer::line,
-          lexer::col,
+    Error(lexer::position,
           "expected 'done' at end of 'if', got '",
           (char)lexer::current_token,
           "' [",
@@ -53,6 +53,6 @@ ast::Expression* If() {
   }
   lexer::NextToken();
 
-  return new ast::If(condition, if_body, else_body);
+  return new ast::If(if_position, condition, if_body, else_body);
 }
 }  // end namespace parser

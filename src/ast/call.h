@@ -6,15 +6,16 @@
 #include <vector>
 
 #include "ast/expression.h"
+#include "debug_log.h"
 
 namespace ast {
 class Call : public Expression {
  public:
-  Call(const std::string& name, std::vector<const Expression*>& args)
-      : name_(name), args_(args) {
-#ifdef DEBUG
-    std::cerr << "Call: " << name_ << "\n";
-#endif
+  Call(lexer::Position position,
+       const std::string& name,
+       std::vector<const Expression*>& args)
+      : Expression(position), name_(name), args_(args) {
+    DebugLog(position, "Call: ", name);
   }
   llvm::Value* Codegen() const override;
   llvm::Type* Type() const override;

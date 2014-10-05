@@ -10,9 +10,10 @@
 namespace parser {
 ast::Expression* Func() {
   assert(lexer::current_token == lexer::TOKEN_FUNC);
+  lexer::Position func_position = lexer::position;
   lexer::NextToken();
   if (lexer::current_token != '(') {
-    Error(lexer::line, lexer::col, "Expected argument list after 'func'");
+    Error(lexer::position, "Expected argument list after 'func'");
     return nullptr;
   }
   lexer::NextToken();
@@ -21,8 +22,7 @@ ast::Expression* Func() {
   if (lexer::current_token != ')') {
     while (true) {
       if (lexer::current_token != lexer::TOKEN_IDENT) {
-        Error(lexer::line,
-              lexer::col,
+        Error(lexer::position,
               "Expected identifier as function argument, got ",
               lexer::current_token);
         return nullptr;
@@ -34,8 +34,7 @@ ast::Expression* Func() {
         break;
 
       if (lexer::current_token != ',') {
-        Error(lexer::line,
-              lexer::col,
+        Error(lexer::position,
               "Expected ',' between args in func, got ",
               lexer::current_token);
         return nullptr;
@@ -46,8 +45,7 @@ ast::Expression* Func() {
   lexer::NextToken();
 
   if (lexer::current_token != '{') {
-    Error(lexer::line,
-          lexer::col,
+    Error(lexer::position,
           "Expected '{' after arg list in func, got ",
           lexer::current_token);
     return nullptr;
@@ -66,6 +64,6 @@ ast::Expression* Func() {
   }
   lexer::NextToken();
 
-  return new ast::Func(args, body);
+  return new ast::Func(func_position, args, body);
 }
 }

@@ -22,7 +22,7 @@ llvm::Function* Program::Codegen() const {
 
   if (f->getName() != "global") {
     f->eraseFromParent();
-    Error(lexer::line, lexer::col, "Failed to create function.");
+    Error(lexer::position, "Failed to create function.");
     return nullptr;
   }
 

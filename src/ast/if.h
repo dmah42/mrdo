@@ -9,10 +9,14 @@ namespace ast {
 class If : public Expression {
  public:
   // TODO: elif
-  If(const Expression* condition,
+  If(lexer::Position position,
+     const Expression* condition,
      std::vector<const Expression*>& if_body,
      std::vector<const Expression*>& else_body)
-      : condition_(condition), if_(if_body), else_(else_body) {}
+      : Expression(position),
+        condition_(condition),
+        if_(if_body),
+        else_(else_body) {}
   llvm::Value* Codegen() const override;
 
  private:

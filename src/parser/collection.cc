@@ -12,6 +12,8 @@ namespace parser {
 ast::Expression* Collection() {
   assert(lexer::current_token == '[' || lexer::current_token == '|');
   bool is_sequence = lexer::current_token == '|';
+  // cache the current lexer position to pass to the AST.
+  lexer::Position collection_position = lexer::position;
   lexer::NextToken();
 
   const char end_token = is_sequence ? '|' : ']';
@@ -25,15 +27,15 @@ ast::Expression* Collection() {
     if (lexer::current_token == end_token)
       break;
     if (lexer::current_token != ',') {
-      Error(lexer::line,
-            lexer::col,
+      Error(lexer::position,
             "Expected ',' between values in collection, got ",
             lexer::current_token);
       return nullptr;
     }
     lexer::NextToken();
   }
-  ast::Expression* e(new ast::Collection(is_sequence, members));
+  ast::Expression* e(
+      new ast::Collection(collection_position, is_sequence, members));
   lexer::NextToken();
   return e;
 }

@@ -15,8 +15,7 @@ ast::Expression* Nested() {
     return nullptr;
 
   if (lexer::current_token != ')') {
-    Error(lexer::line,
-          lexer::col,
+    Error(lexer::position,
           "Expected ')', got '",
           (char)lexer::current_token,
           "' [",

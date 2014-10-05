@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "engine.h"
+#include "lexer.h"
 
 void ErrorCont();
 
@@ -14,8 +15,8 @@ void ErrorCont(const H& err, T&&... t) {
 }
 
 template <typename H, typename... T>
-void Error(int line, int col, const H& err, T&&... t) {
-  std::cerr << engine::filename << ":" << line << ":" << col
+void Error(lexer::Position position, const H& err, T&&... t) {
+  std::cerr << engine::filename << ":" << position.line << ":" << position.col
             << ": error: " << err;
   ErrorCont(std::forward<T>(t)...);
 }

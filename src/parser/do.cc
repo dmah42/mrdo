@@ -12,18 +12,16 @@
 namespace parser {
 ast::Expression* Do() {
   assert(lexer::current_token == lexer::TOKEN_DO);
+  lexer::Position call_position = lexer::position;
   lexer::NextToken();
   if (lexer::current_token != '(') {
-    Error(lexer::line,
-          lexer::col,
-          "Expected '(' after 'do', got ",
-          lexer::current_token);
+    Error(
+        lexer::position, "Expected '(' after 'do', got ", lexer::current_token);
     return nullptr;
   }
   lexer::NextToken();
   if (lexer::current_token != lexer::TOKEN_BUILTIN) {
-    Error(lexer::line,
-          lexer::col,
+    Error(lexer::position,
           "Expected function name after '(', got ",
           lexer::current_token);
     return nullptr;
@@ -37,8 +35,7 @@ ast::Expression* Do() {
       break;
 
     if (lexer::current_token != ',') {
-      Error(lexer::line,
-            lexer::col,
+      Error(lexer::position,
             "Expected ',' between args in do, got ",
             lexer::current_token);
       return nullptr;
@@ -51,6 +48,6 @@ ast::Expression* Do() {
     args.push_back(v);
   }
   lexer::NextToken();
-  return new ast::Call(builtin, args);
+  return new ast::Call(call_position, builtin, args);
 }
 }  // end namespace parser

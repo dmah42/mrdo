@@ -17,13 +17,13 @@ llvm::Value* UnaryOp::Codegen() const {
     const Variable* expr_var = dynamic_cast<const Variable*>(expr_);
     // TODO: check var type is not collection.
     if (!expr_real && !expr_var) {
-      Error(line, col, "Expected real or variable of type real after 'not'.");
+      Error(position, "Expected real or variable of type real after 'not'.");
       return nullptr;
     }
     return builder.CreateUIToFP(
         builder.CreateNot(ToBool(expr), "nottmp"), Type(), "booltmp");
   }
-  Error(line, col, "Unknown unary operator: ", op_, ".");
+  Error(position, "Unknown unary operator: ", op_, ".");
   return nullptr;
 }
 

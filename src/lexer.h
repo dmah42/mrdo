@@ -24,13 +24,17 @@ enum Token {
   TOKEN_FUNC = -16
 };
 
+struct Position {
+  size_t line = 1;
+  size_t col = 1;
+};
+
 extern int current_token;
 extern std::string ident_str;
 extern std::string op_str;
 extern std::string builtin_str;
 extern double real_value;
-
-extern int line, col;
+extern Position position;
 
 void Initialize();
 int NextToken();

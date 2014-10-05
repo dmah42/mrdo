@@ -1,20 +1,19 @@
 #ifndef _DO_AST_VARIABLE_H_
 #define _DO_AST_VARIABLE_H_
 
-#include "ast/expression.h"
-
 #include <iostream>
 #include <string>
 
+#include "ast/expression.h"
+#include "debug_log.h"
 #include "error.h"
 
 namespace ast {
 class Variable : public Expression {
  public:
-  explicit Variable(const std::string& name) : name_(name), v_(nullptr) {
-#ifdef DEBUG
-    std::cerr << "Variable: " << name_ << "\n";
-#endif
+  Variable(lexer::Position position, const std::string& name)
+      : Expression(position), name_(name), v_(nullptr) {
+    DebugLog(position, "Variable: ", name_);
   }
   llvm::Value* Codegen() const override;
   llvm::Type* Type() const override;

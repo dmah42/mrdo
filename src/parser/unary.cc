@@ -12,11 +12,12 @@ ast::Expression* Unary() {
     return RValue();
 
   std::string op = lexer::op_str;
+  lexer::Position position = lexer::position;
   lexer::NextToken();
 
   ast::Expression* operand = Unary();
   if (!operand)
     return nullptr;
-  return new ast::UnaryOp(op, operand);
+  return new ast::UnaryOp(position, op, operand);
 }
 }  // end namespace parser

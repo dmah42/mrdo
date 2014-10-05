@@ -1,19 +1,20 @@
 #ifndef _DO_AST_UNARY_OP_H_
 #define _DO_AST_UNARY_OP_H_
 
-#include "ast/expression.h"
-
 #include <iostream>
 #include <string>
+
+#include "ast/expression.h"
+#include "debug_log.h"
 
 namespace ast {
 class UnaryOp : public Expression {
  public:
-  UnaryOp(const std::string& op, const Expression* expr)
-      : op_(op), expr_(expr) {
-#ifdef DEBUG
-    std::cerr << "UnaryOp: " << op_ << "\n";
-#endif
+  UnaryOp(lexer::Position position,
+          const std::string& op,
+          const Expression* expr)
+      : Expression(position), op_(op), expr_(expr) {
+    DebugLog(position, "UnaryOp: ", op_);
   }
   llvm::Value* Codegen() const override;
   llvm::Type* Type() const override;

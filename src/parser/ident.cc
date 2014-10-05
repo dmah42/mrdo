@@ -10,7 +10,7 @@ namespace parser {
 ast::Expression* Ident() {
   assert(lexer::current_token == lexer::TOKEN_IDENT);
   std::string name = lexer::ident_str;
-  ast::Expression* e = new ast::Variable(name);
+  ast::Expression* e = new ast::Variable(lexer::position, name);
   lexer::NextToken();
   return e;
 }
