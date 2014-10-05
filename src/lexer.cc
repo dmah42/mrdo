@@ -17,7 +17,7 @@ std::string ident_str;
 std::string op_str;
 std::string builtin_str;
 double real_value = 0.0;
-Position position;
+Position position, new_position;
 
 namespace {
 // TODO: split token map to allow extra data (ie, binop precedence)
@@ -59,10 +59,10 @@ const std::map<std::string, std::pair<Token, int>> binop_map = {
 int GetCh() {
   int ch = engine::stream->get();
   if (ch == '\n') {
-    ++position.line;
-    position.col = 1;
+    ++new_position.line;
+    new_position.col = 1;
   } else {
-    ++position.col;
+    ++new_position.col;
   }
   return ch;
 }
@@ -72,6 +72,7 @@ int GetToken() {
   op_str.clear();
   builtin_str.clear();
   real_value = 0.0;
+  position = new_position;
 
   while (isspace(lastch))
     lastch = GetCh();
