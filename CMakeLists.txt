@@ -59,7 +59,7 @@ set(SOURCE_FILES "src/ast.cc"
 		 "src/parser/statement.cc"
 		 "src/parser/unary.cc"
 		 "src/parser/while.cc"
-		"src/stopwatch.cc"
+		 "src/stopwatch.cc"
 		 "src/threadpool.cc")
 
 add_executable(mrdo ${SOURCE_FILES})
