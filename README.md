@@ -53,3 +53,15 @@ Collections can be read or written using the functions
 * write
 
 which used stdin and stdout
+
+vm
+--
+This package compiles the code down to assembly defined in the
+[mrdovm](https://github.com/dominichamon/mrdovm) project. It can then be
+run using that vm.
+
+old
+--
+There's an original version of this project that used LLVM to compile to a
+binary, but that restricted what could be done at runtime so it's been moved
+to `old`.
