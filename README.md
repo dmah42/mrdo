@@ -1,7 +1,5 @@
 mrdo
 ===
-[![Build Status](https://travis-ci.org/dominichamon/mrdo.svg?branch=master)](https://travis-ci.org/dominichamon/mrdo)
-
 mrdo is a language in which variables may be either a:
 
 * real (mutable 64-bit floating point)
