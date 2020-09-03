@@ -2,7 +2,7 @@ use crate::tokens::Token;
 use nom::types::CompleteStr;
 use nom::*;
 
-named!(addition_op<CompleteStr, Token>,
+named!(pub addition_op<CompleteStr, Token>,
     ws!(
         do_parse!(
             tag!("+") >>
@@ -13,7 +13,7 @@ named!(addition_op<CompleteStr, Token>,
     )
 );
 
-named!(subtraction_op<CompleteStr, Token>,
+named!(pub subtraction_op<CompleteStr, Token>,
     ws!(
         do_parse!(
             tag!("-") >>
@@ -24,7 +24,7 @@ named!(subtraction_op<CompleteStr, Token>,
     )
 );
 
-named!(multiplication_op<CompleteStr, Token>,
+named!(pub multiplication_op<CompleteStr, Token>,
     ws!(
         do_parse!(
             tag!("*") >>
@@ -35,7 +35,7 @@ named!(multiplication_op<CompleteStr, Token>,
     )
 );
 
-named!(division_op<CompleteStr, Token>,
+named!(pub division_op<CompleteStr, Token>,
     ws!(
         do_parse!(
             tag!("/") >>
@@ -46,39 +46,28 @@ named!(division_op<CompleteStr, Token>,
     )
 );
 
-named!(pub operator<CompleteStr, Token>,
-    ws!(
-        alt!(
-            addition_op |
-            subtraction_op |
-            multiplication_op |
-            division_op
-        )
-    )
-);
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_operator() {
-        let result = operator(CompleteStr("+"));
+        let result = addition_op(CompleteStr("+"));
         assert!(result.is_ok());
         let (_, token) = result.unwrap();
         assert_eq!(token, Token::AdditionOp);
 
-        let result = operator(CompleteStr("-"));
+        let result = subtraction_op(CompleteStr("-"));
         assert!(result.is_ok());
         let (_, token) = result.unwrap();
         assert_eq!(token, Token::SubtractionOp);
 
-        let result = operator(CompleteStr("*"));
+        let result = multiplication_op(CompleteStr("*"));
         assert!(result.is_ok());
         let (_, token) = result.unwrap();
         assert_eq!(token, Token::MultiplicationOp);
 
-        let result = operator(CompleteStr("/"));
+        let result = division_op(CompleteStr("/"));
         assert!(result.is_ok());
         let (_, token) = result.unwrap();
         assert_eq!(token, Token::DivisionOp);

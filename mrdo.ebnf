@@ -1,11 +1,11 @@
 identifier = alpha, {alpha, digit, "_"};
 coll = "[", rvalue, {",", rvalue}, "]";
 seq = "|", rvalue, {",", rvalue}, "|";
-real = digit, [".", {digit}];
+real = {"-"}, digit, [".", {digit}];
 collection = coll | seq;
 builtin = "map" | "fold" | "filter" | "zip" | "read" | "write" | "length";
 fn = "func", "(", [ident, {",", ident}], ")", "{", {state}, "}";
-rvalue = ({"-"}, (identifier | real | '(', expr, ')') | collection | fn;
+rvalue = (identifier | real | '(', expr, ')') | collection | fn;
 arith = rvalue, ("+" | "-" | "*" | "/"), rvalue;
 logic = rvalue, ("or" | "and", "xor");
 condition = rvalue, ("<" | ">" | "==" | "<=" | ">="), rvalue;

@@ -8,7 +8,6 @@ named!(pub program<CompleteStr, Token>,
         do_parse!(
             expressions: many1!(expression) >>
             (
-                // TODO: expand to statements, etc.
                 Token::Program {
                     expressions
                 }
@@ -32,15 +31,36 @@ mod tests {
             Token::Program {
                 expressions: vec![
                     Token::Expression {
-                        left: Box::new(Token::Real { value: 1.2 }),
-                        op: Box::new(Token::AdditionOp),
-                        right: Box::new(Token::Real { value: 0.3 }),
+                        left: Box::new(Token::Term {
+                            left: Box::new(Token::Factor {
+                                value: Box::new(Token::Real { value: 1.2 }),
+                            }),
+                            right: vec![]
+                        }),
+                        right: vec![(
+                            Token::AdditionOp,
+                            Token::Term {
+                                left: Box::new(Token::Factor {
+                                    value: Box::new(Token::Real { value: 0.3 })
+                                }),
+                                right: vec![]
+                            }
+                        )]
                     },
                     Token::Expression {
-                        left: Box::new(Token::Real { value: 2.4 }),
-                        op: Box::new(Token::MultiplicationOp),
-                        right: Box::new(Token::Real { value: 4.0 }),
-                    }
+                        left: Box::new(Token::Term {
+                            left: Box::new(Token::Factor {
+                                value: Box::new(Token::Real { value: 2.4 }),
+                            }),
+                            right: vec![(
+                                Token::MultiplicationOp,
+                                Token::Factor {
+                                    value: Box::new(Token::Real { value: 4.0 })
+                                },
+                            )]
+                        }),
+                        right: vec![]
+                    },
                 ]
             }
         );

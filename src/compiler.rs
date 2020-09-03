@@ -1,12 +1,14 @@
+use crate::program_parser::program;
 use crate::tokens::Token;
 use crate::visitor::Visitor;
 
 use indexmap::IndexSet;
+use nom::types::CompleteStr;
 
 pub struct Compiler {
     free_reg: IndexSet<u8>,
     used_reg: IndexSet<u8>,
-    assembled: Vec<String>,
+    assembly: Vec<String>,
 }
 
 impl Compiler {
@@ -14,8 +16,14 @@ impl Compiler {
         Compiler {
             free_reg: (0..32).collect(),
             used_reg: IndexSet::new(),
-            assembled: vec![],
+            assembly: vec![],
         }
+    }
+
+    pub fn compile(&mut self, source: &str) -> String {
+        let (_, tree) = program(CompleteStr(source)).unwrap();
+        self.visit_token(&tree);
+        self.assembly.join("\n")
     }
 }
 
@@ -24,9 +32,9 @@ impl Visitor for Compiler {
         match node {
             Token::AdditionOp => {
                 let result_reg = self.free_reg.pop().unwrap();
-                let left_reg = self.used_reg.pop().unwrap();
                 let right_reg = self.used_reg.pop().unwrap();
-                self.assembled
+                let left_reg = self.used_reg.pop().unwrap();
+                self.assembly
                     .push(format!("add ${} ${} ${}", result_reg, left_reg, right_reg));
                 self.free_reg.insert(left_reg);
                 self.free_reg.insert(right_reg);
@@ -34,9 +42,9 @@ impl Visitor for Compiler {
             }
             Token::SubtractionOp => {
                 let result_reg = self.free_reg.pop().unwrap();
-                let left_reg = self.used_reg.pop().unwrap();
                 let right_reg = self.used_reg.pop().unwrap();
-                self.assembled
+                let left_reg = self.used_reg.pop().unwrap();
+                self.assembly
                     .push(format!("sub ${} ${} ${}", result_reg, left_reg, right_reg));
                 self.free_reg.insert(left_reg);
                 self.free_reg.insert(right_reg);
@@ -44,9 +52,9 @@ impl Visitor for Compiler {
             }
             Token::MultiplicationOp => {
                 let result_reg = self.free_reg.pop().unwrap();
-                let left_reg = self.used_reg.pop().unwrap();
                 let right_reg = self.used_reg.pop().unwrap();
-                self.assembled
+                let left_reg = self.used_reg.pop().unwrap();
+                self.assembly
                     .push(format!("mul ${} ${} ${}", result_reg, left_reg, right_reg));
                 self.free_reg.insert(left_reg);
                 self.free_reg.insert(right_reg);
@@ -54,9 +62,9 @@ impl Visitor for Compiler {
             }
             Token::DivisionOp => {
                 let result_reg = self.free_reg.pop().unwrap();
-                let left_reg = self.used_reg.pop().unwrap();
                 let right_reg = self.used_reg.pop().unwrap();
-                self.assembled
+                let left_reg = self.used_reg.pop().unwrap();
+                self.assembly
                     .push(format!("div ${} ${} ${}", result_reg, left_reg, right_reg));
                 self.free_reg.insert(left_reg);
                 self.free_reg.insert(right_reg);
@@ -65,19 +73,33 @@ impl Visitor for Compiler {
             Token::Real { value } => {
                 let next_reg = self.free_reg.pop().unwrap();
                 let line = format!("load ${} #{}", next_reg, value);
-                self.assembled.push(line);
+                self.assembly.push(line);
                 self.used_reg.insert(next_reg);
             }
-            Token::Expression {
+            Token::Factor { ref value } => self.visit_token(value),
+            Token::Term {
                 ref left,
-                ref op,
                 ref right,
             } => {
                 self.visit_token(left);
-                self.visit_token(right);
-                self.visit_token(op);
+                for factor in right {
+                    self.visit_token(&factor.1);
+                    self.visit_token(&factor.0);
+                }
+            }
+            Token::Expression {
+                ref left,
+                ref right,
+            } => {
+                self.visit_token(left);
+                for term in right {
+                    self.visit_token(&term.1);
+                    self.visit_token(&term.0);
+                }
             }
             Token::Program { ref expressions } => {
+                self.assembly.push(".data".into());
+                self.assembly.push(".code".into());
                 for expr in expressions {
                     self.visit_token(expr);
                 }
@@ -96,9 +118,7 @@ impl Default for Compiler {
 mod tests {
     use super::*;
 
-    use crate::program_parser::program;
     use indexmap::indexset;
-    use nom::types::CompleteStr;
 
     fn generate_test_program(listing: &str) -> Token {
         let (_, tree) = program(CompleteStr(listing)).unwrap();
@@ -111,8 +131,14 @@ mod tests {
         let test_program = generate_test_program("1.2 + 3.4");
         compiler.visit_token(&test_program);
         assert_eq!(
-            compiler.assembled,
-            vec!["load $31 #1.2", "load $30 #3.4", "add $29 $30 $31"]
+            compiler.assembly,
+            vec![
+                ".data",
+                ".code",
+                "load $31 #1.2",
+                "load $30 #3.4",
+                "add $29 $31 $30"
+            ]
         );
         let mut expected_free: IndexSet<u8> = (0..29).collect();
         expected_free.insert(30);
@@ -127,8 +153,14 @@ mod tests {
         let test_program = generate_test_program("1.2 - 3.4");
         compiler.visit_token(&test_program);
         assert_eq!(
-            compiler.assembled,
-            vec!["load $31 #1.2", "load $30 #3.4", "sub $29 $30 $31"]
+            compiler.assembly,
+            vec![
+                ".data",
+                ".code",
+                "load $31 #1.2",
+                "load $30 #3.4",
+                "sub $29 $31 $30"
+            ]
         );
         let mut expected_free: IndexSet<u8> = (0..29).collect();
         expected_free.insert(30);
@@ -143,8 +175,14 @@ mod tests {
         let test_program = generate_test_program("1.2 * 3.4");
         compiler.visit_token(&test_program);
         assert_eq!(
-            compiler.assembled,
-            vec!["load $31 #1.2", "load $30 #3.4", "mul $29 $30 $31"]
+            compiler.assembly,
+            vec![
+                ".data",
+                ".code",
+                "load $31 #1.2",
+                "load $30 #3.4",
+                "mul $29 $31 $30"
+            ]
         );
         let mut expected_free: IndexSet<u8> = (0..29).collect();
         expected_free.insert(30);
@@ -159,8 +197,14 @@ mod tests {
         let test_program = generate_test_program("1.2 / 3.4");
         compiler.visit_token(&test_program);
         assert_eq!(
-            compiler.assembled,
-            vec!["load $31 #1.2", "load $30 #3.4", "div $29 $30 $31"]
+            compiler.assembly,
+            vec![
+                ".data",
+                ".code",
+                "load $31 #1.2",
+                "load $30 #3.4",
+                "div $29 $31 $30"
+            ]
         );
         let mut expected_free: IndexSet<u8> = (0..29).collect();
         expected_free.insert(30);

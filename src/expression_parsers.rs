@@ -1,21 +1,25 @@
-use crate::operand_parsers::real;
-use crate::operator_parsers::operator;
+use crate::operator_parsers::{addition_op, subtraction_op};
+use crate::term_parsers::term;
 use crate::tokens::Token;
 use nom::types::CompleteStr;
 use nom::*;
 
-// TODO: strictly speaking this is "arith" but for now it'll do.
 named!(pub expression<CompleteStr, Token>,
     ws!(
         do_parse!(
-            left: real >>
-            op: operator >>
-            right: real >>
+            left: term >>
+            right: many0!(
+                tuple!(
+                    alt!(
+                        addition_op |
+                        subtraction_op
+                    ),
+                    term
+                )
+            ) >>
             (
-                Token::Expression{
-                    left: Box::new(left),
-                    right: Box::new(right),
-                    op: Box::new(op)
+                {
+                    Token::Expression{ left: Box::new(left), right }
                 }
             )
         )
@@ -34,9 +38,18 @@ mod tests {
         assert_eq!(
             token,
             Token::Expression {
-                left: Box::new(Token::Real { value: 3.2 }),
-                op: Box::new(Token::MultiplicationOp),
-                right: Box::new(Token::Real { value: 1.4 }),
+                left: Box::new(Token::Term {
+                    left: Box::new(Token::Factor {
+                        value: Box::new(Token::Real { value: 3.2 })
+                    }),
+                    right: vec![(
+                        Token::MultiplicationOp,
+                        Token::Factor {
+                            value: Box::new(Token::Real { value: 1.4 })
+                        }
+                    )]
+                }),
+                right: vec![]
             }
         );
     }

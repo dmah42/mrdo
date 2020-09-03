@@ -7,10 +7,16 @@ pub enum Token {
     Real {
         value: f64,
     },
+    Factor {
+        value: Box<Token>,
+    },
+    Term {
+        left: Box<Token>,
+        right: Vec<(Token, Token)>,
+    },
     Expression {
         left: Box<Token>,
-        op: Box<Token>,
-        right: Box<Token>,
+        right: Vec<(Token, Token)>,
     },
     Program {
         expressions: Vec<Token>,
