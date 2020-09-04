@@ -3,6 +3,7 @@ use crate::tokens::Token;
 use crate::visitor::Visitor;
 
 use indexmap::IndexSet;
+use mrdovm::assemble_and_run;
 use nom::types::CompleteStr;
 
 pub struct Compiler {
@@ -20,10 +21,12 @@ impl Compiler {
         }
     }
 
-    pub fn compile(&mut self, source: &str) -> String {
+    pub fn compile(&mut self, source: &str) {
         let (_, tree) = program(CompleteStr(source)).unwrap();
         self.visit_token(&tree);
-        self.assembly.join("\n")
+        let assembled = self.assembly.join("\n");
+        println!("assembled\n{}\nEOF", assembled);
+        assemble_and_run(&assembled);
     }
 }
 
@@ -35,7 +38,7 @@ impl Visitor for Compiler {
                 let right_reg = self.used_reg.pop().unwrap();
                 let left_reg = self.used_reg.pop().unwrap();
                 self.assembly
-                    .push(format!("add ${} ${} ${}", result_reg, left_reg, right_reg));
+                    .push(format!("add %{} %{} %{}", result_reg, left_reg, right_reg));
                 self.free_reg.insert(left_reg);
                 self.free_reg.insert(right_reg);
                 self.used_reg.insert(result_reg);
@@ -45,7 +48,7 @@ impl Visitor for Compiler {
                 let right_reg = self.used_reg.pop().unwrap();
                 let left_reg = self.used_reg.pop().unwrap();
                 self.assembly
-                    .push(format!("sub ${} ${} ${}", result_reg, left_reg, right_reg));
+                    .push(format!("sub %{} %{} %{}", result_reg, left_reg, right_reg));
                 self.free_reg.insert(left_reg);
                 self.free_reg.insert(right_reg);
                 self.used_reg.insert(result_reg);
@@ -55,7 +58,7 @@ impl Visitor for Compiler {
                 let right_reg = self.used_reg.pop().unwrap();
                 let left_reg = self.used_reg.pop().unwrap();
                 self.assembly
-                    .push(format!("mul ${} ${} ${}", result_reg, left_reg, right_reg));
+                    .push(format!("mul %{} %{} %{}", result_reg, left_reg, right_reg));
                 self.free_reg.insert(left_reg);
                 self.free_reg.insert(right_reg);
                 self.used_reg.insert(result_reg);
@@ -65,14 +68,14 @@ impl Visitor for Compiler {
                 let right_reg = self.used_reg.pop().unwrap();
                 let left_reg = self.used_reg.pop().unwrap();
                 self.assembly
-                    .push(format!("div ${} ${} ${}", result_reg, left_reg, right_reg));
+                    .push(format!("div %{} %{} %{}", result_reg, left_reg, right_reg));
                 self.free_reg.insert(left_reg);
                 self.free_reg.insert(right_reg);
                 self.used_reg.insert(result_reg);
             }
             Token::Real { value } => {
                 let next_reg = self.free_reg.pop().unwrap();
-                let line = format!("load ${} #{}", next_reg, value);
+                let line = format!("load %{} #{:.2}", next_reg, value);
                 self.assembly.push(line);
                 self.used_reg.insert(next_reg);
             }
@@ -103,6 +106,7 @@ impl Visitor for Compiler {
                 for expr in expressions {
                     self.visit_token(expr);
                 }
+                self.assembly.push("halt".into());
             }
         }
     }
@@ -135,9 +139,9 @@ mod tests {
             vec![
                 ".data",
                 ".code",
-                "load $31 #1.2",
-                "load $30 #3.4",
-                "add $29 $31 $30"
+                "load %31 #1.2",
+                "load %30 #3.4",
+                "add %29 %31 %30"
             ]
         );
         let mut expected_free: IndexSet<u8> = (0..29).collect();
@@ -157,9 +161,9 @@ mod tests {
             vec![
                 ".data",
                 ".code",
-                "load $31 #1.2",
-                "load $30 #3.4",
-                "sub $29 $31 $30"
+                "load %31 #1.2",
+                "load %30 #3.4",
+                "sub %29 %31 %30"
             ]
         );
         let mut expected_free: IndexSet<u8> = (0..29).collect();
@@ -179,9 +183,9 @@ mod tests {
             vec![
                 ".data",
                 ".code",
-                "load $31 #1.2",
-                "load $30 #3.4",
-                "mul $29 $31 $30"
+                "load %31 #1.2",
+                "load %30 #3.4",
+                "mul %29 %31 %30"
             ]
         );
         let mut expected_free: IndexSet<u8> = (0..29).collect();
@@ -201,9 +205,9 @@ mod tests {
             vec![
                 ".data",
                 ".code",
-                "load $31 #1.2",
-                "load $30 #3.4",
-                "div $29 $31 $30"
+                "load %31 #1.2",
+                "load %30 #3.4",
+                "div %29 %31 %30"
             ]
         );
         let mut expected_free: IndexSet<u8> = (0..29).collect();

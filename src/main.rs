@@ -15,5 +15,5 @@ fn main() {
 
     let mut compiler = Compiler::new();
 
-    println!("{}", compiler.compile(LISTING));
+    compiler.compile(LISTING);
 }
