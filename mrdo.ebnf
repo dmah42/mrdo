@@ -1,3 +1,16 @@
+(* new version *)
+
+program = {expression};
+expression = term, [term_op, term];
+term_op = "+" | "-";
+term = factor, [factor_op, factor];
+factor_op = "*" | "/";
+factor = real | "(", expression, ")";
+real = {"-"}, double;
+double = [digit], {".", [digit]};
+
+(* old version *)
+
 identifier = alpha, {alpha, digit, "_"};
 coll = "[", rvalue, {",", rvalue}, "]";
 seq = "|", rvalue, {",", rvalue}, "|";
@@ -22,3 +35,5 @@ program = {state}
 (* missing return *)
 (* no support for ';' yet *)
 (* no support for 'elif' yet *)
+
+

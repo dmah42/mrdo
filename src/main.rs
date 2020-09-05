@@ -15,5 +15,9 @@ fn main() {
 
     let mut compiler = Compiler::new();
 
+    // TODO: output bytecode directly and expect
+    // mrdovm to pick up the bytecode and run it.
     compiler.compile(LISTING);
 }
+
+// TODO: add high-level REPL to mrdo.
