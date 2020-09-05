@@ -2,6 +2,8 @@ use crate::compiler::Compiler;
 use mrdoasm::Assembler;
 use mrdovm::run;
 use std::fs;
+use std::fs::File;
+use std::io::Write;
 use structopt::StructOpt;
 
 pub mod compiler;
@@ -18,7 +20,10 @@ pub mod visitor;
 struct CLI {
     #[structopt(parse(from_os_str))]
     program: Option<std::path::PathBuf>,
+    #[structopt(short)]
     repl_mode: Option<String>,
+    #[structopt(short, parse(from_os_str))]
+    output: Option<std::path::PathBuf>,
 }
 
 enum ReplMode {
@@ -38,14 +43,20 @@ fn main() {
 
             println!("assembly\n{}\nEOF", assembly);
             let mut asm = Assembler::new();
-            let program = asm.assemble(&assembly);
-            match program {
-                Ok(p) => {
-                    if let Err(e) = run(&p) {
-                        println!("vm error: {:?}", e);
-                        std::process::exit(1);
+            let bytecode = asm.assemble(&assembly);
+            match bytecode {
+                Ok(bc) => match args.output {
+                    Some(o) => {
+                        let mut f = File::create(o).expect("Unable to create file");
+                        f.write_all(&bc).expect("Unable to write data");
                     }
-                }
+                    None => {
+                        if let Err(e) = run(&bc) {
+                            println!("vm error: {:?}", e);
+                            std::process::exit(1);
+                        }
+                    }
+                },
                 Err(e) => {
                     println!("assembler error: {:?}", e);
                     std::process::exit(1);
