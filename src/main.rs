@@ -1,5 +1,6 @@
 use crate::compiler::Compiler;
-use mrdovm::assemble_and_run;
+use mrdoasm::Assembler;
+use mrdovm::run;
 use std::fs;
 use structopt::StructOpt;
 
@@ -36,8 +37,20 @@ fn main() {
             let assembly = compiler.compile(&source);
 
             println!("assembly\n{}\nEOF", assembly);
-
-            assemble_and_run(&assembly);
+            let mut asm = Assembler::new();
+            let program = asm.assemble(&assembly);
+            match program {
+                Ok(p) => {
+                    if let Err(e) = run(&p) {
+                        println!("vm error: {:?}", e);
+                        std::process::exit(1);
+                    }
+                }
+                Err(e) => {
+                    println!("assembler error: {:?}", e);
+                    std::process::exit(1);
+                }
+            }
         }
         None => {
             let repl_mode = match args.repl_mode {
