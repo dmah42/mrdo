@@ -10,10 +10,7 @@ mrdo is a language in which variables may be either a:
 Other types than real may be added later.
 
 TODO: add repl (copy mrdovm)
-TODO: output bytecode for mrdovm to consume using separate mrdoasm library (to create)
 TODO: option to output IR (assembly) which can then be read by the assembler repl/assembler.
-
-TODO: ie, mrdo highlevel -> IR. mrdoasm IR -> bytecode. mrdovm bytecode -> run!. each has their own repl.
 
 functions
 ---------
