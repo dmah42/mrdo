@@ -118,16 +118,26 @@ name = "mrdo"
 version = "0.1.0"
 dependencies = [
  "indexmap",
+ "mrdoasm",
  "mrdovm",
  "nom",
+ "structopt",
+]
+
+[[package]]
+name = "mrdoasm"
+version = "0.1.0"
+dependencies = [
+ "nom",
+ "num_enum",
 ]
 
 [[package]]
 name = "mrdovm"
 version = "0.1.0"
 dependencies = [
+ "mrdoasm",
  "nom",
- "num_enum",
  "structopt",
 ]
 

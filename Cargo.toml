@@ -7,6 +7,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-indexmap="^1.5.2"
-nom="^4.0"
-mrdovm={ path = "../mrdovm" }
+indexmap = "^1.5.2"
+nom = "^4.0"
+mrdoasm = { path = "../mrdoasm" }
+mrdovm = { path = "../mrdovm" }
+structopt = "^0.3"

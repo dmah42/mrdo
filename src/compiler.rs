@@ -3,7 +3,6 @@ use crate::tokens::Token;
 use crate::visitor::Visitor;
 
 use indexmap::IndexSet;
-use mrdovm::assemble_and_run;
 use nom::types::CompleteStr;
 
 pub struct Compiler {
@@ -21,12 +20,10 @@ impl Compiler {
         }
     }
 
-    pub fn compile(&mut self, source: &str) {
+    pub fn compile(&mut self, source: &str) -> String {
         let (_, tree) = program(CompleteStr(source)).unwrap();
         self.visit_token(&tree);
-        let assembled = self.assembly.join("\n");
-        println!("assembled\n{}\nEOF", assembled);
-        assemble_and_run(&assembled);
+        self.assembly.join("\n")
     }
 }
 
