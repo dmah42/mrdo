@@ -3,7 +3,8 @@ extern crate nom;
 
 use crate::compiler::Compiler;
 use crate::asm::Assembler;
-use crate::vm::run;
+use crate::repl::REPL;
+use crate::vm::{error::Error, VM};
 
 use std::fs;
 use std::fs::File;
@@ -23,6 +24,8 @@ struct CLI {
     repl_mode: Option<String>,
     #[structopt(short, parse(from_os_str))]
     output: Option<std::path::PathBuf>,
+    #[structopt(short, long)]
+    threads: Option<u32>,
 }
 
 enum ReplMode {
@@ -50,7 +53,7 @@ fn main() {
                         f.write_all(&bc).expect("Unable to write data");
                     }
                     None => {
-                        if let Err(e) = run(&bc) {
+                        if let Err(e) = run_bytecode(&bc) {
                             println!("vm error: {:?}", e);
                             std::process::exit(1);
                         }
@@ -76,8 +79,6 @@ fn main() {
     }
 }
 
-// TODO: add high-level REPL to mrdo.
-
 fn read_file(tmp: &std::path::PathBuf) -> String {
     let contents = fs::read_to_string(tmp);
     match contents {
@@ -89,5 +90,42 @@ fn read_file(tmp: &std::path::PathBuf) -> String {
     }
 }
 
-// TODO:
-fn run_repl(_mode: ReplMode) {}
+// TODO: pass through mode
+// TODO: implemente high-level repl
+fn run_repl(_mode: ReplMode) {
+    let mut repl = REPL::new();
+    repl.run();
+}
+
+fn run_bytecode(bytecode: &[u8]) -> Result<(), Error> {
+    let mut vm = VM::new();
+    vm.set_bytecode(&bytecode)?;
+
+    println!("Listing instructions:");
+    for instr in vm.program.chunks(4) {
+        println!("  {:?}", instr);
+    }
+    println!("EOF");
+
+    let result = vm.run();
+    match result {
+        Ok(_) => {
+            println!("Listing integer registers:");
+            for reg in vm.iregisters.chunks(4) {
+                println!("  {}\t{}\t{}\t{}", reg[0], reg[1], reg[2], reg[3]);
+            }
+            println!("EOF");
+
+            println!("Listing real registers:");
+            for reg in vm.rregisters.chunks(4) {
+                println!("  {}\t{}\t{}\t{}", reg[0], reg[1], reg[2], reg[3]);
+            }
+            println!("EOF");
+            std::process::exit(0);
+        }
+        Err(e) => {
+            println!("{}", e);
+            std::process::exit(1);
+        }
+    }
+}
