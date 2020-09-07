@@ -1,43 +1,61 @@
 ![Rust](https://github.com/dominichamon/mrdo/workflows/Rust/badge.svg)
 
-mrdo
-===
+# mrdo
 mrdo is a language in which variables may be either a:
 
 * real (mutable 64-bit floating point)
-* coll (an immutable collection of reals)
-* seq (an ordered immutable collection of reals)
-* dict (key-value immutable collection of reals)
+* TODO: coll (an immutable collection of reals)
+* TODO: seq (an ordered immutable collection of reals)
+* TODO: dict (key-value immutable collection of reals)
 
-Other types than real may be added later.
+## usage
+```bash
+$ ./mrdo
+```
 
-**compiler** goes from high-level to assembly
-**assembler** goes from assembly to bytecode
+will start a repl (that currently only understands assembly).
+
+```bash
+$ ./mrdo <filename> [-o <output>]
+```
+
+will compile the program provided and run it, optionally outputting the
+bytecode. If the provided program is already bytecode, it will be run directly.
+
+## submodules
+**compiler** compiles from high-level to assembly
+
+**assembler** compiles from assembly to bytecode
+
 **vm** runs the bytecode
-**repl** understands _assembly_ at this point
 
-functions
----------
+**repl** understands _assembly_ at this point and (TODO) will understand high
+level code later.
 
-Functions operate on these collections in parallel and are either a:
+## laungage features
 
-* map (convert each element in the input collection to one element in the output
-    collection)
-* filter (conditionally output each element in the input collection)
-* fold (accumulate a collection to a single element)
+### functions
 
-For map, the input and output collections may be different types.
+TODO
+
+Functions operate on collections in parallel and are either a:
+
+* `map` (convert each element in the input collection to one element in the
+  output collection)
+* `filter` (conditionally output each element in the input collection)
+* `fold` (accumulate a collection to a single element)
+
+For `map`, the input and output collections may be different types.
 
 More function types may be added later.
 
-operations
-----------
+### operations
 The usual operations are available within a function for elements of a
-collection:
+collection (reals):
 
 * arithmetical: +, -, /, *
-* comparitive: gt, ge, lt, le, eq, ne
-* logical: and, or, not, xor
+* TODO: comparitive: gt, ge, lt, le, eq, ne
+* TODO: logical: and, or, not, xor
 
 Logical operations treat 0.0 as false and all other values as true.
 
@@ -50,8 +68,8 @@ governed by a given comparison operation.
 * TODO: first: returns the first 'n' elements of a collection in the same collection
 type.
 
-io
---
+### io
+TODO:
 Collections can be read or written using the functions
 
 * read
@@ -59,14 +77,8 @@ Collections can be read or written using the functions
 
 which used stdin and stdout
 
-vm
---
-This package compiles the code down to assembly defined in the
-[mrdovm](https://github.com/dominichamon/mrdovm) project. It can then be
-run using that vm.
-
 old
 --
-There's an original version of this project that used LLVM to compile to a
-binary, but that restricted what could be done at runtime so it's been moved
-to `old`.
+There's an original version of this project that is more feature rich and uses
+LLVM to compile to a binary, but that restricted what could be done at runtime
+so it's been moved to `old`.
