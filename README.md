@@ -1,3 +1,5 @@
+![Rust](https://github.com/dominichamon/mrdo/workflows/Rust/badge.svg)
+
 mrdo
 ===
 mrdo is a language in which variables may be either a:
