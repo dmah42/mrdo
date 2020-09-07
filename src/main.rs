@@ -6,15 +6,18 @@ use std::fs::File;
 use std::io::Write;
 use structopt::StructOpt;
 
+pub mod asm;
 pub mod compiler;
 pub mod expression_parsers;
 pub mod factor_parsers;
 pub mod operand_parsers;
 pub mod operator_parsers;
 pub mod program_parser;
+pub mod repl;
 pub mod term_parsers;
 pub mod tokens;
 pub mod visitor;
+pub mod vm;
 
 #[derive(StructOpt)]
 struct CLI {
