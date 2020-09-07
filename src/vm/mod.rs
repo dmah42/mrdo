@@ -1,6 +1,6 @@
-use crate::vm::error::Error;
 use crate::asm::instruction::*;
 use crate::asm::{DO_HEADER_LEN, DO_HEADER_PREFIX};
+use crate::vm::error::Error;
 
 use std::convert::TryFrom;
 
@@ -13,6 +13,10 @@ pub struct VM {
     heap: Vec<u8>,
     pc: usize,
     ro_data: Vec<u8>,
+}
+
+pub fn is_valid_bytecode(bytecode: &[u8]) -> bool {
+    bytecode.len() > DO_HEADER_LEN && bytecode[0..4] == DO_HEADER_PREFIX
 }
 
 impl VM {
@@ -36,7 +40,7 @@ impl VM {
     }
 
     pub fn set_bytecode(&mut self, bytecode: &[u8]) -> Result<(), Error> {
-        if bytecode[0..4] != DO_HEADER_PREFIX {
+        if !is_valid_bytecode(bytecode) {
             return Err(Error::new("Invalid bytecode"));
         }
 
@@ -670,7 +674,10 @@ mod tests {
 
         let mut bytecode = vec![];
         bytecode.append(&mut DO_HEADER_PREFIX.to_vec());
-        bytecode.append(&mut vec![0, 0, 0, 0]);
+        while bytecode.len() < DO_HEADER_LEN {
+            bytecode.push(0 as u8);
+        }
+        bytecode.append(&mut vec![1, 2, 3, 4]);
         let result = vm.set_bytecode(&bytecode);
         assert!(result.is_ok());
         assert_eq!(vm.ro_data, vec![]);

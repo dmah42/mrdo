@@ -1,10 +1,10 @@
 #[macro_use]
 extern crate nom;
 
-use crate::compiler::Compiler;
 use crate::asm::Assembler;
+use crate::compiler::Compiler;
 use crate::repl::REPL;
-use crate::vm::{error::Error, VM};
+use crate::vm::{is_valid_bytecode, VM};
 
 use std::fs;
 use std::fs::File;
@@ -36,34 +36,14 @@ enum ReplMode {
 fn main() {
     let args = CLI::from_args();
 
-    let mut compiler = Compiler::new();
-
     match args.program {
         Some(p) => {
-            let source = read_file(&p);
-            let assembly = compiler.compile(&source);
-
-            println!("assembly\n{}\nEOF", assembly);
-            let mut asm = Assembler::new();
-            let bytecode = asm.assemble(&assembly);
-            match bytecode {
-                Ok(bc) => match args.output {
-                    Some(o) => {
-                        let mut f = File::create(o).expect("Unable to create file");
-                        f.write_all(&bc).expect("Unable to write data");
-                    }
-                    None => {
-                        if let Err(e) = run_bytecode(&bc) {
-                            println!("vm error: {:?}", e);
-                            std::process::exit(1);
-                        }
-                    }
-                },
-                Err(e) => {
-                    println!("assembler error: {:?}", e);
-                    std::process::exit(1);
-                }
-            }
+            let bytecode = read_bytecode(&p);
+            let bc = match bytecode {
+                Some(bc) => bc,
+                None => compile(&p, args.output),
+            };
+            run_bytecode(&bc);
         }
         None => {
             let repl_mode = match args.repl_mode {
@@ -79,7 +59,16 @@ fn main() {
     }
 }
 
-fn read_file(tmp: &std::path::PathBuf) -> String {
+fn read_bytecode(tmp: &std::path::PathBuf) -> Option<Vec<u8>> {
+    let bytecode = fs::read(&tmp).unwrap();
+
+    match is_valid_bytecode(&bytecode) {
+        true => Some(bytecode),
+        false => None,
+    }
+}
+
+fn read_assembly(tmp: &std::path::PathBuf) -> String {
     let contents = fs::read_to_string(tmp);
     match contents {
         Ok(_) => contents.unwrap(),
@@ -97,9 +86,11 @@ fn run_repl(_mode: ReplMode) {
     repl.run();
 }
 
-fn run_bytecode(bytecode: &[u8]) -> Result<(), Error> {
+fn run_bytecode(bytecode: &[u8]) {
     let mut vm = VM::new();
-    vm.set_bytecode(&bytecode)?;
+    if let Err(e) = vm.set_bytecode(&bytecode) {
+        println!("vmerror: {}", e);
+    }
 
     println!("Listing instructions:");
     for instr in vm.program.chunks(4) {
@@ -124,7 +115,31 @@ fn run_bytecode(bytecode: &[u8]) -> Result<(), Error> {
             std::process::exit(0);
         }
         Err(e) => {
-            println!("{}", e);
+            println!("vmerror: {}", e);
+            std::process::exit(1);
+        }
+    }
+}
+
+fn compile(assembly: &std::path::PathBuf, output: Option<std::path::PathBuf>) -> Vec<u8> {
+    let mut compiler = Compiler::new();
+
+    let source = read_assembly(&assembly);
+    let assembly = compiler.compile(&source);
+
+    println!("assembly\n{}\nEOF", assembly);
+    let mut asm = Assembler::new();
+    let bytecode = asm.assemble(&assembly);
+    match bytecode {
+        Ok(bc) => {
+            if let Some(o) = output {
+                let mut f = File::create(o).expect("Unable to create file");
+                f.write_all(&bc).expect("Unable to write data");
+            };
+            bc
+        }
+        Err(e) => {
+            println!("assembler error: {:?}", e);
             std::process::exit(1);
         }
     }
