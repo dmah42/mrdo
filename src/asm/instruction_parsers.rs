@@ -1,9 +1,9 @@
-use crate::directive_parsers::*;
-use crate::label_parsers::*;
-use crate::opcode_parsers::*;
-use crate::operand_parsers::operand;
-use crate::symbols::*;
-use crate::Token;
+use crate::asm::directive_parsers::*;
+use crate::asm::label_parsers::*;
+use crate::asm::opcode_parsers::*;
+use crate::asm::operand_parsers::operand;
+use crate::asm::symbols::*;
+use crate::asm::Token;
 
 use nom::types::CompleteStr;
 use std::fmt;

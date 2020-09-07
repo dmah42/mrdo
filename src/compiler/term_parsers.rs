@@ -1,9 +1,9 @@
+use crate::compiler::factor_parsers::factor;
+use crate::compiler::operator_parsers::{division_op, multiplication_op};
+use crate::compiler::tokens::Token;
+
 use nom::types::CompleteStr;
 use nom::*;
-
-use crate::factor_parsers::factor;
-use crate::operator_parsers::{division_op, multiplication_op};
-use crate::tokens::Token;
 
 named!(pub term<CompleteStr, Token>,
     ws!(

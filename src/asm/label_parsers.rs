@@ -1,4 +1,5 @@
-use crate::Token;
+use crate::asm::Token;
+
 use nom::types::CompleteStr;
 use nom::{alphanumeric, multispace};
 

@@ -1,6 +1,10 @@
+#[macro_use]
+extern crate nom;
+
 use crate::compiler::Compiler;
-use mrdoasm::Assembler;
-use mrdovm::run;
+use crate::asm::Assembler;
+use crate::vm::run;
+
 use std::fs;
 use std::fs::File;
 use std::io::Write;
@@ -8,15 +12,7 @@ use structopt::StructOpt;
 
 pub mod asm;
 pub mod compiler;
-pub mod expression_parsers;
-pub mod factor_parsers;
-pub mod operand_parsers;
-pub mod operator_parsers;
-pub mod program_parser;
 pub mod repl;
-pub mod term_parsers;
-pub mod tokens;
-pub mod visitor;
 pub mod vm;
 
 #[derive(StructOpt)]

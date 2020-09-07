@@ -1,7 +1,8 @@
+use crate::asm::program_parsers::program;
+use crate::asm::Assembler;
 use crate::repl::command_parser::CommandParser;
-use crate::vm::VM;
-use mrdoasm::program_parsers::program;
-use mrdoasm::Assembler;
+use crate::vm::vm::VM;
+
 use std::fs;
 use std::io;
 use std::io::Write;

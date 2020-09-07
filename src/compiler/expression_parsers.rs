@@ -1,6 +1,7 @@
-use crate::operator_parsers::{addition_op, subtraction_op};
-use crate::term_parsers::term;
-use crate::tokens::Token;
+use crate::compiler::operator_parsers::{addition_op, subtraction_op};
+use crate::compiler::term_parsers::term;
+use crate::compiler::tokens::Token;
+
 use nom::types::CompleteStr;
 use nom::*;
 

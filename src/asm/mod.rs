@@ -1,11 +1,9 @@
-#[macro_use]
-extern crate nom;
+use crate::asm::error::AsmError;
+use crate::asm::instruction::Opcode;
+use crate::asm::instruction_parsers::AssemblerInstruction;
+use crate::asm::program_parsers::{program, Program};
+use crate::asm::symbols::{Symbol, Table, Type};
 
-use crate::error::AsmError;
-use crate::instruction::Opcode;
-use crate::instruction_parsers::AssemblerInstruction;
-use crate::program_parsers::{program, Program};
-use crate::symbols::{Symbol, Table, Type};
 use nom::types::CompleteStr;
 
 pub mod directive_parsers;

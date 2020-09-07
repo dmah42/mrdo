@@ -1,7 +1,8 @@
-use crate::instruction_parsers::AssemblerInstruction;
-use crate::label_parsers::label_decl;
-use crate::operand_parsers::operand;
-use crate::Token;
+use crate::asm::instruction_parsers::AssemblerInstruction;
+use crate::asm::label_parsers::label_decl;
+use crate::asm::operand_parsers::operand;
+use crate::asm::Token;
+
 use nom::alpha1;
 use nom::types::CompleteStr;
 

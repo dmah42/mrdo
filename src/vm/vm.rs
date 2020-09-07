@@ -1,8 +1,7 @@
-pub mod error;
-
 use crate::vm::error::Error;
-use mrdoasm::instruction::*;
-use mrdoasm::{DO_HEADER_LEN, DO_HEADER_PREFIX};
+use crate::asm::instruction::*;
+use crate::asm::{DO_HEADER_LEN, DO_HEADER_PREFIX};
+
 use std::convert::TryFrom;
 
 pub struct VM {

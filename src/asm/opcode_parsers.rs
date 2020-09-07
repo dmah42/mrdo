@@ -1,5 +1,6 @@
-use crate::Opcode;
-use crate::Token;
+use crate::asm::Opcode;
+use crate::asm::Token;
+
 use nom::types::CompleteStr;
 use nom::*;
 

@@ -1,4 +1,5 @@
-use crate::tokens::Token;
+use crate::compiler::tokens::Token;
+
 use nom::types::CompleteStr;
 use nom::*;
 

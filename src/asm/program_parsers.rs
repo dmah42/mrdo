@@ -1,6 +1,7 @@
-use crate::directive_parsers::*;
-use crate::instruction_parsers::*;
-use crate::symbols::Table;
+use crate::asm::directive_parsers::*;
+use crate::asm::instruction_parsers::*;
+use crate::asm::symbols::Table;
+
 use nom::types::CompleteStr;
 
 #[derive(Debug, PartialEq)]

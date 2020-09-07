@@ -1,9 +1,9 @@
+use crate::compiler::expression_parsers::expression;
+use crate::compiler::operand_parsers::real;
+use crate::compiler::tokens::Token;
+
 use nom::types::CompleteStr;
 use nom::*;
-
-use crate::expression_parsers::expression;
-use crate::operand_parsers::real;
-use crate::tokens::Token;
 
 named!(pub factor<CompleteStr, Token>,
     ws!(

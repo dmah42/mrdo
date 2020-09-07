@@ -1,6 +1,11 @@
 use crate::vm::error::Error;
+use crate::repl::REPL;
+
 use std::fs;
 use structopt::StructOpt;
+
+pub mod error;
+pub mod vm;
 
 #[derive(StructOpt)]
 struct CLI {
@@ -10,6 +15,7 @@ struct CLI {
     threads: Option<u32>,
 }
 
+// TODO: merge with real main.
 fn main() {
     let args = CLI::from_args();
 
@@ -19,7 +25,7 @@ fn main() {
             run(&bytecode).unwrap();
         }
         None => {
-            let mut repl = repl::REPL::new();
+            let mut repl = REPL::new();
             repl.run();
         }
     }

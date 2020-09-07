@@ -1,5 +1,6 @@
-use crate::expression_parsers::expression;
-use crate::tokens::Token;
+use crate::compiler::expression_parsers::expression;
+use crate::compiler::tokens::Token;
+
 use nom::types::CompleteStr;
 use nom::*;
 

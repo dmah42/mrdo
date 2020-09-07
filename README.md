@@ -9,8 +9,10 @@ mrdo is a language in which variables may be either a:
 
 Other types than real may be added later.
 
-TODO: add repl (copy mrdovm)
-TODO: option to output IR (assembly) which can then be read by the assembler repl/assembler.
+**compiler** goes from high-level to assembly
+**assembler** goes from assembly to bytecode
+**vm** runs the bytecode
+**repl** understands _assembly_ at this point
 
 functions
 ---------

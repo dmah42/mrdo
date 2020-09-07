@@ -1,9 +1,18 @@
-use crate::program_parser::program;
-use crate::tokens::Token;
-use crate::visitor::Visitor;
+use crate::compiler::program_parser::program;
+use crate::compiler::tokens::Token;
+use crate::compiler::visitor::Visitor;
 
 use indexmap::IndexSet;
 use nom::types::CompleteStr;
+
+pub mod expression_parsers;
+pub mod factor_parsers;
+pub mod operand_parsers;
+pub mod operator_parsers;
+pub mod program_parser;
+pub mod term_parsers;
+pub mod tokens;
+pub mod visitor;
 
 pub struct Compiler {
     free_reg: IndexSet<u8>,

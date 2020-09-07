@@ -1,6 +1,7 @@
-use crate::label_parsers::label_ref;
-use crate::register_parsers::register;
-use crate::Token;
+use crate::asm::label_parsers::label_ref;
+use crate::asm::register_parsers::register;
+use crate::asm::Token;
+
 use nom::digit;
 use nom::types::CompleteStr;
 
