@@ -9,6 +9,5 @@ edition = "2018"
 [dependencies]
 indexmap = "^1.5.2"
 nom = "^4.0"
-mrdoasm = { path = "../mrdoasm" }
-mrdovm = { path = "../mrdovm" }
+num_enum="^0.5.1"
 structopt = "^0.3"

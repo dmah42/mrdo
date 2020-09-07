@@ -2,9 +2,6 @@ use crate::vm::error::Error;
 use std::fs;
 use structopt::StructOpt;
 
-pub mod repl;
-pub mod vm;
-
 #[derive(StructOpt)]
 struct CLI {
     #[structopt(parse(from_os_str))]
