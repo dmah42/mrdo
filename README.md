@@ -54,7 +54,7 @@ The usual operations are available within a function for elements of a
 collection (reals):
 
 * arithmetical: +, -, /, *
-* TODO: comparitive: gt, ge, lt, le, eq, ne
+* comparitive: gt, ge, lt, le, eq, ne
 * TODO: logical: and, or, not, xor
 
 Logical operations treat 0.0 as false and all other values as true.

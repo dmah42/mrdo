@@ -1,9 +1,30 @@
 #[derive(Debug, PartialEq)]
 pub enum Token {
+    // Arithmetic
     AdditionOp,
     SubtractionOp,
     MultiplicationOp,
     DivisionOp,
+
+    // Comparative
+    EqualsOp,
+    NotEqualsOp,
+    GreaterThanOp,
+    GreaterThanEqualsOp,
+    LessThanOp,
+    LessThanEqualsOp,
+
+    Compare {
+        left: Box<Token>,
+        op: Box<Token>,
+        right: Box<Token>,
+    },
+
+    Assign {
+        ident: String,
+        expr: Box<Token>,
+    },
+
     Real {
         value: f64,
     },

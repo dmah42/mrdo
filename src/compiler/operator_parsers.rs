@@ -47,6 +47,72 @@ named!(pub division_op<CompleteStr, Token>,
     )
 );
 
+named!(pub eq_op<CompleteStr, Token>,
+    ws!(
+        do_parse!(
+            tag!("eq") >>
+            (
+                Token::EqualsOp
+            )
+        )
+    )
+);
+
+named!(pub neq_op<CompleteStr, Token>,
+    ws!(
+        do_parse!(
+            tag!("neq") >>
+            (
+                Token::NotEqualsOp
+            )
+        )
+    )
+);
+
+named!(pub gt_op<CompleteStr, Token>,
+    ws!(
+        do_parse!(
+            tag!("gt") >>
+            (
+                Token::GreaterThanOp
+            )
+        )
+    )
+);
+
+named!(pub gte_op<CompleteStr, Token>,
+    ws!(
+        do_parse!(
+            tag!("gte") >>
+            (
+                Token::GreaterThanEqualsOp
+            )
+        )
+    )
+);
+
+named!(pub lt_op<CompleteStr, Token>,
+    ws!(
+        do_parse!(
+            tag!("lt") >>
+            (
+                Token::LessThanOp
+            )
+        )
+    )
+);
+
+named!(pub lte_op<CompleteStr, Token>,
+    ws!(
+        do_parse!(
+            tag!("lte") >>
+            (
+                Token::LessThanEqualsOp
+            )
+        )
+    )
+);
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -72,5 +138,23 @@ mod tests {
         assert!(result.is_ok());
         let (_, token) = result.unwrap();
         assert_eq!(token, Token::DivisionOp);
+
+        let result = eq_op(CompleteStr("eq"));
+        assert!(result.is_ok());
+
+        let result = neq_op(CompleteStr("neq"));
+        assert!(result.is_ok());
+
+        let result = gt_op(CompleteStr("gt"));
+        assert!(result.is_ok());
+
+        let result = gte_op(CompleteStr("gte"));
+        assert!(result.is_ok());
+
+        let result = lt_op(CompleteStr("lt"));
+        assert!(result.is_ok());
+
+        let result = lte_op(CompleteStr("lte"));
+        assert!(result.is_ok());
     }
 }

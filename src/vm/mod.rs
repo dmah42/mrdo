@@ -94,6 +94,7 @@ impl VM {
                 let target = self.iregisters[self.next_u8() as usize];
                 self.pc = target as usize;
             }
+            // TODO: real comparisons.
             Opcode::EQ => {
                 let register = self.next_u8() as usize;
                 let a = self.iregisters[self.next_u8() as usize];
@@ -669,7 +670,7 @@ mod tests {
     fn test_set_bytecode() {
         let mut vm = VM::new();
 
-        let result = vm.set_bytecode(&vec![1, 2, 3, 4, 0, 0, 0, 0]);
+        let result = vm.set_bytecode(&[1, 2, 3, 4, 0, 0, 0, 0]);
         assert!(result.is_err());
 
         let mut bytecode = vec![];

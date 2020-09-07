@@ -39,6 +39,7 @@ impl Compiler {
 impl Visitor for Compiler {
     fn visit_token(&mut self, node: &Token) {
         match node {
+            // Arithmetic
             Token::AdditionOp => {
                 let result_reg = self.free_reg.pop().unwrap();
                 let right_reg = self.used_reg.pop().unwrap();
@@ -79,6 +80,85 @@ impl Visitor for Compiler {
                 self.free_reg.insert(right_reg);
                 self.used_reg.insert(result_reg);
             }
+
+            // Comparative
+            Token::EqualsOp => {
+                let result_reg = self.free_reg.pop().unwrap();
+                let right_reg = self.used_reg.pop().unwrap();
+                let left_reg = self.used_reg.pop().unwrap();
+                self.assembly
+                    .push(format!("eq %{} %{} %{}", result_reg, left_reg, right_reg));
+                self.free_reg.insert(left_reg);
+                self.free_reg.insert(right_reg);
+                self.used_reg.insert(result_reg);
+            }
+            Token::NotEqualsOp => {
+                let result_reg = self.free_reg.pop().unwrap();
+                let right_reg = self.used_reg.pop().unwrap();
+                let left_reg = self.used_reg.pop().unwrap();
+                self.assembly
+                    .push(format!("neq %{} %{} %{}", result_reg, left_reg, right_reg));
+                self.free_reg.insert(left_reg);
+                self.free_reg.insert(right_reg);
+                self.used_reg.insert(result_reg);
+            }
+            Token::GreaterThanOp => {
+                let result_reg = self.free_reg.pop().unwrap();
+                let right_reg = self.used_reg.pop().unwrap();
+                let left_reg = self.used_reg.pop().unwrap();
+                self.assembly
+                    .push(format!("gt %{} %{} %{}", result_reg, left_reg, right_reg));
+                self.free_reg.insert(left_reg);
+                self.free_reg.insert(right_reg);
+                self.used_reg.insert(result_reg);
+            }
+            Token::GreaterThanEqualsOp => {
+                let result_reg = self.free_reg.pop().unwrap();
+                let right_reg = self.used_reg.pop().unwrap();
+                let left_reg = self.used_reg.pop().unwrap();
+                self.assembly
+                    .push(format!("gte %{} %{} %{}", result_reg, left_reg, right_reg));
+                self.free_reg.insert(left_reg);
+                self.free_reg.insert(right_reg);
+                self.used_reg.insert(result_reg);
+            }
+            Token::LessThanOp => {
+                let result_reg = self.free_reg.pop().unwrap();
+                let right_reg = self.used_reg.pop().unwrap();
+                let left_reg = self.used_reg.pop().unwrap();
+                self.assembly
+                    .push(format!("lt %{} %{} %{}", result_reg, left_reg, right_reg));
+                self.free_reg.insert(left_reg);
+                self.free_reg.insert(right_reg);
+                self.used_reg.insert(result_reg);
+            }
+            Token::LessThanEqualsOp => {
+                let result_reg = self.free_reg.pop().unwrap();
+                let right_reg = self.used_reg.pop().unwrap();
+                let left_reg = self.used_reg.pop().unwrap();
+                self.assembly
+                    .push(format!("lte %{} %{} %{}", result_reg, left_reg, right_reg));
+                self.free_reg.insert(left_reg);
+                self.free_reg.insert(right_reg);
+                self.used_reg.insert(result_reg);
+            }
+
+            Token::Compare { left, op, right } => {
+                self.visit_token(left);
+                self.visit_token(right);
+                self.visit_token(op);
+            }
+
+            Token::Assign { ident: _, expr } => {
+                // First visit the rhs to make sure we do what we need
+                // to find the value we need.
+                self.visit_token(expr);
+                let _result_reg = self.used_reg.pop().unwrap();
+                // TODO: Allocate storage for the identifier and write value to heap.
+
+                // TODO: Map identifier name to heap offset.
+            }
+
             Token::Real { value } => {
                 let next_reg = self.free_reg.pop().unwrap();
                 let line = format!("load %{} #{:.2}", next_reg, value);
@@ -217,6 +297,144 @@ mod tests {
                 "load %31 #1.20",
                 "load %30 #3.40",
                 "div %29 %31 %30",
+                "halt"
+            ]
+        );
+        let mut expected_free: IndexSet<u8> = (0..29).collect();
+        expected_free.insert(30);
+        expected_free.insert(31);
+        assert_eq!(compiler.free_reg, expected_free);
+        assert_eq!(compiler.used_reg, indexset! {29});
+    }
+
+    #[test]
+    fn test_equals() {
+        let mut compiler = Compiler::new();
+        let test_program = generate_test_program("1.2 + 4.1 eq 3.4");
+        compiler.visit_token(&test_program);
+        assert_eq!(
+            compiler.assembly,
+            vec![
+                ".data",
+                ".code",
+                "load %31 #1.20",
+                "load %30 #4.10",
+                "add %29 %31 %30",
+                "load %30 #3.40",
+                "eq %31 %29 %30",
+                "halt"
+            ]
+        );
+        let expected_free: IndexSet<u8> = (0..31).collect();
+        assert_eq!(compiler.free_reg, expected_free);
+        assert_eq!(compiler.used_reg, indexset! {31});
+    }
+
+    #[test]
+    fn test_not_equals() {
+        let mut compiler = Compiler::new();
+        let test_program = generate_test_program("1.2 neq 3.4");
+        compiler.visit_token(&test_program);
+        assert_eq!(
+            compiler.assembly,
+            vec![
+                ".data",
+                ".code",
+                "load %31 #1.20",
+                "load %30 #3.40",
+                "neq %29 %31 %30",
+                "halt"
+            ]
+        );
+        let mut expected_free: IndexSet<u8> = (0..29).collect();
+        expected_free.insert(30);
+        expected_free.insert(31);
+        assert_eq!(compiler.free_reg, expected_free);
+        assert_eq!(compiler.used_reg, indexset! {29});
+    }
+
+    #[test]
+    fn test_greater_than() {
+        let mut compiler = Compiler::new();
+        let test_program = generate_test_program("1.2 gt 3.4");
+        compiler.visit_token(&test_program);
+        assert_eq!(
+            compiler.assembly,
+            vec![
+                ".data",
+                ".code",
+                "load %31 #1.20",
+                "load %30 #3.40",
+                "gt %29 %31 %30",
+                "halt"
+            ]
+        );
+        let mut expected_free: IndexSet<u8> = (0..29).collect();
+        expected_free.insert(30);
+        expected_free.insert(31);
+        assert_eq!(compiler.free_reg, expected_free);
+        assert_eq!(compiler.used_reg, indexset! {29});
+    }
+
+    #[test]
+    fn test_greater_than_equals() {
+        let mut compiler = Compiler::new();
+        let test_program = generate_test_program("1.2 gte 3.4");
+        compiler.visit_token(&test_program);
+        assert_eq!(
+            compiler.assembly,
+            vec![
+                ".data",
+                ".code",
+                "load %31 #1.20",
+                "load %30 #3.40",
+                "gte %29 %31 %30",
+                "halt"
+            ]
+        );
+        let mut expected_free: IndexSet<u8> = (0..29).collect();
+        expected_free.insert(30);
+        expected_free.insert(31);
+        assert_eq!(compiler.free_reg, expected_free);
+        assert_eq!(compiler.used_reg, indexset! {29});
+    }
+
+    #[test]
+    fn test_less_than() {
+        let mut compiler = Compiler::new();
+        let test_program = generate_test_program("1.2 lt 3.4");
+        compiler.visit_token(&test_program);
+        assert_eq!(
+            compiler.assembly,
+            vec![
+                ".data",
+                ".code",
+                "load %31 #1.20",
+                "load %30 #3.40",
+                "lt %29 %31 %30",
+                "halt"
+            ]
+        );
+        let mut expected_free: IndexSet<u8> = (0..29).collect();
+        expected_free.insert(30);
+        expected_free.insert(31);
+        assert_eq!(compiler.free_reg, expected_free);
+        assert_eq!(compiler.used_reg, indexset! {29});
+    }
+
+    #[test]
+    fn test_less_than_equals() {
+        let mut compiler = Compiler::new();
+        let test_program = generate_test_program("1.2 lte 3.4");
+        compiler.visit_token(&test_program);
+        assert_eq!(
+            compiler.assembly,
+            vec![
+                ".data",
+                ".code",
+                "load %31 #1.20",
+                "load %30 #3.40",
+                "lte %29 %31 %30",
                 "halt"
             ]
         );
