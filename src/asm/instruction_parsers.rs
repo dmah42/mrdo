@@ -177,7 +177,7 @@ named!(instruction_comb<CompleteStr, AssemblerInstruction>,
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Opcode;
+    use crate::asm::Opcode;
 
     #[test]
     fn test_extract_operand_int_register() {

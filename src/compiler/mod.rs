@@ -145,9 +145,10 @@ mod tests {
             vec![
                 ".data",
                 ".code",
-                "load %31 #1.2",
-                "load %30 #3.4",
-                "add %29 %31 %30"
+                "load %31 #1.20",
+                "load %30 #3.40",
+                "add %29 %31 %30",
+                "halt"
             ]
         );
         let mut expected_free: IndexSet<u8> = (0..29).collect();
@@ -167,9 +168,10 @@ mod tests {
             vec![
                 ".data",
                 ".code",
-                "load %31 #1.2",
-                "load %30 #3.4",
-                "sub %29 %31 %30"
+                "load %31 #1.20",
+                "load %30 #3.40",
+                "sub %29 %31 %30",
+                "halt"
             ]
         );
         let mut expected_free: IndexSet<u8> = (0..29).collect();
@@ -189,9 +191,10 @@ mod tests {
             vec![
                 ".data",
                 ".code",
-                "load %31 #1.2",
-                "load %30 #3.4",
-                "mul %29 %31 %30"
+                "load %31 #1.20",
+                "load %30 #3.40",
+                "mul %29 %31 %30",
+                "halt"
             ]
         );
         let mut expected_free: IndexSet<u8> = (0..29).collect();
@@ -211,9 +214,10 @@ mod tests {
             vec![
                 ".data",
                 ".code",
-                "load %31 #1.2",
-                "load %30 #3.4",
-                "div %29 %31 %30"
+                "load %31 #1.20",
+                "load %30 #3.40",
+                "div %29 %31 %30",
+                "halt"
             ]
         );
         let mut expected_free: IndexSet<u8> = (0..29).collect();
