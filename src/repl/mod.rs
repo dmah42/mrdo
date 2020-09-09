@@ -70,12 +70,14 @@ impl REPL {
         let args = CommandParser::tokenize(input);
         match args[0] {
             ":c" => self.vm = VM::new(),
+            ":h" => self.print_help(),
             ":history" => {
                 for command in &self.command_buffer {
                     println!("  {}", command);
                 }
             }
             ":list" => self.list_program(),
+            ":load" => self.load_file(&args[1..]),
             ":q" => {
                 println!("{} Buh-bye!", INFO_TAG);
                 std::process::exit(0);
@@ -86,9 +88,19 @@ impl REPL {
                 println!("{:#?}", self.asm.symbols);
                 println!("{} EOF", INFO_TAG);
             }
-            ":load" => self.load_file(&args[1..]),
             _ => println!("Invalid command: '{}'", input),
         }
+    }
+
+    fn print_help(&self) {
+        println!(":c clears the VM");
+        println!(":h prints this help");
+        println!(":history shows the command buffer");
+        println!(":list lists the current program");
+        println!(":load loads a program from the given path");
+        println!(":q quits");
+        println!(":r prints the registers");
+        println!(":s lists the known symbols");
     }
 
     fn list_program(&self) {
