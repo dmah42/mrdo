@@ -1,3 +1,4 @@
+use crate::compiler::expression_parsers::expression;
 use crate::compiler::program_parser::program;
 use crate::compiler::tokens::Token;
 use crate::compiler::visitor::Visitor;
@@ -30,9 +31,18 @@ impl Compiler {
     }
 
     pub fn compile(&mut self, source: &str) -> String {
+        self.assembly.clear();
         let (_, tree) = program(CompleteStr(source)).unwrap();
         self.visit_token(&tree);
         self.assembly.join("\n")
+    }
+
+    // NOTE: public for the repl
+    pub fn compile_expr(&mut self, source: &str) -> &Vec<String> {
+        self.assembly.clear();
+        let (_, tree) = expression(CompleteStr(source)).unwrap();
+        self.visit_token(&tree);
+        &self.assembly
     }
 }
 

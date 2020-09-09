@@ -1,8 +1,10 @@
 use crate::asm::program_parsers::program;
 use crate::asm::Assembler;
+use crate::compiler::Compiler;
 use crate::repl::command_parser::CommandParser;
 use crate::vm::VM;
 
+use nom::types::CompleteStr;
 use std::fs;
 use std::io;
 use std::io::Write;
@@ -14,18 +16,30 @@ const INFO_TAG: char = '\u{29FB}';
 const WARN_TAG: char = '\u{26A0}';
 const ERROR_TAG: char = '\u{2620}';
 
+#[derive(Debug)]
+enum Mode {
+    Assembly,
+    Highlevel,
+}
+
 pub struct REPL {
+    assembly_buffer: Vec<String>,
     command_buffer: Vec<String>,
-    vm: VM,
+    compiler: Compiler,
     asm: Assembler,
+    vm: VM,
+    mode: Mode,
 }
 
 impl REPL {
     pub fn new() -> REPL {
         REPL {
-            vm: VM::new(),
+            assembly_buffer: vec![],
             command_buffer: vec![],
+            compiler: Compiler::new(),
             asm: Assembler::new(),
+            vm: VM::new(),
+            mode: Mode::Highlevel,
         }
     }
 
@@ -48,19 +62,27 @@ impl REPL {
             if buffer.starts_with(':') {
                 self.execute_command(&buffer);
             } else {
-                let program = match program(buffer.into()) {
-                    Ok((_, program)) => program,
+                let assembly = match self.mode {
+                    // TODO: figure out how to step enough in highlevel or halt if we run for
+                    // assembly.
+                    Mode::Assembly => vec![buffer.into()],
+                    Mode::Highlevel => self.compiler.compile_expr(buffer.into()).to_vec(),
+                };
+                self.assembly_buffer.append(&mut assembly.clone());
+                let assembled = assembly.join("\n");
+                let mut bytecode = match program(CompleteStr(&assembled)) {
+                    Ok((_, prog)) => self.asm.process_second(&prog),
                     Err(e) => {
-                        println!("{} Unable to parse input: {}", WARN_TAG, e);
+                        println!("{} Unable to parse input: {:?}", WARN_TAG, e);
                         continue;
                     }
                 };
-                self.vm
-                    .program
-                    .append(&mut program.to_bytes(&self.asm.symbols));
-                if let Err(e) = self.vm.step() {
-                    println!("{} {}", ERROR_TAG, e);
-                    continue;
+                self.vm.program.append(&mut bytecode);
+                for _i in 1..=assembly.len() {
+                    if let Err(e) = self.vm.step() {
+                        println!("{} {}", ERROR_TAG, e);
+                        continue;
+                    }
                 }
             }
         }
@@ -78,6 +100,7 @@ impl REPL {
             }
             ":list" => self.list_program(),
             ":load" => self.load_file(&args[1..]),
+            ":m" => self.toggle_mode(),
             ":q" => {
                 println!("{} Buh-bye!", INFO_TAG);
                 std::process::exit(0);
@@ -88,7 +111,7 @@ impl REPL {
                 println!("{:#?}", self.asm.symbols);
                 println!("{} EOF", INFO_TAG);
             }
-            _ => println!("Invalid command: '{}'", input),
+            _ => println!("{} Invalid command: '{}'", ERROR_TAG, input),
         }
     }
 
@@ -98,12 +121,18 @@ impl REPL {
         println!(":history shows the command buffer");
         println!(":list lists the current program");
         println!(":load loads a program from the given path");
+        println!(":m toggles the mode between assembly and high-level language");
         println!(":q quits");
         println!(":r prints the registers");
         println!(":s lists the known symbols");
     }
 
     fn list_program(&self) {
+        println!("{} Listing assembly:", INFO_TAG);
+        for line in &self.assembly_buffer {
+            println!("  {}", line);
+        }
+        println!("{} EOF", INFO_TAG);
         println!("{} Listing instructions:", INFO_TAG);
         for instr in self.vm.program.chunks(4) {
             println!("  {:?}", instr);
@@ -171,6 +200,14 @@ impl REPL {
                 }
             }
         }
+    }
+
+    fn toggle_mode(&mut self) {
+        match self.mode {
+            Mode::Highlevel => self.mode = Mode::Assembly,
+            Mode::Assembly => self.mode = Mode::Highlevel,
+        };
+        println!("{} Mode is now {:?}", INFO_TAG, self.mode);
     }
 }
 

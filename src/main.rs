@@ -20,17 +20,10 @@ pub mod vm;
 struct CLI {
     #[structopt(parse(from_os_str))]
     program: Option<std::path::PathBuf>,
-    #[structopt(short)]
-    repl_mode: Option<String>,
-    #[structopt(short, parse(from_os_str))]
+    #[structopt(short, long, parse(from_os_str))]
     output: Option<std::path::PathBuf>,
     #[structopt(short, long)]
     threads: Option<u32>,
-}
-
-enum ReplMode {
-    Assembler,
-    HighLevel,
 }
 
 fn main() {
@@ -45,17 +38,7 @@ fn main() {
             };
             run_bytecode(&bc);
         }
-        None => {
-            let repl_mode = match args.repl_mode {
-                Some(mode) => match mode.as_str() {
-                    "assembly" => ReplMode::Assembler,
-                    "highlevel" => ReplMode::HighLevel,
-                    _ => ReplMode::HighLevel,
-                },
-                None => ReplMode::HighLevel,
-            };
-            run_repl(repl_mode);
-        }
+        None => run_repl()
     }
 }
 
@@ -79,9 +62,7 @@ fn read_assembly(tmp: &std::path::PathBuf) -> String {
     }
 }
 
-// TODO: pass through mode
-// TODO: implemente high-level repl
-fn run_repl(_mode: ReplMode) {
+fn run_repl() {
     let mut repl = REPL::new();
     repl.run();
 }

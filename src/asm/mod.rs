@@ -128,7 +128,8 @@ impl Assembler {
         self.symbols.add(Symbol::new(name, Type::Label));
     }
 
-    fn process_second(&mut self, p: &Program) -> Vec<u8> {
+    // NOTE: public so the repl can do the right thing.
+    pub fn process_second(&mut self, p: &Program) -> Vec<u8> {
         let mut program = vec![];
         for i in &p.instructions {
             if i.is_opcode() {

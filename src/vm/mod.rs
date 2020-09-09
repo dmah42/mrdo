@@ -85,7 +85,6 @@ impl VM {
         let opcode = self.decode_opcode();
         match opcode {
             Opcode::HLT => {
-                println!("Halting");
                 return Ok(true);
             }
             Opcode::LOAD => {
