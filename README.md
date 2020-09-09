@@ -25,14 +25,14 @@ bytecode. If the provided program is already bytecode, it will be run directly.
 ## submodules
 **compiler** compiles from high-level to assembly
 
-**assembler** compiles from assembly to bytecode
+**asm** compiles from assembly to bytecode
 
 **vm** runs the bytecode
 
 **repl** understands _assembly_ at this point and (TODO) will understand high
 level code later.
 
-## laungage features
+## language features
 
 ### functions
 
