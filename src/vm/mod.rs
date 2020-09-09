@@ -19,6 +19,18 @@ pub fn is_valid_bytecode(bytecode: &[u8]) -> bool {
     bytecode.len() > DO_HEADER_LEN && bytecode[0..4] == DO_HEADER_PREFIX
 }
 
+fn is_int_register(reg: u8) -> bool {
+    (reg & 0b10000000) == 0
+}
+
+fn idx_from_real_register(reg: u8) -> u8 {
+    reg & 0b01111111
+}
+
+pub fn real_register_to_idx(reg: u8) -> u8 {
+    reg | 0b10000000
+}
+
 impl VM {
     pub fn new() -> VM {
         VM {
@@ -80,10 +92,10 @@ impl VM {
                 // TODO: future proof this a bit. `LOAD %1 10` will fail, as
                 // will `LOAD $1 3.14`.
                 let register = self.next_u8();
-                if VM::is_int_register(register) {
+                if is_int_register(register) {
                     self.iregisters[register as usize] = self.next_i32();
                 } else {
-                    self.rregisters[(register & 0b01111111) as usize] = self.next_f64();
+                    self.rregisters[idx_from_real_register(register) as usize] = self.next_f64();
                 }
             }
             Opcode::ADD => self.add(),
@@ -94,67 +106,12 @@ impl VM {
                 let target = self.iregisters[self.next_u8() as usize];
                 self.pc = target as usize;
             }
-            // TODO: real comparisons.
-            Opcode::EQ => {
-                let register = self.next_u8() as usize;
-                let a = self.iregisters[self.next_u8() as usize];
-                let b = self.iregisters[self.next_u8() as usize];
-                if a == b {
-                    self.iregisters[register] = 1;
-                } else {
-                    self.iregisters[register] = 0;
-                }
-            }
-            Opcode::NEQ => {
-                let register = self.next_u8() as usize;
-                let a = self.iregisters[self.next_u8() as usize];
-                let b = self.iregisters[self.next_u8() as usize];
-                if a != b {
-                    self.iregisters[register] = 1;
-                } else {
-                    self.iregisters[register] = 0;
-                }
-            }
-            Opcode::GT => {
-                let register = self.next_u8() as usize;
-                let a = self.iregisters[self.next_u8() as usize];
-                let b = self.iregisters[self.next_u8() as usize];
-                if a > b {
-                    self.iregisters[register] = 1;
-                } else {
-                    self.iregisters[register] = 0;
-                }
-            }
-            Opcode::LT => {
-                let register = self.next_u8() as usize;
-                let a = self.iregisters[self.next_u8() as usize];
-                let b = self.iregisters[self.next_u8() as usize];
-                if a < b {
-                    self.iregisters[register] = 1;
-                } else {
-                    self.iregisters[register] = 0;
-                }
-            }
-            Opcode::GTE => {
-                let register = self.next_u8() as usize;
-                let a = self.iregisters[self.next_u8() as usize];
-                let b = self.iregisters[self.next_u8() as usize];
-                if a >= b {
-                    self.iregisters[register] = 1;
-                } else {
-                    self.iregisters[register] = 0;
-                }
-            }
-            Opcode::LTE => {
-                let register = self.next_u8() as usize;
-                let a = self.iregisters[self.next_u8() as usize];
-                let b = self.iregisters[self.next_u8() as usize];
-                if a <= b {
-                    self.iregisters[register] = 1;
-                } else {
-                    self.iregisters[register] = 0;
-                }
-            }
+            Opcode::EQ => self.eq(),
+            Opcode::NEQ => self.neq(),
+            Opcode::GT => self.gt(),
+            Opcode::LT => self.lt(),
+            Opcode::GTE => self.gte(),
+            Opcode::LTE => self.lte(),
             Opcode::JEQ => {
                 // TODO: check the register is an integer register.
                 let target = self.iregisters[self.next_u8() as usize];
@@ -167,7 +124,8 @@ impl VM {
             Opcode::ALLOC => {
                 // TODO: check this is an int register
                 let register = self.next_u8() as usize;
-                let bytes = self.iregisters[register];
+                let bytes = self.iregisters[self.next_u8() as usize];
+                self.iregisters[register] = self.heap.len() as i32;
                 let new_end = self.heap.len() as i32 + bytes;
                 self.heap.resize(new_end as usize, 0);
             }
@@ -198,10 +156,6 @@ impl VM {
             }
         }
         Ok(false)
-    }
-
-    fn is_int_register(reg: u8) -> bool {
-        (reg & 0b10000000) == 0
     }
 
     fn decode_opcode(&mut self) -> Opcode {
@@ -255,21 +209,21 @@ impl VM {
 
         let mut ia: Option<i32> = None;
         let mut ra: Option<f64> = None;
-        if VM::is_int_register(a_reg) {
+        if is_int_register(a_reg) {
             ia = Some(self.iregisters[a_reg as usize]);
         } else {
-            ra = Some(self.rregisters[(a_reg & 0b01111111) as usize]);
+            ra = Some(self.rregisters[idx_from_real_register(a_reg) as usize]);
         }
 
         let mut ib: Option<i32> = None;
         let mut rb: Option<f64> = None;
-        if VM::is_int_register(b_reg) {
+        if is_int_register(b_reg) {
             ib = Some(self.iregisters[b_reg as usize]);
         } else {
-            rb = Some(self.rregisters[(b_reg & 0b01111111) as usize]);
+            rb = Some(self.rregisters[idx_from_real_register(b_reg) as usize]);
         }
 
-        if VM::is_int_register(register) {
+        if is_int_register(register) {
             let a: i32 = match ia {
                 Some(i) => i,
                 None => ra.unwrap() as i32,
@@ -292,7 +246,7 @@ impl VM {
                 None => ib.unwrap() as f64,
             };
 
-            self.rregisters[(register & 0b01111111) as usize] = a + b;
+            self.rregisters[idx_from_real_register(register) as usize] = a + b;
         }
     }
 
@@ -303,21 +257,21 @@ impl VM {
 
         let mut ia: Option<i32> = None;
         let mut ra: Option<f64> = None;
-        if VM::is_int_register(a_reg) {
+        if is_int_register(a_reg) {
             ia = Some(self.iregisters[a_reg as usize]);
         } else {
-            ra = Some(self.rregisters[(a_reg & 0b01111111) as usize]);
+            ra = Some(self.rregisters[idx_from_real_register(a_reg) as usize]);
         }
 
         let mut ib: Option<i32> = None;
         let mut rb: Option<f64> = None;
-        if VM::is_int_register(b_reg) {
+        if is_int_register(b_reg) {
             ib = Some(self.iregisters[b_reg as usize]);
         } else {
-            rb = Some(self.rregisters[(b_reg & 0b01111111) as usize]);
+            rb = Some(self.rregisters[idx_from_real_register(b_reg) as usize]);
         }
 
-        if VM::is_int_register(register) {
+        if is_int_register(register) {
             let a: i32 = match ia {
                 Some(i) => i,
                 None => ra.unwrap() as i32,
@@ -340,7 +294,7 @@ impl VM {
                 None => ib.unwrap() as f64,
             };
 
-            self.rregisters[(register & 0b01111111) as usize] = a - b;
+            self.rregisters[idx_from_real_register(register) as usize] = a - b;
         }
     }
 
@@ -351,21 +305,21 @@ impl VM {
 
         let mut ia: Option<i32> = None;
         let mut ra: Option<f64> = None;
-        if VM::is_int_register(a_reg) {
+        if is_int_register(a_reg) {
             ia = Some(self.iregisters[a_reg as usize]);
         } else {
-            ra = Some(self.rregisters[(a_reg & 0b01111111) as usize]);
+            ra = Some(self.rregisters[idx_from_real_register(a_reg) as usize]);
         }
 
         let mut ib: Option<i32> = None;
         let mut rb: Option<f64> = None;
-        if VM::is_int_register(b_reg) {
+        if is_int_register(b_reg) {
             ib = Some(self.iregisters[b_reg as usize]);
         } else {
-            rb = Some(self.rregisters[(b_reg & 0b01111111) as usize]);
+            rb = Some(self.rregisters[idx_from_real_register(b_reg) as usize]);
         }
 
-        if VM::is_int_register(register) {
+        if is_int_register(register) {
             let a: i32 = match ia {
                 Some(i) => i,
                 None => ra.unwrap() as i32,
@@ -388,7 +342,7 @@ impl VM {
                 None => ib.unwrap() as f64,
             };
 
-            self.rregisters[(register & 0b01111111) as usize] = a * b;
+            self.rregisters[idx_from_real_register(register) as usize] = a * b;
         }
     }
 
@@ -399,21 +353,21 @@ impl VM {
 
         let mut ia: Option<i32> = None;
         let mut ra: Option<f64> = None;
-        if VM::is_int_register(a_reg) {
+        if is_int_register(a_reg) {
             ia = Some(self.iregisters[a_reg as usize]);
         } else {
-            ra = Some(self.rregisters[(a_reg & 0b01111111) as usize]);
+            ra = Some(self.rregisters[idx_from_real_register(a_reg) as usize]);
         }
 
         let mut ib: Option<i32> = None;
         let mut rb: Option<f64> = None;
-        if VM::is_int_register(b_reg) {
+        if is_int_register(b_reg) {
             ib = Some(self.iregisters[b_reg as usize]);
         } else {
-            rb = Some(self.rregisters[(b_reg & 0b01111111) as usize]);
+            rb = Some(self.rregisters[idx_from_real_register(b_reg) as usize]);
         }
 
-        if VM::is_int_register(register) {
+        if is_int_register(register) {
             let a: i32 = match ia {
                 Some(i) => i,
                 None => ra.unwrap() as i32,
@@ -436,7 +390,343 @@ impl VM {
                 None => ib.unwrap() as f64,
             };
 
-            self.rregisters[(register & 0b01111111) as usize] = a / b;
+            self.rregisters[idx_from_real_register(register) as usize] = a / b;
+        }
+    }
+
+    fn eq(&mut self) {
+        let register = self.next_u8();
+        let a_reg = self.next_u8();
+        let b_reg = self.next_u8();
+
+        let mut ia: Option<i32> = None;
+        let mut ra: Option<f64> = None;
+        if is_int_register(a_reg) {
+            ia = Some(self.iregisters[a_reg as usize]);
+        } else {
+            ra = Some(self.rregisters[idx_from_real_register(a_reg) as usize]);
+        }
+
+        let mut ib: Option<i32> = None;
+        let mut rb: Option<f64> = None;
+        if is_int_register(b_reg) {
+            ib = Some(self.iregisters[b_reg as usize]);
+        } else {
+            rb = Some(self.rregisters[idx_from_real_register(b_reg) as usize]);
+        }
+
+        if is_int_register(register) {
+            let a: i32 = match ia {
+                Some(i) => i,
+                None => ra.unwrap() as i32,
+            };
+
+            let b: i32 = match ib {
+                Some(i) => i,
+                None => rb.unwrap() as i32,
+            };
+
+            if a == b {
+                self.iregisters[register as usize] = 1;
+            } else {
+                self.iregisters[register as usize] = 0;
+            }
+        } else {
+            let a: f64 = match ra {
+                Some(r) => r,
+                None => ia.unwrap() as f64,
+            };
+
+            let b: f64 = match rb {
+                Some(r) => r,
+                None => ib.unwrap() as f64,
+            };
+
+            if (a - b).abs() < f64::EPSILON {
+                self.rregisters[idx_from_real_register(register) as usize] = 1.0;
+            } else {
+                self.rregisters[idx_from_real_register(register) as usize] = 0.0;
+            }
+        }
+    }
+
+    fn neq(&mut self) {
+        let register = self.next_u8();
+        let a_reg = self.next_u8();
+        let b_reg = self.next_u8();
+
+        let mut ia: Option<i32> = None;
+        let mut ra: Option<f64> = None;
+        if is_int_register(a_reg) {
+            ia = Some(self.iregisters[a_reg as usize]);
+        } else {
+            ra = Some(self.rregisters[idx_from_real_register(a_reg) as usize]);
+        }
+
+        let mut ib: Option<i32> = None;
+        let mut rb: Option<f64> = None;
+        if is_int_register(b_reg) {
+            ib = Some(self.iregisters[b_reg as usize]);
+        } else {
+            rb = Some(self.rregisters[idx_from_real_register(b_reg) as usize]);
+        }
+
+        if is_int_register(register) {
+            let a: i32 = match ia {
+                Some(i) => i,
+                None => ra.unwrap() as i32,
+            };
+
+            let b: i32 = match ib {
+                Some(i) => i,
+                None => rb.unwrap() as i32,
+            };
+
+            if a != b {
+                self.iregisters[register as usize] = 1;
+            } else {
+                self.iregisters[register as usize] = 0;
+            }
+        } else {
+            let a: f64 = match ra {
+                Some(r) => r,
+                None => ia.unwrap() as f64,
+            };
+
+            let b: f64 = match rb {
+                Some(r) => r,
+                None => ib.unwrap() as f64,
+            };
+
+            if (a - b).abs() > f64::EPSILON {
+                self.rregisters[idx_from_real_register(register) as usize] = 1.0;
+            } else {
+                self.rregisters[idx_from_real_register(register) as usize] = 0.0;
+            }
+        }
+    }
+
+    fn gt(&mut self) {
+        let register = self.next_u8();
+        let a_reg = self.next_u8();
+        let b_reg = self.next_u8();
+
+        let mut ia: Option<i32> = None;
+        let mut ra: Option<f64> = None;
+        if is_int_register(a_reg) {
+            ia = Some(self.iregisters[a_reg as usize]);
+        } else {
+            ra = Some(self.rregisters[idx_from_real_register(a_reg) as usize]);
+        }
+
+        let mut ib: Option<i32> = None;
+        let mut rb: Option<f64> = None;
+        if is_int_register(b_reg) {
+            ib = Some(self.iregisters[b_reg as usize]);
+        } else {
+            rb = Some(self.rregisters[idx_from_real_register(b_reg) as usize]);
+        }
+
+        if is_int_register(register) {
+            let a: i32 = match ia {
+                Some(i) => i,
+                None => ra.unwrap() as i32,
+            };
+
+            let b: i32 = match ib {
+                Some(i) => i,
+                None => rb.unwrap() as i32,
+            };
+
+            if a > b {
+                self.iregisters[register as usize] = 1;
+            } else {
+                self.iregisters[register as usize] = 0;
+            }
+        } else {
+            let a: f64 = match ra {
+                Some(r) => r,
+                None => ia.unwrap() as f64,
+            };
+
+            let b: f64 = match rb {
+                Some(r) => r,
+                None => ib.unwrap() as f64,
+            };
+
+            if a > b {
+                self.rregisters[idx_from_real_register(register) as usize] = 1.0;
+            } else {
+                self.rregisters[idx_from_real_register(register) as usize] = 0.0;
+            }
+        }
+    }
+
+    fn lt(&mut self) {
+        let register = self.next_u8();
+        let a_reg = self.next_u8();
+        let b_reg = self.next_u8();
+
+        let mut ia: Option<i32> = None;
+        let mut ra: Option<f64> = None;
+        if is_int_register(a_reg) {
+            ia = Some(self.iregisters[a_reg as usize]);
+        } else {
+            ra = Some(self.rregisters[idx_from_real_register(a_reg) as usize]);
+        }
+
+        let mut ib: Option<i32> = None;
+        let mut rb: Option<f64> = None;
+        if is_int_register(b_reg) {
+            ib = Some(self.iregisters[b_reg as usize]);
+        } else {
+            rb = Some(self.rregisters[idx_from_real_register(b_reg) as usize]);
+        }
+
+        if is_int_register(register) {
+            let a: i32 = match ia {
+                Some(i) => i,
+                None => ra.unwrap() as i32,
+            };
+
+            let b: i32 = match ib {
+                Some(i) => i,
+                None => rb.unwrap() as i32,
+            };
+
+            if a < b {
+                self.iregisters[register as usize] = 1;
+            } else {
+                self.iregisters[register as usize] = 0;
+            }
+        } else {
+            let a: f64 = match ra {
+                Some(r) => r,
+                None => ia.unwrap() as f64,
+            };
+
+            let b: f64 = match rb {
+                Some(r) => r,
+                None => ib.unwrap() as f64,
+            };
+
+            if a < b {
+                self.rregisters[idx_from_real_register(register) as usize] = 1.0;
+            } else {
+                self.rregisters[idx_from_real_register(register) as usize] = 0.0;
+            }
+        }
+    }
+
+    fn gte(&mut self) {
+        let register = self.next_u8();
+        let a_reg = self.next_u8();
+        let b_reg = self.next_u8();
+
+        let mut ia: Option<i32> = None;
+        let mut ra: Option<f64> = None;
+        if is_int_register(a_reg) {
+            ia = Some(self.iregisters[a_reg as usize]);
+        } else {
+            ra = Some(self.rregisters[idx_from_real_register(a_reg) as usize]);
+        }
+
+        let mut ib: Option<i32> = None;
+        let mut rb: Option<f64> = None;
+        if is_int_register(b_reg) {
+            ib = Some(self.iregisters[b_reg as usize]);
+        } else {
+            rb = Some(self.rregisters[idx_from_real_register(b_reg) as usize]);
+        }
+
+        if is_int_register(register) {
+            let a: i32 = match ia {
+                Some(i) => i,
+                None => ra.unwrap() as i32,
+            };
+
+            let b: i32 = match ib {
+                Some(i) => i,
+                None => rb.unwrap() as i32,
+            };
+
+            if a >= b {
+                self.iregisters[register as usize] = 1;
+            } else {
+                self.iregisters[register as usize] = 0;
+            }
+        } else {
+            let a: f64 = match ra {
+                Some(r) => r,
+                None => ia.unwrap() as f64,
+            };
+
+            let b: f64 = match rb {
+                Some(r) => r,
+                None => ib.unwrap() as f64,
+            };
+
+            if a > b - f64::EPSILON {
+                self.rregisters[idx_from_real_register(register) as usize] = 1.0;
+            } else {
+                self.rregisters[idx_from_real_register(register) as usize] = 0.0;
+            }
+        }
+    }
+
+    fn lte(&mut self) {
+        let register = self.next_u8();
+        let a_reg = self.next_u8();
+        let b_reg = self.next_u8();
+
+        let mut ia: Option<i32> = None;
+        let mut ra: Option<f64> = None;
+        if is_int_register(a_reg) {
+            ia = Some(self.iregisters[a_reg as usize]);
+        } else {
+            ra = Some(self.rregisters[idx_from_real_register(a_reg) as usize]);
+        }
+
+        let mut ib: Option<i32> = None;
+        let mut rb: Option<f64> = None;
+        if is_int_register(b_reg) {
+            ib = Some(self.iregisters[b_reg as usize]);
+        } else {
+            rb = Some(self.rregisters[idx_from_real_register(b_reg) as usize]);
+        }
+
+        if is_int_register(register) {
+            let a: i32 = match ia {
+                Some(i) => i,
+                None => ra.unwrap() as i32,
+            };
+
+            let b: i32 = match ib {
+                Some(i) => i,
+                None => rb.unwrap() as i32,
+            };
+
+            if a <= b {
+                self.iregisters[register as usize] = 1;
+            } else {
+                self.iregisters[register as usize] = 0;
+            }
+        } else {
+            let a: f64 = match ra {
+                Some(r) => r,
+                None => ia.unwrap() as f64,
+            };
+
+            let b: f64 = match rb {
+                Some(r) => r,
+                None => ib.unwrap() as f64,
+            };
+
+            if a < b + f64::EPSILON {
+                self.rregisters[idx_from_real_register(register) as usize] = 1.0;
+            } else {
+                self.rregisters[idx_from_real_register(register) as usize] = 0.0;
+            }
         }
     }
 }

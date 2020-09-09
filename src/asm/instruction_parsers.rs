@@ -4,6 +4,7 @@ use crate::asm::opcode_parsers::*;
 use crate::asm::operand_parsers::operand;
 use crate::asm::symbols::*;
 use crate::asm::Token;
+use crate::vm::real_register_to_idx;
 
 use nom::types::CompleteStr;
 use std::fmt;
@@ -102,7 +103,7 @@ impl AssemblerInstruction {
                 results.push(*idx);
             }
             Token::RealRegister { idx } => {
-                let idx = *idx | 0b10000000;
+                let idx = real_register_to_idx(*idx);
                 results.push(idx);
             }
             Token::Integer { value } => {
