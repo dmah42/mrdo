@@ -24,6 +24,17 @@ named!(pub real<CompleteStr, Token>,
     )
 );
 
+named!(pub ident<CompleteStr, Token>,
+    ws!(
+        do_parse!(
+            name: alpha >>
+            (
+                Token::Identifier{ name: name.to_string() }
+            )
+        )
+    )
+);
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -44,5 +55,13 @@ mod tests {
         // failure
         let result = real(CompleteStr("foo"));
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_ident() {
+        let result = ident(CompleteStr("foo"));
+        assert!(result.is_ok());
+        let (_, token) = result.unwrap();
+        assert_eq!(token, Token::Identifier { name: "foo".to_string() });
     }
 }

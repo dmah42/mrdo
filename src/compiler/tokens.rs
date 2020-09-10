@@ -25,6 +25,9 @@ pub enum Token {
         expr: Box<Token>,
     },
 
+    Identifier {
+        name: String,
+    },
     Real {
         value: f64,
     },

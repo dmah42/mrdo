@@ -1,5 +1,5 @@
 use crate::compiler::expression_parsers::expression;
-use crate::compiler::operand_parsers::real;
+use crate::compiler::operand_parsers::*;
 use crate::compiler::tokens::Token;
 
 use nom::types::CompleteStr;
@@ -10,7 +10,8 @@ named!(pub factor<CompleteStr, Token>,
         do_parse!(
             f: alt!(
                 real |
-                ws!(delimited!(tag!("("), expression, tag!(")")))
+                ws!(delimited!(tag!("("), expression, tag!(")"))) |
+                ident
             ) >>
             (
                 {
@@ -28,6 +29,11 @@ mod tests {
     #[test]
     fn test_factor() {
         let result = factor(CompleteStr("(1+2)"));
+        assert!(result.is_ok());
+        let (_, tree) = result.unwrap();
+        println!("{:?}", tree);
+
+        let result = factor(CompleteStr("3.0 + foo"));
         assert!(result.is_ok());
         let (_, tree) = result.unwrap();
         println!("{:?}", tree);

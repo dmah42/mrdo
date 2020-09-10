@@ -1,14 +1,12 @@
 (* new version *)
 
-(* TODO: add idents into expressions instead of ariths *)
-
 program = {expression};
 expression = term, [term_op, term] | arith, compare_op, arith | assign;
 compare_op = "eq" | "neq" | "gt" | "gte" | "lt" | "lte";
 term_op = "+" | "-";
 term = factor, [factor_op, factor];
 factor_op = "*" | "/";
-factor = real | "(", expression, ")";
+factor = real | "(", expression, ")" | ident;
 real = {"-"}, double;
 double = [digit], {".", [digit]};
 assign = ident, "=", expression;

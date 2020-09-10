@@ -5,6 +5,7 @@ use crate::compiler::visitor::Visitor;
 
 use indexmap::IndexSet;
 use nom::types::CompleteStr;
+use std::collections::HashMap;
 
 pub mod expression_parsers;
 pub mod factor_parsers;
@@ -19,6 +20,7 @@ pub struct Compiler {
     free_reg: IndexSet<u8>,
     used_reg: IndexSet<u8>,
     assembly: Vec<String>,
+    variables: HashMap<String, u8>,
 }
 
 impl Compiler {
@@ -27,6 +29,7 @@ impl Compiler {
             free_reg: (0..32).collect(),
             used_reg: IndexSet::new(),
             assembly: vec![],
+            variables: HashMap::new(),
         }
     }
 
@@ -159,14 +162,37 @@ impl Visitor for Compiler {
                 self.visit_token(op);
             }
 
-            Token::Assign { ident: _, expr } => {
+            Token::Assign { ident, expr } => {
                 // First visit the rhs to make sure we do what we need
                 // to find the value we need.
                 self.visit_token(expr);
-                let _result_reg = self.used_reg.pop().unwrap();
-                // TODO: Allocate storage for the identifier and write value to heap.
+                let result_reg = self.used_reg.pop().unwrap();
 
+                // TODO: Allocate storage for the identifier and write value to heap.
                 // TODO: Map identifier name to heap offset.
+                // TODO: create a 'load from heap' operation in assembly.
+
+                // Temporary: ensure result reg remains 'used' and map name to result reg.
+                // 'unassign' old result reg if the variable already exists.
+                if self.variables.contains_key(ident) {
+                    self.free_reg.insert(self.variables[ident]);
+                }
+
+                self.used_reg.insert(result_reg);
+                self.variables.insert(ident.to_string(), result_reg);
+            }
+
+            Token::Identifier { name } => {
+                // This adds the current variables register to zero to get the value into a
+                // new register ready to be referenced in whatever binary ops are expected.
+                let zero_reg = self.free_reg.pop().unwrap();
+                self.assembly.push(format!("load %{} #0", zero_reg));
+
+                let next_reg = self.free_reg.pop().unwrap();
+                self.assembly.push(format!("add %{} %{} %{}", next_reg, zero_reg, self.variables[name]));
+
+                self.used_reg.insert(next_reg);
+                self.free_reg.insert(zero_reg);
             }
 
             Token::Real { value } => {
