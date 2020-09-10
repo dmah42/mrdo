@@ -66,7 +66,7 @@ impl REPL {
                     // TODO: figure out how to step enough in highlevel or halt if we run for
                     // assembly.
                     Mode::Assembly => vec![buffer.into()],
-                    Mode::Highlevel => self.compiler.compile_expr(buffer.into()).to_vec(),
+                    Mode::Highlevel => self.compiler.compile_expr(buffer).to_vec(),
                 };
                 self.assembly_buffer.append(&mut assembly.clone());
                 let assembled = assembly.join("\n");
