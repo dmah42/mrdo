@@ -29,8 +29,7 @@ bytecode. If the provided program is already bytecode, it will be run directly.
 
 **vm** runs the bytecode
 
-**repl** understands _assembly_ at this point and (TODO) will understand high
-level code later.
+**repl** understands both _assembly_ and _high level_ code
 
 ## language features
 
