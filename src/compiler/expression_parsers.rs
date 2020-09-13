@@ -1,3 +1,4 @@
+use crate::compiler::builtin_parsers::builtin;
 use crate::compiler::operator_parsers::*;
 use crate::compiler::term_parsers::term;
 use crate::compiler::tokens::Token;
@@ -61,7 +62,7 @@ named!(assign<CompleteStr, Token>,
 
 named!(pub expression<CompleteStr, Token>,
     alt!(
-        assign | compare | arith
+        builtin | assign | compare | arith
     )
 );
 

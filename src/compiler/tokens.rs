@@ -25,6 +25,11 @@ pub enum Token {
         expr: Box<Token>,
     },
 
+    Builtin {
+        builtin: String,
+        args: Vec<Token>,
+    },
+
     Identifier {
         name: String,
     },

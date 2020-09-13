@@ -7,6 +7,7 @@ use indexmap::IndexSet;
 use nom::types::CompleteStr;
 use std::collections::HashMap;
 
+pub mod builtin_parsers;
 pub mod expression_parsers;
 pub mod factor_parsers;
 pub mod operand_parsers;
@@ -182,6 +183,22 @@ impl Visitor for Compiler {
                 self.variables.insert(ident.to_string(), result_reg);
             }
 
+            Token::Builtin { builtin, args } => {
+                // TODO: some sort of error return?
+                match builtin.as_str() {
+                    "write" => {
+                        for expr in args {
+                            self.visit_token(expr);
+                        }
+                        let reg = self.used_reg.pop().unwrap();
+                        // TODO: unclear how to print the contents of a register...
+                        self.assembly.push(format!("somestr: .str 'reg ${}'", reg));
+                        self.assembly.push("print @somestr".to_string());
+                    }
+                    _ => println!("Unknown builtin: {}", builtin),
+                };
+            }
+
             Token::Identifier { name } => {
                 // This adds the current variables register to zero to get the value into a
                 // new register ready to be referenced in whatever binary ops are expected.
@@ -189,7 +206,10 @@ impl Visitor for Compiler {
                 self.assembly.push(format!("load %{} #0", zero_reg));
 
                 let next_reg = self.free_reg.pop().unwrap();
-                self.assembly.push(format!("add %{} %{} %{}", next_reg, zero_reg, self.variables[name]));
+                self.assembly.push(format!(
+                    "add %{} %{} %{}",
+                    next_reg, zero_reg, self.variables[name]
+                ));
 
                 self.used_reg.insert(next_reg);
                 self.free_reg.insert(zero_reg);
