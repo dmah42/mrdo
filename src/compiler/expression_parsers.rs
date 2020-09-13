@@ -37,9 +37,7 @@ named!(compare<CompleteStr, Token>,
             ) >>
             right: arith >>
             (
-                {
-                    Token::Compare{ left: Box::new(left), op: Box::new(op), right: Box::new(right) }
-                }
+                Token::Compare{ left: Box::new(left), op: Box::new(op), right: Box::new(right) }
             )
         )
     )
@@ -52,9 +50,22 @@ named!(assign<CompleteStr, Token>,
             tag!("=") >>
             expr: arith >>
             (
-                {
-                    Token::Assign{ ident: ident.to_string(), expr: Box::new(expr) }
-                }
+                Token::Assign{ ident: ident.to_string(), expr: Box::new(expr) }
+            )
+        )
+    )
+);
+
+named!(comment<CompleteStr, Token>,
+    ws!(
+        do_parse!(
+            tag!(";") >>
+            comment: alt!(
+                take_until!("\n") |
+                take_while1!(|ch: char| ch.is_ascii())
+            ) >>
+            (
+                Token::Comment{comment: comment.to_string()}
             )
         )
     )
@@ -62,7 +73,7 @@ named!(assign<CompleteStr, Token>,
 
 named!(pub expression<CompleteStr, Token>,
     alt!(
-        builtin | assign | compare | arith
+        comment | builtin | assign | compare | arith
     )
 );
 
@@ -159,6 +170,30 @@ mod tests {
                     }),
                     right: vec![],
                 })
+            }
+        );
+    }
+
+    #[test]
+    fn test_comment() {
+        let result = comment(CompleteStr("; this! is a comment"));
+        assert!(result.is_ok());
+        let (rest, token) = result.unwrap();
+        assert_eq!(
+            token,
+            Token::Comment {
+                comment: "this! is a comment".to_string()
+            }
+        );
+        assert_eq!(rest, CompleteStr(""));
+
+        let result = comment(CompleteStr("; this! is a comment\n42.0 + 3.0"));
+        assert!(result.is_ok());
+        let (_, token) = result.unwrap();
+        assert_eq!(
+            token,
+            Token::Comment {
+                comment: "this! is a comment".to_string()
             }
         );
     }

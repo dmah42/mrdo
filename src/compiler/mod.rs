@@ -53,6 +53,10 @@ impl Compiler {
 impl Visitor for Compiler {
     fn visit_token(&mut self, node: &Token) {
         match node {
+            Token::Comment { comment: _ } => {
+                //println!("Skipping comment '{}'", comment);
+            }
+
             // Arithmetic
             Token::AdditionOp => {
                 let result_reg = self.free_reg.pop().unwrap();
@@ -200,6 +204,10 @@ impl Visitor for Compiler {
             }
 
             Token::Identifier { name } => {
+                if !self.variables.contains_key(name) {
+                    println!("Unknown variable '{}'", name);
+                }
+
                 // This adds the current variables register to zero to get the value into a
                 // new register ready to be referenced in whatever binary ops are expected.
                 let zero_reg = self.free_reg.pop().unwrap();

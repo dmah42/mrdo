@@ -1,5 +1,9 @@
 #[derive(Debug, PartialEq)]
 pub enum Token {
+    Comment {
+        comment: String,
+    },
+
     // Arithmetic
     AdditionOp,
     SubtractionOp,
