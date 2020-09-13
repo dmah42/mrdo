@@ -20,8 +20,19 @@ pub mod vm;
 struct CLI {
     #[structopt(parse(from_os_str))]
     program: Option<std::path::PathBuf>,
+
     #[structopt(short, long, parse(from_os_str))]
     output: Option<std::path::PathBuf>,
+
+    #[structopt(short("a"), long)]
+    list_asm: bool,
+
+    #[structopt(short("b"), long)]
+    list_bc: bool,
+
+    #[structopt(short("r"), long)]
+    list_reg: bool,
+
     #[structopt(short, long)]
     threads: Option<u32>,
 }
@@ -34,9 +45,9 @@ fn main() {
             let bytecode = read_bytecode(&p);
             let bc = match bytecode {
                 Some(bc) => bc,
-                None => compile(&p, args.output),
+                None => compile(&p, args.output, args.list_asm),
             };
-            run_bytecode(&bc);
+            run_bytecode(&bc, args.list_bc, args.list_reg);
         }
         None => run_repl(),
     }
@@ -67,52 +78,56 @@ fn run_repl() {
     repl.run();
 }
 
-fn run_bytecode(bytecode: &[u8]) {
+fn run_bytecode(bytecode: &[u8], list_bc: bool, list_reg: bool) {
     let mut vm = VM::new();
     if let Err(e) = vm.set_bytecode(&bytecode) {
         println!("vmerror: {}", e);
     }
 
-    println!("Listing readonly:");
-    for data in vm.ro_data.chunks(4) {
-        println!("  {:?}", data);
-    }
-    println!("EOF");
+    if list_bc {
+        println!("Listing readonly:");
+        for data in vm.ro_data.chunks(4) {
+            println!("  {:?}", data);
+        }
+        println!("EOF");
 
-    println!("Listing instructions:");
-    for instr in vm.program.chunks(4) {
-        println!("  {:?}", instr);
+        println!("Listing instructions:");
+        for instr in vm.program.chunks(4) {
+            println!("  {:?}", instr);
+        }
+        println!("EOF");
     }
-    println!("EOF");
 
     let result = vm.run();
     match result {
         Ok(_) => {
-            println!("Listing integer registers:");
-            for (i, reg) in vm.iregisters.chunks(4).enumerate() {
-                println!(
-                    "  [{}]\t{}\t{}\t{}\t{}",
-                    i * 4,
-                    reg[0],
-                    reg[1],
-                    reg[2],
-                    reg[3]
-                );
-            }
-            println!("EOF");
+            if list_reg {
+                println!("Listing integer registers:");
+                for (i, reg) in vm.iregisters.chunks(4).enumerate() {
+                    println!(
+                        "  [{}]\t{}\t{}\t{}\t{}",
+                        i * 4,
+                        reg[0],
+                        reg[1],
+                        reg[2],
+                        reg[3]
+                    );
+                }
+                println!("EOF");
 
-            println!("Listing real registers:");
-            for (i, reg) in vm.rregisters.chunks(4).enumerate() {
-                println!(
-                    "  [{}]\t{:.03}\t{:.03}\t{:.03}\t{:.03}",
-                    i * 4,
-                    reg[0],
-                    reg[1],
-                    reg[2],
-                    reg[3]
-                );
+                println!("Listing real registers:");
+                for (i, reg) in vm.rregisters.chunks(4).enumerate() {
+                    println!(
+                        "  [{}]\t{:.03}\t{:.03}\t{:.03}\t{:.03}",
+                        i * 4,
+                        reg[0],
+                        reg[1],
+                        reg[2],
+                        reg[3]
+                    );
+                }
+                println!("EOF");
             }
-            println!("EOF");
             std::process::exit(0);
         }
         Err(e) => {
@@ -122,13 +137,19 @@ fn run_bytecode(bytecode: &[u8]) {
     }
 }
 
-fn compile(assembly: &std::path::PathBuf, output: Option<std::path::PathBuf>) -> Vec<u8> {
+fn compile(
+    assembly: &std::path::PathBuf,
+    output: Option<std::path::PathBuf>,
+    list_asm: bool,
+) -> Vec<u8> {
     let mut compiler = Compiler::new();
 
     let source = read_assembly(&assembly);
     let assembly = compiler.compile(&source);
 
-    println!("assembly\n{}\nEOF", assembly);
+    if list_asm {
+        println!("assembly\n{}\nEOF", assembly);
+    }
     let mut asm = Assembler::new();
     let bytecode = asm.assemble(&assembly);
     match bytecode {
