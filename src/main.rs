@@ -38,7 +38,7 @@ fn main() {
             };
             run_bytecode(&bc);
         }
-        None => run_repl()
+        None => run_repl(),
     }
 }
 
@@ -73,6 +73,12 @@ fn run_bytecode(bytecode: &[u8]) {
         println!("vmerror: {}", e);
     }
 
+    println!("Listing readonly:");
+    for data in vm.ro_data.chunks(4) {
+        println!("  {:?}", data);
+    }
+    println!("EOF");
+
     println!("Listing instructions:");
     for instr in vm.program.chunks(4) {
         println!("  {:?}", instr);
@@ -83,14 +89,28 @@ fn run_bytecode(bytecode: &[u8]) {
     match result {
         Ok(_) => {
             println!("Listing integer registers:");
-            for reg in vm.iregisters.chunks(4) {
-                println!("  {}\t{}\t{}\t{}", reg[0], reg[1], reg[2], reg[3]);
+            for (i, reg) in vm.iregisters.chunks(4).enumerate() {
+                println!(
+                    "  [{}]\t{}\t{}\t{}\t{}",
+                    i * 4,
+                    reg[0],
+                    reg[1],
+                    reg[2],
+                    reg[3]
+                );
             }
             println!("EOF");
 
             println!("Listing real registers:");
-            for reg in vm.rregisters.chunks(4) {
-                println!("  {}\t{}\t{}\t{}", reg[0], reg[1], reg[2], reg[3]);
+            for (i, reg) in vm.rregisters.chunks(4).enumerate() {
+                println!(
+                    "  [{}]\t{:.03}\t{:.03}\t{:.03}\t{:.03}",
+                    i * 4,
+                    reg[0],
+                    reg[1],
+                    reg[2],
+                    reg[3]
+                );
             }
             println!("EOF");
             std::process::exit(0);

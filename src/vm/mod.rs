@@ -12,7 +12,7 @@ pub struct VM {
     pub program: Vec<u8>,
     heap: Vec<u8>,
     pc: usize,
-    ro_data: Vec<u8>,
+    pub ro_data: Vec<u8>,
 }
 
 pub fn is_valid_bytecode(bytecode: &[u8]) -> bool {
@@ -140,7 +140,7 @@ impl VM {
                 let result = std::str::from_utf8(&slice[offset..end]);
                 match result {
                     Ok(s) => {
-                        print!("{}", s);
+                        println!("{}", s);
                     }
                     Err(e) => {
                         return Err(Error::new(&format!(
