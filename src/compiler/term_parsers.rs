@@ -33,6 +33,7 @@ mod tests {
 
     #[test]
     fn test_parse_term() {
+        // TODO: fill out the test cases.
         let result = term(CompleteStr("3 * 4"));
         assert!(result.is_ok());
         let (_, tree) = result.unwrap();

@@ -7,11 +7,26 @@ use nom::*;
 named!(pub builtin<CompleteStr, Token>,
     ws!(
         do_parse!(
-            builtin: alpha >>
-            args: ws!(delimited!(tag!("("), separated_list!(tag!(","), expression), tag!(")"))) >>
+            tag!("do") >>
+            args: ws!(
+                delimited!(
+                    tag!("("),
+                    tuple!(
+                        alpha,
+                        opt!(pair!(tag!(","), separated_list!(tag!(","), expression)))
+                    ),
+                    tag!(")")
+                )) >>
             (
                 {
-                    Token::Builtin{ builtin: builtin.to_string(), args }
+                    match args.1 {
+                        Some(exprs) => {
+                            Token::Builtin{ builtin: args.0.to_string(), args: exprs.1 }
+                        },
+                        None => {
+                            Token::Builtin{ builtin: args.0.to_string(), args: vec![] }
+                        }
+                    }
                 }
             )
         )
@@ -24,18 +39,18 @@ mod tests {
 
     #[test]
     fn test_builtin() {
-        let result = builtin(CompleteStr("foo()"));
+        let result = builtin(CompleteStr("do(foo)"));
         assert!(result.is_ok());
         let (_, token) = result.unwrap();
         assert_eq!(
             token,
             Token::Builtin {
                 builtin: "foo".to_string(),
-                args: vec![]
+                args: vec![],
             }
         );
 
-        let result = builtin(CompleteStr("write(42.0)"));
+        let result = builtin(CompleteStr("do(write, 42.0)"));
         assert!(result.is_ok());
         let (_, token) = result.unwrap();
         assert_eq!(
@@ -50,11 +65,11 @@ mod tests {
                         right: vec![],
                     }),
                     right: vec![],
-                }]
+                }],
             }
         );
 
-        let result = builtin(CompleteStr("read(foo, 1.0)"));
+        let result = builtin(CompleteStr("do (read, foo, 1.0)"));
         assert!(result.is_ok());
         let (_, token) = result.unwrap();
         assert_eq!(

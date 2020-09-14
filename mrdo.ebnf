@@ -1,7 +1,11 @@
 (* new version *)
 
-program = {expression};
-expression = term, [term_op, term] | arith, compare_op, arith | assign;
+program = {expression | comment};
+comment = ";", [ascii];
+(* TODO: separate 'assign' from expression to create an rvalue *)
+expression = term, [term_op, term] | arith, compare_op, arith | assign | call;
+builtin = "write"; (* TODO: add more *)
+call = "do", "(", builtin, {[", expression"]}, ")";  (* TODO: implement this *)
 compare_op = "eq" | "neq" | "gt" | "gte" | "lt" | "lte";
 term_op = "+" | "-";
 term = factor, [factor_op, factor];

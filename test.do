@@ -4,4 +4,4 @@
 foo = 41.0 + 1.0
 foo / 2.0
 ; let's write it out
-write(foo)
+do(write, foo)

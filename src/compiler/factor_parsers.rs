@@ -28,6 +28,7 @@ mod tests {
 
     #[test]
     fn test_factor() {
+        // TODO: fill these test cases out.
         let result = factor(CompleteStr("(1+2)"));
         assert!(result.is_ok());
         let (_, tree) = result.unwrap();
