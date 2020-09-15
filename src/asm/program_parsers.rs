@@ -13,7 +13,14 @@ impl Program {
     pub fn to_bytes(&self, symbols: &Table) -> Vec<u8> {
         let mut program = vec![];
         for instruction in &self.instructions {
-            program.append(&mut instruction.to_bytes(symbols));
+            match instruction.to_bytes(symbols) {
+                Ok(mut bytes) => program.append(&mut bytes),
+                Err(e) => {
+                    // TODO: error return.
+                    println!("{}", e);
+                    std::process::exit(1);
+                }
+            }
         }
         program
     }

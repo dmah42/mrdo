@@ -1,4 +1,5 @@
 use crate::asm::directive_parsers::*;
+use crate::asm::error::AsmError;
 use crate::asm::label_parsers::*;
 use crate::asm::opcode_parsers::*;
 use crate::asm::operand_parsers::operand;
@@ -69,7 +70,7 @@ impl AssemblerInstruction {
         }
     }
 
-    pub fn to_bytes(&self, symbols: &Table) -> Vec<u8> {
+    pub fn to_bytes(&self, symbols: &Table) -> Result<Vec<u8>, AsmError> {
         let mut results = vec![];
         if let Some(ref token) = self.opcode {
             match token {
@@ -77,16 +78,16 @@ impl AssemblerInstruction {
                     let b: u8 = (*code).into();
                     results.push(b);
                 }
-                _ => {
-                    println!("Non-opcode found in opcode field!");
-                    std::process::exit(1); // TODO: error returns
-                }
+                _ => return Err(AsmError::NotAnOpcode),
             }
         };
 
         for operand in &[&self.operand0, &self.operand1, &self.operand2] {
             if let Some(token) = operand {
-                AssemblerInstruction::extract_operand(token, symbols, &mut results)
+                if let Err(e) = AssemblerInstruction::extract_operand(token, symbols, &mut results)
+                {
+                    return Err(e);
+                }
             }
         }
 
@@ -94,10 +95,10 @@ impl AssemblerInstruction {
             results.push(0);
         }
 
-        results
+        Ok(results)
     }
 
-    fn extract_operand(t: &Token, symbols: &Table, results: &mut Vec<u8>) {
+    fn extract_operand(t: &Token, symbols: &Table, results: &mut Vec<u8>) -> Result<(), AsmError> {
         match t {
             Token::IntRegister { idx } => {
                 results.push(*idx);
@@ -123,14 +124,17 @@ impl AssemblerInstruction {
                     results.push(hb as u8);
                     results.push(lb as u8);
                 } else {
-                    println!("No value found for label {:?}", name);
-                    std::process::exit(1); // TODO: error returns.
+                    return Err(AsmError::UnknownLabel {
+                        name: name.to_string(),
+                    });
                 }
             }
             _ => {
+                // TODO: error return.
                 println!("Opcode {:?} found in operand field", t);
             }
         };
+        Ok(())
     }
 }
 
@@ -186,7 +190,7 @@ mod tests {
         let symbols = Table::new();
         let mut results = vec![];
 
-        AssemblerInstruction::extract_operand(&token, &symbols, &mut results);
+        assert!(AssemblerInstruction::extract_operand(&token, &symbols, &mut results).is_ok());
         assert_eq!(results, vec![4]);
     }
 
@@ -196,7 +200,7 @@ mod tests {
         let symbols = Table::new();
         let mut results = vec![];
 
-        AssemblerInstruction::extract_operand(&token, &symbols, &mut results);
+        assert!(AssemblerInstruction::extract_operand(&token, &symbols, &mut results).is_ok());
         assert_eq!(results, vec![131]);
     }
 
@@ -206,13 +210,13 @@ mod tests {
         let symbols = Table::new();
         let mut results = vec![];
 
-        AssemblerInstruction::extract_operand(&token, &symbols, &mut results);
+        assert!(AssemblerInstruction::extract_operand(&token, &symbols, &mut results).is_ok());
         assert_eq!(results, vec![0, 0, 0, 42]);
 
         let token = Token::Integer { value: -42 };
         let mut results = vec![];
 
-        AssemblerInstruction::extract_operand(&token, &symbols, &mut results);
+        assert!(AssemblerInstruction::extract_operand(&token, &symbols, &mut results).is_ok());
         assert_eq!(results, vec![255, 255, 255, 214]);
     }
 
@@ -222,13 +226,13 @@ mod tests {
         let symbols = Table::new();
         let mut results = vec![];
 
-        AssemblerInstruction::extract_operand(&token, &symbols, &mut results);
+        assert!(AssemblerInstruction::extract_operand(&token, &symbols, &mut results).is_ok());
         assert_eq!(results, vec![64, 16, 204, 204, 204, 204, 204, 205]);
 
         let token = Token::Real { value: -4.2 };
         let mut results = vec![];
 
-        AssemblerInstruction::extract_operand(&token, &symbols, &mut results);
+        assert!(AssemblerInstruction::extract_operand(&token, &symbols, &mut results).is_ok());
         assert_eq!(results, vec![192, 16, 204, 204, 204, 204, 204, 205]);
     }
 

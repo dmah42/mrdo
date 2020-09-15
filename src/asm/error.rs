@@ -11,6 +11,8 @@ pub enum AsmError {
     InvalidDirectiveName { instr: String },
     UnknownDirective { name: String },
     UnknownSection { name: String },
+    UnknownLabel { name: String },
+    NotAnOpcode,
     EmptyString,
     UnlabeledString,
 }
@@ -37,6 +39,8 @@ impl fmt::Display for AsmError {
             AsmError::UnknownSection { ref name } => {
                 f.write_str(&format!("Unknown section: {}", name))
             }
+            AsmError::UnknownLabel { ref name } => f.write_str(&format!("Unknown label: {}", name)),
+            AsmError::NotAnOpcode => f.write_str("Non-opcode found in opcode field"),
             AsmError::EmptyString => f.write_str("Empty string provided"),
             AsmError::UnlabeledString => f.write_str("Unlabeled string cannot be referenced"),
         }
@@ -54,6 +58,8 @@ impl Error for AsmError {
             AsmError::InvalidDirectiveName { .. } => "Invalid directive name",
             AsmError::UnknownDirective { .. } => "Unknown directive",
             AsmError::UnknownSection { .. } => "Unknown section",
+            AsmError::UnknownLabel { .. } => "Unknown label",
+            AsmError::NotAnOpcode { .. } => "Not an opcode",
             AsmError::EmptyString { .. } => "Empty string",
             AsmError::UnlabeledString { .. } => "Unlabeled string",
         }

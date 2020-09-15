@@ -133,8 +133,14 @@ impl Assembler {
         let mut program = vec![];
         for i in &p.instructions {
             if i.is_opcode() {
-                let mut bytes = i.to_bytes(&self.symbols);
-                program.append(&mut bytes);
+                match i.to_bytes(&self.symbols) {
+                    Ok(mut bytes) => program.append(&mut bytes),
+                    Err(e) => {
+                        // TODO: reraise error.
+                        println!("{}", e);
+                        std::process::exit(1);
+                    }
+                }
             }
             if i.is_directive() {
                 self.process_directive(i);
