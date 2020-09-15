@@ -1,4 +1,4 @@
-use crate::asm::error::AsmError;
+use crate::asm::error::Error;
 use crate::asm::instruction::Opcode;
 use crate::asm::instruction_parsers::AssemblerInstruction;
 use crate::asm::program_parsers::{program, Program};
@@ -47,7 +47,7 @@ pub struct Assembler {
     phase: Phase,
     sections: Vec<Section>,
     current_section: Option<Section>,
-    errors: Vec<AsmError>,
+    errors: Vec<Error>,
 }
 
 impl Assembler {
@@ -62,7 +62,7 @@ impl Assembler {
         }
     }
 
-    pub fn assemble(&mut self, raw: &str) -> Result<Vec<u8>, Vec<AsmError>> {
+    pub fn assemble(&mut self, raw: &str) -> Result<Vec<u8>, Vec<Error>> {
         match program(CompleteStr(raw)) {
             Ok((_remainder, program)) => {
                 self.process_first(&program);
@@ -72,7 +72,7 @@ impl Assembler {
                 }
 
                 if self.sections.len() != 2 {
-                    self.errors.push(AsmError::MissingSection);
+                    self.errors.push(Error::MissingSection);
                     return Err(self.errors.clone());
                 }
 
@@ -88,7 +88,7 @@ impl Assembler {
                 Ok(assembled)
             }
             Err(e) => {
-                self.errors.push(AsmError::ParseError {
+                self.errors.push(Error::ParseError {
                     error: e.to_string(),
                 });
                 Err(self.errors.clone())
@@ -102,7 +102,7 @@ impl Assembler {
                 if self.current_section.is_some() {
                     self.process_label_decl(i);
                 } else {
-                    self.errors.push(AsmError::NoSectionDecl);
+                    self.errors.push(Error::NoSectionDecl);
                 }
             }
 
@@ -117,7 +117,7 @@ impl Assembler {
         let name = match i.label_name() {
             Some(name) => name,
             None => {
-                self.errors.push(AsmError::StringConstantWithoutLabel {
+                self.errors.push(Error::StringConstantWithoutLabel {
                     instr: i.to_string(),
                 });
                 return;
@@ -125,7 +125,7 @@ impl Assembler {
         };
 
         if self.symbols.has(&name) {
-            self.errors.push(AsmError::SymbolAlreadyDeclared { name });
+            self.errors.push(Error::SymbolAlreadyDeclared { name });
             return;
         }
 
@@ -133,7 +133,7 @@ impl Assembler {
     }
 
     // NOTE: public so the repl can do the right thing.
-    pub fn process_second(&mut self, p: &Program) -> Result<Vec<u8>, AsmError> {
+    pub fn process_second(&mut self, p: &Program) -> Result<Vec<u8>, Error> {
         let mut program = vec![];
         for i in &p.instructions {
             if i.is_opcode() {
@@ -150,7 +150,7 @@ impl Assembler {
         let name = match i.directive_name() {
             Some(name) => name,
             None => {
-                self.errors.push(AsmError::InvalidDirectiveName {
+                self.errors.push(Error::InvalidDirectiveName {
                     instr: i.to_string(),
                 });
                 return;
@@ -163,7 +163,7 @@ impl Assembler {
                     self.handle_str(i);
                 }
                 _ => {
-                    self.errors.push(AsmError::UnknownDirective { name });
+                    self.errors.push(Error::UnknownDirective { name });
                 }
             }
         } else {
@@ -174,7 +174,7 @@ impl Assembler {
     fn process_section_header(&mut self, name: &str) {
         let section: Section = name.into();
         if section == Section::Unknown {
-            self.errors.push(AsmError::UnknownSection {
+            self.errors.push(Error::UnknownSection {
                 name: name.to_string(),
             });
             return;
@@ -195,7 +195,7 @@ impl Assembler {
                         self.symbols.set_offset(&name, self.readonly.len() as u32);
                     }
                     None => {
-                        self.errors.push(AsmError::UnlabeledString);
+                        self.errors.push(Error::UnlabeledString);
                         return;
                     }
                 };
@@ -206,7 +206,7 @@ impl Assembler {
                 self.readonly.push(0);
             }
             None => {
-                self.errors.push(AsmError::EmptyString);
+                self.errors.push(Error::EmptyString);
             }
         }
     }

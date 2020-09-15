@@ -1,5 +1,5 @@
 use crate::asm::directive_parsers::*;
-use crate::asm::error::AsmError;
+use crate::asm::error::Error;
 use crate::asm::label_parsers::*;
 use crate::asm::opcode_parsers::*;
 use crate::asm::operand_parsers::operand;
@@ -69,7 +69,7 @@ impl AssemblerInstruction {
         }
     }
 
-    pub fn to_bytes(&self, symbols: &Table) -> Result<Vec<u8>, AsmError> {
+    pub fn to_bytes(&self, symbols: &Table) -> Result<Vec<u8>, Error> {
         let mut results = vec![];
         if let Some(ref token) = self.opcode {
             match token {
@@ -77,7 +77,7 @@ impl AssemblerInstruction {
                     let b: u8 = (*code).into();
                     results.push(b);
                 }
-                _ => return Err(AsmError::NotAnOpcode),
+                _ => return Err(Error::NotAnOpcode),
             }
         };
 
@@ -94,7 +94,7 @@ impl AssemblerInstruction {
         Ok(results)
     }
 
-    fn extract_operand(t: &Token, symbols: &Table, results: &mut Vec<u8>) -> Result<(), AsmError> {
+    fn extract_operand(t: &Token, symbols: &Table, results: &mut Vec<u8>) -> Result<(), Error> {
         match t {
             Token::IntRegister { idx } => {
                 results.push(*idx);
@@ -120,13 +120,13 @@ impl AssemblerInstruction {
                     results.push(hb as u8);
                     results.push(lb as u8);
                 } else {
-                    return Err(AsmError::UnknownLabel {
+                    return Err(Error::UnknownLabel {
                         name: name.to_string(),
                     });
                 }
             }
             _ => {
-                return Err(AsmError::UnexpectedToken { token: t.clone() });
+                return Err(Error::UnexpectedToken { token: t.clone() });
             }
         };
         Ok(())
