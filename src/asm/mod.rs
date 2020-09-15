@@ -76,11 +76,15 @@ impl Assembler {
                     return Err(self.errors.clone());
                 }
 
-                let mut body = self.process_second(&program);
+                let body = self.process_second(&program);
+                if let Err(e) = body {
+                    self.errors.push(e);
+                    return Err(self.errors.clone());
+                }
 
                 let mut assembled = self.write_header();
                 assembled.append(&mut self.readonly);
-                assembled.append(&mut body);
+                assembled.append(&mut body.unwrap());
                 Ok(assembled)
             }
             Err(e) => {
@@ -129,24 +133,17 @@ impl Assembler {
     }
 
     // NOTE: public so the repl can do the right thing.
-    pub fn process_second(&mut self, p: &Program) -> Vec<u8> {
+    pub fn process_second(&mut self, p: &Program) -> Result<Vec<u8>, AsmError> {
         let mut program = vec![];
         for i in &p.instructions {
             if i.is_opcode() {
-                match i.to_bytes(&self.symbols) {
-                    Ok(mut bytes) => program.append(&mut bytes),
-                    Err(e) => {
-                        // TODO: reraise error.
-                        println!("{}", e);
-                        std::process::exit(1);
-                    }
-                }
+                program.append(&mut i.to_bytes(&self.symbols)?);
             }
             if i.is_directive() {
                 self.process_directive(i);
             }
         }
-        program
+        Ok(program)
     }
 
     fn process_directive(&mut self, i: &AssemblerInstruction) {

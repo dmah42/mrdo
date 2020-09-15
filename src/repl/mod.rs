@@ -70,14 +70,18 @@ impl REPL {
                 };
                 self.assembly_buffer.append(&mut assembly.clone());
                 let assembled = assembly.join("\n");
-                let mut bytecode = match program(CompleteStr(&assembled)) {
+                let bytecode = match program(CompleteStr(&assembled)) {
                     Ok((_, prog)) => self.asm.process_second(&prog),
                     Err(e) => {
                         println!("{} Unable to parse input: {:?}", WARN_TAG, e);
                         continue;
                     }
                 };
-                self.vm.program.append(&mut bytecode);
+                if let Err(e) = bytecode {
+                    println!("{} {}", ERROR_TAG, e);
+                    continue;
+                }
+                self.vm.program.append(&mut bytecode.unwrap());
                 for _i in 1..=assembly.len() {
                     if let Err(e) = self.vm.step() {
                         println!("{} {}", ERROR_TAG, e);

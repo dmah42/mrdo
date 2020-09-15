@@ -1,5 +1,4 @@
 use crate::asm::Token;
-use std::error::Error;
 use std::fmt;
 
 #[derive(Debug, Clone)]
@@ -52,7 +51,7 @@ impl fmt::Display for AsmError {
     }
 }
 
-impl Error for AsmError {
+impl std::error::Error for AsmError {
     fn description(&self) -> &str {
         match self {
             AsmError::ParseError { .. } => "There was an error parsing the code",

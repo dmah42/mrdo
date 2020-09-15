@@ -83,10 +83,7 @@ impl AssemblerInstruction {
 
         for operand in &[&self.operand0, &self.operand1, &self.operand2] {
             if let Some(token) = operand {
-                if let Err(e) = AssemblerInstruction::extract_operand(token, symbols, &mut results)
-                {
-                    return Err(e);
-                }
+                AssemblerInstruction::extract_operand(token, symbols, &mut results)?
             }
         }
 
@@ -129,7 +126,7 @@ impl AssemblerInstruction {
                 }
             }
             _ => {
-                return Err(AsmError::UnexpectedToken{ token: t.clone() });
+                return Err(AsmError::UnexpectedToken { token: t.clone() });
             }
         };
         Ok(())

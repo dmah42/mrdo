@@ -111,17 +111,9 @@ impl VM {
             Opcode::LT => self.lt(),
             Opcode::GTE => self.gte(),
             Opcode::LTE => self.lte(),
-            Opcode::JEQ => {
-                // TODO: check the register is an integer register.
-                let target = self.iregisters[self.next_u8() as usize];
-                let a = self.iregisters[self.next_u8() as usize];
-                let b = self.iregisters[self.next_u8() as usize];
-                if a == b {
-                    self.pc = target as usize;
-                }
-            }
+            Opcode::JEQ => self.jeq()?,
             Opcode::ALLOC => {
-                // TODO: check this is an int register
+                // TODO: check this is an int register. See `self.jeq()` for how.
                 let register = self.next_u8() as usize;
                 let bytes = self.iregisters[self.next_u8() as usize];
                 self.iregisters[register] = self.heap.len() as i32;
@@ -170,9 +162,9 @@ impl VM {
     }
 
     fn next_u16(&mut self) -> u16 {
-        let result = ((self.program[self.pc] as u16) << 8) | self.program[self.pc + 1] as u16;
+        let bytes = [self.program[self.pc], self.program[self.pc + 1]];
         self.pc += 2;
-        result
+        u16::from_be_bytes(bytes)
     }
 
     fn next_i32(&mut self) -> i32 {
@@ -414,6 +406,10 @@ impl VM {
             rb = Some(self.rregisters[idx_from_real_register(b_reg) as usize]);
         }
 
+        // FIXME: this isn't right. we shouldn't use the destination to assume something about the operands.
+        // See `self.jeq()` which does this right by always doing the comparison as float.
+        // Specifically this should first do the comparison by float (which will trivially pass if they're ints)
+        // and then write the appropriate value to the output register.
         if is_int_register(register) {
             let a: i32 = match ia {
                 Some(i) => i,
@@ -727,6 +723,48 @@ impl VM {
                 self.rregisters[idx_from_real_register(register) as usize] = 0.0;
             }
         }
+    }
+
+    fn jeq(&mut self) -> Result<(), Error> {
+        let register = self.next_u8();
+        if !is_int_register(register) {
+            return Err(Error::new("Cannot jump to non-integer location"));
+        }
+        let target = self.iregisters[register as usize];
+
+        let a_reg = self.next_u8();
+        let b_reg = self.next_u8();
+
+        let mut ia: Option<i32> = None;
+        let mut ra: Option<f64> = None;
+        if is_int_register(a_reg) {
+            ia = Some(self.iregisters[a_reg as usize]);
+        } else {
+            ra = Some(self.rregisters[idx_from_real_register(a_reg) as usize]);
+        }
+
+        let mut ib: Option<i32> = None;
+        let mut rb: Option<f64> = None;
+        if is_int_register(b_reg) {
+            ib = Some(self.iregisters[b_reg as usize]);
+        } else {
+            rb = Some(self.rregisters[idx_from_real_register(b_reg) as usize]);
+        }
+
+        let a: f64 = match ra {
+            Some(f) => f,
+            None => ia.unwrap() as f64,
+        };
+
+        let b: f64 = match rb {
+            Some(f) => f,
+            None => ib.unwrap() as f64,
+        };
+
+        if (a - b).abs() < f64::EPSILON {
+            self.pc = target as usize;
+        }
+        Ok(())
     }
 }
 
