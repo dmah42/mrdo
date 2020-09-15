@@ -28,15 +28,40 @@ mod tests {
 
     #[test]
     fn test_factor() {
-        // TODO: fill these test cases out.
         let result = factor(CompleteStr("(1+2)"));
         assert!(result.is_ok());
         let (_, tree) = result.unwrap();
-        println!("{:?}", tree);
+        assert_eq!(
+            tree,
+            Token::Factor {
+                value: Box::new(Token::Expression {
+                    left: Box::new(Token::Term {
+                        left: Box::new(Token::Factor {
+                            value: Box::new(Token::Real { value: 1.0 })
+                        }),
+                        right: vec![]
+                    }),
+                    right: vec![(
+                        Token::AdditionOp,
+                        Token::Term {
+                            left: Box::new(Token::Factor {
+                                value: Box::new(Token::Real { value: 2.0 })
+                            }),
+                            right: vec![]
+                        }
+                    )]
+                })
+            }
+        );
 
         let result = factor(CompleteStr("3.0 + foo"));
         assert!(result.is_ok());
         let (_, tree) = result.unwrap();
-        println!("{:?}", tree);
+        assert_eq!(
+            tree,
+            Token::Factor {
+                value: Box::new(Token::Real { value: 3.0 })
+            }
+        );
     }
 }
