@@ -32,9 +32,9 @@ struct CLI {
 
     #[structopt(short("r"), long)]
     list_reg: bool,
-
-    #[structopt(short, long)]
-    threads: Option<u32>,
+    // TODO: implement this.
+    //#[structopt(short, long)]
+    //threads: Option<u32>,
 }
 
 fn main() {

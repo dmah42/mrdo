@@ -20,7 +20,7 @@ pub mod symbols;
 pub const DO_HEADER_PREFIX: [u8; 4] = [68, 79, 86, 77]; // "DOVM"
 pub const DO_HEADER_LEN: usize = 32;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     Op { code: Opcode },
     IntRegister { idx: u8 },

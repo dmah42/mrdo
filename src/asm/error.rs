@@ -1,3 +1,4 @@
+use crate::asm::Token;
 use std::error::Error;
 use std::fmt;
 
@@ -12,6 +13,7 @@ pub enum AsmError {
     UnknownDirective { name: String },
     UnknownSection { name: String },
     UnknownLabel { name: String },
+    UnexpectedToken { token: Token },
     NotAnOpcode,
     EmptyString,
     UnlabeledString,
@@ -40,6 +42,9 @@ impl fmt::Display for AsmError {
                 f.write_str(&format!("Unknown section: {}", name))
             }
             AsmError::UnknownLabel { ref name } => f.write_str(&format!("Unknown label: {}", name)),
+            AsmError::UnexpectedToken { ref token } => {
+                f.write_str(&format!("Unexpected token {:?} in the bagging area", token))
+            }
             AsmError::NotAnOpcode => f.write_str("Non-opcode found in opcode field"),
             AsmError::EmptyString => f.write_str("Empty string provided"),
             AsmError::UnlabeledString => f.write_str("Unlabeled string cannot be referenced"),
@@ -59,6 +64,7 @@ impl Error for AsmError {
             AsmError::UnknownDirective { .. } => "Unknown directive",
             AsmError::UnknownSection { .. } => "Unknown section",
             AsmError::UnknownLabel { .. } => "Unknown label",
+            AsmError::UnexpectedToken { .. } => "Unexpected token",
             AsmError::NotAnOpcode { .. } => "Not an opcode",
             AsmError::EmptyString { .. } => "Empty string",
             AsmError::UnlabeledString { .. } => "Unlabeled string",

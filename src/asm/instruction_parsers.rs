@@ -27,7 +27,6 @@ impl AssemblerInstruction {
         self.label.is_some()
     }
 
-    // TODO: return result instead of option
     pub fn label_name(&self) -> Option<String> {
         match &self.label {
             Some(l) => match l {
@@ -130,8 +129,7 @@ impl AssemblerInstruction {
                 }
             }
             _ => {
-                // TODO: error return.
-                println!("Opcode {:?} found in operand field", t);
+                return Err(AsmError::UnexpectedToken{ token: t.clone() });
             }
         };
         Ok(())
