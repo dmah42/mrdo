@@ -1,4 +1,4 @@
-use crate::asm::instruction_parsers::AssemblerInstruction;
+use crate::asm::instruction_parsers::Instruction;
 use crate::asm::label_parsers::label_decl;
 use crate::asm::operand_parsers::operand;
 use crate::asm::Token;
@@ -16,7 +16,7 @@ named!(directive_decl<CompleteStr, Token>,
     )
 );
 
-named!(directive_comb<CompleteStr, AssemblerInstruction>,
+named!(directive_comb<CompleteStr, Instruction>,
     ws!(
         do_parse!(
             l: opt!(label_decl) >>
@@ -25,7 +25,7 @@ named!(directive_comb<CompleteStr, AssemblerInstruction>,
             o1: opt!(operand) >>
             o2: opt!(operand) >>
             (
-                AssemblerInstruction{
+                Instruction{
                     opcode: None,
                     directive: Some(name),
                     label: l,
@@ -38,7 +38,7 @@ named!(directive_comb<CompleteStr, AssemblerInstruction>,
     )
 );
 
-named!(pub directive<CompleteStr, AssemblerInstruction>,
+named!(pub directive<CompleteStr, Instruction>,
     do_parse!(
         instr: alt!(
             directive_comb
@@ -72,7 +72,7 @@ mod tests {
         assert!(result.is_ok());
         let (_, directive) = result.unwrap();
 
-        let expected = AssemblerInstruction {
+        let expected = Instruction {
             opcode: None,
             label: Some(Token::LabelDecl {
                 name: "test".to_string(),

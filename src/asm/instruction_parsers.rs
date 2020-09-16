@@ -12,7 +12,7 @@ use std::fmt;
 
 #[derive(Debug, PartialEq)]
 // TODO: Split this into Instructions, Directives, and Labels and clean up all the type safety bits.
-pub struct AssemblerInstruction {
+pub struct Instruction {
     pub label: Option<Token>,
     pub directive: Option<Token>,
     pub opcode: Option<Token>,
@@ -21,7 +21,7 @@ pub struct AssemblerInstruction {
     pub operand2: Option<Token>,
 }
 
-impl AssemblerInstruction {
+impl Instruction {
     pub fn is_label(&self) -> bool {
         self.label.is_some()
     }
@@ -82,7 +82,7 @@ impl AssemblerInstruction {
 
         for operand in &[&self.operand0, &self.operand1, &self.operand2] {
             if let Some(token) = operand {
-                AssemblerInstruction::extract_operand(token, symbols, &mut results)?
+                Instruction::extract_operand(token, symbols, &mut results)?
             }
         }
 
@@ -132,7 +132,7 @@ impl AssemblerInstruction {
     }
 }
 
-impl fmt::Display for AssemblerInstruction {
+impl fmt::Display for Instruction {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -142,7 +142,7 @@ impl fmt::Display for AssemblerInstruction {
     }
 }
 
-named!(pub instruction<CompleteStr, AssemblerInstruction>,
+named!(pub instruction<CompleteStr, Instruction>,
     do_parse!(
         instr: alt!(
             instruction_comb | directive
@@ -153,7 +153,7 @@ named!(pub instruction<CompleteStr, AssemblerInstruction>,
     )
 );
 
-named!(instruction_comb<CompleteStr, AssemblerInstruction>,
+named!(instruction_comb<CompleteStr, Instruction>,
     do_parse!(
         l: opt!(label_decl) >>
         o: opcode >>
@@ -161,7 +161,7 @@ named!(instruction_comb<CompleteStr, AssemblerInstruction>,
         o1: opt!(operand) >>
         o2: opt!(operand) >>
         (
-            AssemblerInstruction{
+            Instruction{
                 label: l,
                 directive: None,
                 opcode: Some(o),
@@ -184,7 +184,7 @@ mod tests {
         let symbols = Table::new();
         let mut results = vec![];
 
-        assert!(AssemblerInstruction::extract_operand(&token, &symbols, &mut results).is_ok());
+        assert!(Instruction::extract_operand(&token, &symbols, &mut results).is_ok());
         assert_eq!(results, vec![4]);
     }
 
@@ -194,7 +194,7 @@ mod tests {
         let symbols = Table::new();
         let mut results = vec![];
 
-        assert!(AssemblerInstruction::extract_operand(&token, &symbols, &mut results).is_ok());
+        assert!(Instruction::extract_operand(&token, &symbols, &mut results).is_ok());
         assert_eq!(results, vec![131]);
     }
 
@@ -204,13 +204,13 @@ mod tests {
         let symbols = Table::new();
         let mut results = vec![];
 
-        assert!(AssemblerInstruction::extract_operand(&token, &symbols, &mut results).is_ok());
+        assert!(Instruction::extract_operand(&token, &symbols, &mut results).is_ok());
         assert_eq!(results, vec![0, 0, 0, 42]);
 
         let token = Token::Integer { value: -42 };
         let mut results = vec![];
 
-        assert!(AssemblerInstruction::extract_operand(&token, &symbols, &mut results).is_ok());
+        assert!(Instruction::extract_operand(&token, &symbols, &mut results).is_ok());
         assert_eq!(results, vec![255, 255, 255, 214]);
     }
 
@@ -220,13 +220,13 @@ mod tests {
         let symbols = Table::new();
         let mut results = vec![];
 
-        assert!(AssemblerInstruction::extract_operand(&token, &symbols, &mut results).is_ok());
+        assert!(Instruction::extract_operand(&token, &symbols, &mut results).is_ok());
         assert_eq!(results, vec![64, 16, 204, 204, 204, 204, 204, 205]);
 
         let token = Token::Real { value: -4.2 };
         let mut results = vec![];
 
-        assert!(AssemblerInstruction::extract_operand(&token, &symbols, &mut results).is_ok());
+        assert!(Instruction::extract_operand(&token, &symbols, &mut results).is_ok());
         assert_eq!(results, vec![192, 16, 204, 204, 204, 204, 204, 205]);
     }
 
@@ -237,7 +237,7 @@ mod tests {
             result,
             Ok((
                 CompleteStr(""),
-                AssemblerInstruction {
+                Instruction {
                     label: None,
                     directive: None,
                     opcode: Some(Token::Op { code: Opcode::LOAD }),
@@ -256,7 +256,7 @@ mod tests {
             result,
             Ok((
                 CompleteStr(""),
-                AssemblerInstruction {
+                Instruction {
                     label: None,
                     directive: None,
                     opcode: Some(Token::Op { code: Opcode::LOAD }),
@@ -277,7 +277,7 @@ mod tests {
             result,
             Ok((
                 CompleteStr(""),
-                AssemblerInstruction {
+                Instruction {
                     label: None,
                     directive: None,
                     opcode: Some(Token::Op { code: Opcode::HLT }),
@@ -296,7 +296,7 @@ mod tests {
             result,
             Ok((
                 CompleteStr(""),
-                AssemblerInstruction {
+                Instruction {
                     label: None,
                     directive: None,
                     opcode: Some(Token::Op { code: Opcode::ADD }),

@@ -5,7 +5,7 @@ use nom::types::CompleteStr;
 
 #[derive(Debug, PartialEq)]
 pub struct Program {
-    pub instructions: Vec<AssemblerInstruction>,
+    pub instructions: Vec<Instruction>,
 }
 
 named!(pub program<CompleteStr, Program>,
@@ -34,7 +34,7 @@ mod tests {
         assert_eq!(
             program.instructions,
             vec![
-                AssemblerInstruction {
+                Instruction {
                     label: None,
                     directive: None,
                     opcode: Some(Token::Op { code: Opcode::LOAD }),
@@ -42,7 +42,7 @@ mod tests {
                     operand1: Some(Token::Integer { value: 42 }),
                     operand2: None,
                 },
-                AssemblerInstruction {
+                Instruction {
                     label: None,
                     directive: None,
                     opcode: Some(Token::Op { code: Opcode::LOAD }),

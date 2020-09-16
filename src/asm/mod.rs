@@ -1,5 +1,5 @@
 use crate::asm::error::Error;
-use crate::asm::instruction_parsers::AssemblerInstruction;
+use crate::asm::instruction_parsers::Instruction;
 use crate::asm::opcode::Opcode;
 use crate::asm::program_parsers::{program, Program};
 use crate::asm::symbols::{Symbol, Table, Type};
@@ -112,7 +112,7 @@ impl Assembler {
         self.phase = Phase::Second;
     }
 
-    fn process_label_decl(&mut self, i: &AssemblerInstruction) {
+    fn process_label_decl(&mut self, i: &Instruction) {
         let name = match i.label_name() {
             Some(name) => name,
             None => {
@@ -145,7 +145,7 @@ impl Assembler {
         Ok(program)
     }
 
-    fn process_directive(&mut self, i: &AssemblerInstruction) {
+    fn process_directive(&mut self, i: &Instruction) {
         let name = match i.directive_name() {
             Some(name) => name,
             None => {
@@ -182,7 +182,7 @@ impl Assembler {
         self.current_section = Some(section);
     }
 
-    fn handle_str(&mut self, i: &AssemblerInstruction) {
+    fn handle_str(&mut self, i: &Instruction) {
         if self.phase != Phase::First {
             return;
         }
