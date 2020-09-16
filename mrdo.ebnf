@@ -2,15 +2,17 @@
 
 program = {expression | comment};
 comment = ";", [ascii];
-(* TODO: separate 'assign' from expression to create an rvalue *)
-expression = term, [term_op, term] | arith, compare_op, arith | assign | call;
+expression = rvalue | assign;
+rvalue = arith | compare | call;
+compare = rvalue, compare_op, rvalue;
+arith = term, [term_op, term];
 builtin = "write"; (* TODO: add more *)
-call = "do", "(", builtin, {[", expression"]}, ")"; (* this should be 'rvalue' not 'expression'*)
+call = "do", "(", builtin, {["," rvalue]}, ")";
 compare_op = "eq" | "neq" | "gt" | "gte" | "lt" | "lte";
 term_op = "+" | "-";
 term = factor, [factor_op, factor];
 factor_op = "*" | "/";
-factor = real | "(", expression, ")" | ident;
+factor = real | "(", rvalue, ")" | ident;
 real = {"-"}, double;
 double = [digit], {".", [digit]};
 assign = ident, "=", expression;

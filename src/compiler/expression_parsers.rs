@@ -31,11 +31,11 @@ named!(arith<CompleteStr, Token>,
 named!(compare<CompleteStr, Token>,
     ws!(
         do_parse!(
-            left: arith >>
+            left: rvalue >>
             op: alt!(
                 eq_op | neq_op | gte_op | gt_op | lte_op | lt_op
             ) >>
-            right: arith >>
+            right: rvalue >>
             (
                 Token::Compare{ left: Box::new(left), op: Box::new(op), right: Box::new(right) }
             )
@@ -71,9 +71,15 @@ named!(comment<CompleteStr, Token>,
     )
 );
 
+named!(pub rvalue<CompleteStr, Token>,
+    alt!(
+        builtin | arith
+    )
+);
+
 named!(pub expression<CompleteStr, Token>,
     alt!(
-        comment | builtin | assign | compare | arith
+        comment  | compare | rvalue | assign
     )
 );
 

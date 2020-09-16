@@ -88,8 +88,7 @@ impl VM {
                 return Ok(true);
             }
             Opcode::LOAD => {
-                // TODO: future proof this a bit. `LOAD %1 10` will fail, as
-                // will `LOAD $1 3.14`.
+                // NOTE: `LOAD %1 10` will fail, as will `LOAD $1 3.14`, but in odd ways.
                 let register = self.next_u8();
                 if is_int_register(register) {
                     self.iregisters[register as usize] = self.next_i32();

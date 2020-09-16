@@ -1,4 +1,4 @@
-use crate::compiler::expression_parsers::expression;
+use crate::compiler::expression_parsers::*;
 use crate::compiler::operand_parsers::*;
 use crate::compiler::tokens::Token;
 
@@ -10,7 +10,7 @@ named!(pub factor<CompleteStr, Token>,
         do_parse!(
             f: alt!(
                 real |
-                ws!(delimited!(tag!("("), expression, tag!(")"))) |
+                ws!(delimited!(tag!("("), rvalue, tag!(")"))) |
                 ident
             ) >>
             (

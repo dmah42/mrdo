@@ -1,4 +1,4 @@
-use crate::compiler::expression_parsers::expression;
+use crate::compiler::expression_parsers::*;
 use crate::compiler::tokens::Token;
 
 use nom::types::CompleteStr;
@@ -13,15 +13,15 @@ named!(pub builtin<CompleteStr, Token>,
                     tag!("("),
                     tuple!(
                         alpha,
-                        opt!(pair!(tag!(","), separated_list!(tag!(","), expression)))
+                        opt!(pair!(tag!(","), separated_list!(tag!(","), rvalue)))
                     ),
                     tag!(")")
                 )) >>
             (
                 {
                     match args.1 {
-                        Some(exprs) => {
-                            Token::Builtin{ builtin: args.0.to_string(), args: exprs.1 }
+                        Some(rvs) => {
+                            Token::Builtin{ builtin: args.0.to_string(), args: rvs.1 }
                         },
                         None => {
                             Token::Builtin{ builtin: args.0.to_string(), args: vec![] }
@@ -38,7 +38,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_builtin() {
+    fn test_builtin_noargs() {
         let result = builtin(CompleteStr("do(foo)"));
         assert!(result.is_ok());
         let (_, token) = result.unwrap();
@@ -49,7 +49,9 @@ mod tests {
                 args: vec![],
             }
         );
-
+    }
+    #[test]
+    fn test_builtin_onearg() {
         let result = builtin(CompleteStr("do(write, 42.0)"));
         assert!(result.is_ok());
         let (_, token) = result.unwrap();
@@ -68,7 +70,10 @@ mod tests {
                 }],
             }
         );
+    }
 
+    #[test]
+    fn test_builtin_multiple_args() {
         let result = builtin(CompleteStr("do (read, foo, 1.0)"));
         assert!(result.is_ok());
         let (_, token) = result.unwrap();
