@@ -1,6 +1,6 @@
 use crate::asm::error::Error;
-use crate::asm::instruction::Opcode;
 use crate::asm::instruction_parsers::AssemblerInstruction;
+use crate::asm::opcode::Opcode;
 use crate::asm::program_parsers::{program, Program};
 use crate::asm::symbols::{Symbol, Table, Type};
 
@@ -8,9 +8,9 @@ use nom::types::CompleteStr;
 
 pub mod directive_parsers;
 pub mod error;
-pub mod instruction;
 pub mod instruction_parsers;
 pub mod label_parsers;
+pub mod opcode;
 pub mod opcode_parsers;
 pub mod operand_parsers;
 pub mod program_parsers;

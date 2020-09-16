@@ -1,4 +1,4 @@
-use crate::asm::instruction::*;
+use crate::asm::opcode::Opcode;
 use crate::asm::{DO_HEADER_LEN, DO_HEADER_PREFIX};
 use crate::vm::error::Error;
 

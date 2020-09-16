@@ -20,7 +20,7 @@ named!(pub program<CompleteStr, Program>,
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::asm::instruction::Opcode;
+    use crate::asm::opcode::Opcode;
     use crate::asm::Token;
 
     #[test]

@@ -23,17 +23,6 @@ pub enum Opcode {
     IGL = 255,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Instruction {
-    opcode: Opcode,
-}
-
-impl Instruction {
-    pub fn new(opcode: Opcode) -> Instruction {
-        Instruction { opcode }
-    }
-}
-
 impl<'a> From<CompleteStr<'a>> for Opcode {
     fn from(v: CompleteStr<'a>) -> Self {
         let lowercase_opcode = v.to_lowercase();
@@ -71,12 +60,6 @@ impl Clone for Opcode {
 mod tests {
     use super::*;
     use std::convert::{Into, TryFrom};
-
-    #[test]
-    fn test_create_hlt_instruction() {
-        let inst = Instruction::new(Opcode::HLT);
-        assert_eq!(inst.opcode, Opcode::HLT);
-    }
 
     #[test]
     fn test_from_u8() {
