@@ -41,7 +41,6 @@ pub enum Phase {
 
 #[derive(Debug)]
 pub struct Assembler {
-    // TODO: output the symbols to some file.
     pub symbols: Table,
     readonly: Vec<u8>,
     phase: Phase,

@@ -33,11 +33,23 @@ mod tests {
 
     #[test]
     fn test_parse_term() {
-        // TODO: fill out the test cases.
         let result = term(CompleteStr("3 * 4"));
         assert!(result.is_ok());
         let (_, tree) = result.unwrap();
-        println!("{:#?}", tree);
+        assert_eq!(
+            tree,
+            Token::Term {
+                left: Box::new(Token::Factor {
+                    value: Box::new(Token::Real { value: 3.0 })
+                }),
+                right: vec![(
+                    Token::MultiplicationOp,
+                    Token::Factor {
+                        value: Box::new(Token::Real { value: 4.0 })
+                    },
+                )]
+            }
+        )
     }
 
     #[test]
@@ -45,7 +57,33 @@ mod tests {
         let result = term(CompleteStr("(3 * 4)*2"));
         assert!(result.is_ok());
         let (_, tree) = result.unwrap();
-        println!("{:#?}", tree);
+        assert_eq!(
+            tree,
+            Token::Term {
+                left: Box::new(Token::Factor {
+                    value: Box::new(Token::Expression {
+                        left: Box::new(Token::Term {
+                            left: Box::new(Token::Factor {
+                                value: Box::new(Token::Real { value: 3.0 })
+                            }),
+                            right: vec![(
+                                Token::MultiplicationOp,
+                                Token::Factor {
+                                    value: Box::new(Token::Real { value: 4.0 }),
+                                }
+                            )]
+                        }),
+                        right: vec![],
+                    })
+                }),
+                right: vec![(
+                    Token::MultiplicationOp,
+                    Token::Factor {
+                        value: Box::new(Token::Real { value: 2.0 })
+                    },
+                )]
+            }
+        )
     }
 
     #[test]
@@ -53,6 +91,40 @@ mod tests {
         let result = term(CompleteStr("((3 * 4)*2)"));
         assert!(result.is_ok());
         let (_, tree) = result.unwrap();
-        println!("{:#?}", tree);
+        assert_eq!(
+            tree,
+            Token::Term {
+                left: Box::new(Token::Factor {
+                    value: Box::new(Token::Expression {
+                        left: Box::new(Token::Term {
+                            left: Box::new(Token::Factor {
+                                value: Box::new(Token::Expression {
+                                    left: Box::new(Token::Term {
+                                        left: Box::new(Token::Factor {
+                                            value: Box::new(Token::Real { value: 3.0 })
+                                        }),
+                                        right: vec![(
+                                            Token::MultiplicationOp,
+                                            Token::Factor {
+                                                value: Box::new(Token::Real { value: 4.0 }),
+                                            }
+                                        )]
+                                    }),
+                                    right: vec![],
+                                }),
+                            }),
+                            right: vec![(
+                                Token::MultiplicationOp,
+                                Token::Factor {
+                                    value: Box::new(Token::Real { value: 2.0 })
+                                },
+                            )],
+                        }),
+                        right: vec![],
+                    }),
+                }),
+                right: vec![],
+            }
+        )
     }
 }
