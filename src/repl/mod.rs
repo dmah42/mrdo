@@ -66,14 +66,20 @@ impl REPL {
                     // TODO: figure out how to step enough in highlevel or halt if we run for
                     // assembly.
                     Mode::Assembly => vec![buffer.into()],
-                    Mode::Highlevel => self.compiler.compile_expr(buffer).to_vec(),
+                    Mode::Highlevel => match self.compiler.compile_expr(buffer) {
+                        Ok(compiled) => compiled.to_vec(),
+                        Err(e) => {
+                            println!("{} Unable to compile input: {}", ERROR_TAG, e);
+                            continue;
+                        }
+                    },
                 };
                 self.assembly_buffer.append(&mut assembly.clone());
                 let assembled = assembly.join("\n");
                 let bytecode = match program(CompleteStr(&assembled)) {
                     Ok((_, prog)) => self.asm.process_second(&prog),
                     Err(e) => {
-                        println!("{} Unable to parse input: {:?}", WARN_TAG, e);
+                        println!("{} Unable to parse input: {}", WARN_TAG, e);
                         continue;
                     }
                 };

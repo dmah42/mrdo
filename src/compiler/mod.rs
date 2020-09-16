@@ -1,3 +1,4 @@
+use crate::compiler::error::Error;
 use crate::compiler::expression_parsers::expression;
 use crate::compiler::program_parser::program;
 use crate::compiler::tokens::Token;
@@ -8,6 +9,7 @@ use nom::types::CompleteStr;
 use std::collections::HashMap;
 
 pub mod builtin_parsers;
+pub mod error;
 pub mod expression_parsers;
 pub mod factor_parsers;
 pub mod operand_parsers;
@@ -34,24 +36,24 @@ impl Compiler {
         }
     }
 
-    pub fn compile(&mut self, source: &str) -> String {
+    pub fn compile(&mut self, source: &str) -> Result<String, Error> {
         self.assembly.clear();
         let (_, tree) = program(CompleteStr(source)).unwrap();
-        self.visit_token(&tree);
-        self.assembly.join("\n")
+        self.visit_token(&tree)?;
+        Ok(self.assembly.join("\n"))
     }
 
     // NOTE: public for the repl
-    pub fn compile_expr(&mut self, source: &str) -> &Vec<String> {
+    pub fn compile_expr(&mut self, source: &str) -> Result<&Vec<String>, Error> {
         self.assembly.clear();
         let (_, tree) = expression(CompleteStr(source)).unwrap();
-        self.visit_token(&tree);
-        &self.assembly
+        self.visit_token(&tree)?;
+        Ok(&self.assembly)
     }
 }
 
 impl Visitor for Compiler {
-    fn visit_token(&mut self, node: &Token) {
+    fn visit_token(&mut self, node: &Token) -> Result<(), Error> {
         match node {
             Token::Comment { comment: _ } => {
                 //println!("Skipping comment '{}'", comment);
@@ -162,15 +164,15 @@ impl Visitor for Compiler {
             }
 
             Token::Compare { left, op, right } => {
-                self.visit_token(left);
-                self.visit_token(right);
-                self.visit_token(op);
+                self.visit_token(left)?;
+                self.visit_token(right)?;
+                self.visit_token(op)?;
             }
 
             Token::Assign { ident, expr } => {
                 // First visit the rhs to make sure we do what we need
                 // to find the value we need.
-                self.visit_token(expr);
+                self.visit_token(expr)?;
                 let result_reg = self.used_reg.pop().unwrap();
 
                 // TODO: Allocate storage for the identifier and write value to heap.
@@ -192,20 +194,20 @@ impl Visitor for Compiler {
                 match builtin.as_str() {
                     "write" => {
                         for expr in args {
-                            self.visit_token(expr);
+                            self.visit_token(expr)?;
                         }
                         let reg = self.used_reg.pop().unwrap();
                         // TODO: unclear how to print the contents of a register...
                         self.assembly.push(format!("somestr: .str 'reg ${}'", reg));
                         self.assembly.push("print @somestr".to_string());
                     }
-                    _ => println!("Unknown builtin: {}", builtin),
+                    _ => return Err(Error::new(format!("Unknown builtin: {}", builtin))),
                 };
             }
 
             Token::Identifier { name } => {
                 if !self.variables.contains_key(name) {
-                    println!("Unknown variable '{}'", name);
+                    return Err(Error::new(format!("Unknown variable '{}'", name)));
                 }
 
                 // This adds the current variables register to zero to get the value into a
@@ -229,36 +231,37 @@ impl Visitor for Compiler {
                 self.assembly.push(line);
                 self.used_reg.insert(next_reg);
             }
-            Token::Factor { ref value } => self.visit_token(value),
+            Token::Factor { ref value } => self.visit_token(value)?,
             Token::Term {
                 ref left,
                 ref right,
             } => {
-                self.visit_token(left);
+                self.visit_token(left)?;
                 for factor in right {
-                    self.visit_token(&factor.1);
-                    self.visit_token(&factor.0);
+                    self.visit_token(&factor.1)?;
+                    self.visit_token(&factor.0)?;
                 }
             }
             Token::Expression {
                 ref left,
                 ref right,
             } => {
-                self.visit_token(left);
+                self.visit_token(left)?;
                 for term in right {
-                    self.visit_token(&term.1);
-                    self.visit_token(&term.0);
+                    self.visit_token(&term.1)?;
+                    self.visit_token(&term.0)?;
                 }
             }
             Token::Program { ref expressions } => {
                 self.assembly.push(".data".into());
                 self.assembly.push(".code".into());
                 for expr in expressions {
-                    self.visit_token(expr);
+                    self.visit_token(expr)?;
                 }
                 self.assembly.push("halt".into());
             }
         }
+        Ok(())
     }
 }
 
@@ -283,7 +286,7 @@ mod tests {
     fn test_addition() {
         let mut compiler = Compiler::new();
         let test_program = generate_test_program("1.2 + 3.4");
-        compiler.visit_token(&test_program);
+        assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
             vec![
@@ -306,7 +309,7 @@ mod tests {
     fn test_subtraction() {
         let mut compiler = Compiler::new();
         let test_program = generate_test_program("1.2 - 3.4");
-        compiler.visit_token(&test_program);
+        assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
             vec![
@@ -329,7 +332,7 @@ mod tests {
     fn test_multiplication() {
         let mut compiler = Compiler::new();
         let test_program = generate_test_program("1.2 * 3.4");
-        compiler.visit_token(&test_program);
+        assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
             vec![
@@ -352,7 +355,7 @@ mod tests {
     fn test_division() {
         let mut compiler = Compiler::new();
         let test_program = generate_test_program("1.2 / 3.4");
-        compiler.visit_token(&test_program);
+        assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
             vec![
@@ -375,7 +378,7 @@ mod tests {
     fn test_equals() {
         let mut compiler = Compiler::new();
         let test_program = generate_test_program("1.2 + 4.1 eq 3.4");
-        compiler.visit_token(&test_program);
+        assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
             vec![
@@ -398,7 +401,7 @@ mod tests {
     fn test_not_equals() {
         let mut compiler = Compiler::new();
         let test_program = generate_test_program("1.2 neq 3.4");
-        compiler.visit_token(&test_program);
+        assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
             vec![
@@ -421,7 +424,7 @@ mod tests {
     fn test_greater_than() {
         let mut compiler = Compiler::new();
         let test_program = generate_test_program("1.2 gt 3.4");
-        compiler.visit_token(&test_program);
+        assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
             vec![
@@ -444,7 +447,7 @@ mod tests {
     fn test_greater_than_equals() {
         let mut compiler = Compiler::new();
         let test_program = generate_test_program("1.2 gte 3.4");
-        compiler.visit_token(&test_program);
+        assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
             vec![
@@ -467,7 +470,7 @@ mod tests {
     fn test_less_than() {
         let mut compiler = Compiler::new();
         let test_program = generate_test_program("1.2 lt 3.4");
-        compiler.visit_token(&test_program);
+        assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
             vec![
@@ -490,7 +493,7 @@ mod tests {
     fn test_less_than_equals() {
         let mut compiler = Compiler::new();
         let test_program = generate_test_program("1.2 lte 3.4");
-        compiler.visit_token(&test_program);
+        assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
             vec![

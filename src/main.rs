@@ -146,6 +146,12 @@ fn compile(
 
     let source = read_assembly(&assembly);
     let assembly = compiler.compile(&source);
+    if let Err(e) = assembly {
+        println!("compiler error: {}", e);
+        std::process::exit(1);
+    }
+
+    let assembly = assembly.unwrap();
 
     if list_asm {
         println!("assembly\n{}\nEOF", assembly);
