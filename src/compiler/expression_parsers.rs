@@ -1,4 +1,5 @@
 use crate::compiler::builtin_parsers::builtin;
+use crate::compiler::operand_parsers::coll;
 use crate::compiler::operator_parsers::*;
 use crate::compiler::term_parsers::term;
 use crate::compiler::tokens::Token;
@@ -48,7 +49,7 @@ named!(assign<CompleteStr, Token>,
         do_parse!(
             ident: alpha >>
             tag!("=") >>
-            expr: arith >>
+            expr: rvalue >>
             (
                 Token::Assign{ ident: ident.to_string(), expr: Box::new(expr) }
             )
@@ -73,13 +74,13 @@ named!(comment<CompleteStr, Token>,
 
 named!(pub rvalue<CompleteStr, Token>,
     alt!(
-        builtin | arith
+        builtin | arith | coll
     )
 );
 
 named!(pub expression<CompleteStr, Token>,
     alt!(
-        comment  | compare | rvalue | assign
+        comment  | assign | compare | rvalue
     )
 );
 

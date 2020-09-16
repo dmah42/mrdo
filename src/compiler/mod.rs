@@ -187,6 +187,8 @@ impl Visitor for Compiler {
 
                 self.used_reg.insert(result_reg);
                 self.variables.insert(ident.to_string(), result_reg);
+
+                println!("inserted variable '{}'", ident.to_string());
             }
 
             Token::Builtin { builtin, args } => {
@@ -205,6 +207,7 @@ impl Visitor for Compiler {
             }
 
             Token::Identifier { name } => {
+                println!("referencing variable '{}'", name.to_string());
                 if !self.variables.contains_key(name) {
                     return Err(Error::new(format!("Unknown variable '{}'", name)));
                 }
@@ -224,12 +227,22 @@ impl Visitor for Compiler {
                 self.free_reg.insert(zero_reg);
             }
 
+            // TODO: allow for 'Integer' types maybe.
             Token::Real { value } => {
                 let next_reg = self.free_reg.pop().unwrap();
                 let line = format!("load %{} #{:.2}", next_reg, value);
                 self.assembly.push(line);
                 self.used_reg.insert(next_reg);
             }
+            Token::Coll { values } => {
+                // FIXME: figure out how to best use a heap here instead of registers.
+                // Maybe something like allocating the space and then after each visit
+                // loading the register contents into the heap...
+                for v in values {
+                    self.visit_token(v)?;
+                }
+            }
+
             Token::Factor { ref value } => self.visit_token(value)?,
             Token::Term {
                 ref left,
@@ -255,6 +268,7 @@ impl Visitor for Compiler {
                 self.assembly.push(".data".into());
                 self.assembly.push(".code".into());
                 for expr in expressions {
+                    println!(".. visiting {:?}", expr);
                     self.visit_token(expr)?;
                 }
                 self.assembly.push("halt".into());
@@ -279,6 +293,17 @@ mod tests {
     fn generate_test_program(listing: &str) -> Token {
         let (_, tree) = program(CompleteStr(listing)).unwrap();
         tree
+    }
+
+    #[test]
+    fn test_collection() {
+        let mut compiler = Compiler::new();
+        let test_program = generate_test_program("[0, 1.2]");
+        assert!(compiler.visit_token(&test_program).is_ok());
+        assert_eq!(
+            compiler.assembly,
+            vec![".data", ".code", "load %31 #0.00", "load %30 #1.20", "halt"]
+        );
     }
 
     #[test]

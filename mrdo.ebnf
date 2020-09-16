@@ -3,7 +3,7 @@
 program = {expression | comment};
 comment = ";", [ascii];
 expression = rvalue | assign;
-rvalue = arith | compare | call;
+rvalue = arith | compare | call | coll;
 compare = rvalue, compare_op, rvalue;
 arith = term, [term_op, term];
 builtin = "write"; (* TODO: add more *)

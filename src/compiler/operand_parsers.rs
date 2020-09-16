@@ -1,3 +1,4 @@
+use crate::compiler::expression_parsers::*;
 use crate::compiler::tokens::Token;
 
 use nom::types::CompleteStr;
@@ -35,6 +36,19 @@ named!(pub ident<CompleteStr, Token>,
     )
 );
 
+named!(pub coll<CompleteStr, Token>,
+    ws!(
+        do_parse!(
+            tag!("[") >>
+            values: separated_list!(tag!(","), rvalue) >>
+            tag!("]") >>
+            (
+                Token::Coll { values }
+            )
+        )
+    )
+);
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -62,6 +76,65 @@ mod tests {
         let result = ident(CompleteStr("foo"));
         assert!(result.is_ok());
         let (_, token) = result.unwrap();
-        assert_eq!(token, Token::Identifier { name: "foo".to_string() });
+        assert_eq!(
+            token,
+            Token::Identifier {
+                name: "foo".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn test_coll() {
+        let result = coll(CompleteStr("[]"));
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().1, Token::Coll { values: vec![] });
+
+        let result = coll(CompleteStr("[3+4, 42, foo]"));
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap().1,
+            Token::Coll {
+                values: vec![
+                    Token::Expression {
+                        left: Box::new(Token::Term {
+                            left: Box::new(Token::Factor {
+                                value: Box::new(Token::Real { value: 3.0 })
+                            }),
+                            right: vec![]
+                        }),
+                        right: vec![(
+                            Token::AdditionOp,
+                            Token::Term {
+                                left: Box::new(Token::Factor {
+                                    value: Box::new(Token::Real { value: 4.0 })
+                                }),
+                                right: vec![],
+                            },
+                        )],
+                    },
+                    Token::Expression {
+                        left: Box::new(Token::Term {
+                            left: Box::new(Token::Factor {
+                                value: Box::new(Token::Real { value: 42.0 })
+                            }),
+                            right: vec![],
+                        }),
+                        right: vec![],
+                    },
+                    Token::Expression {
+                        left: Box::new(Token::Term {
+                            left: Box::new(Token::Factor {
+                                value: Box::new(Token::Identifier {
+                                    name: "foo".to_string()
+                                }),
+                            }),
+                            right: vec![],
+                        }),
+                        right: vec![],
+                    },
+                ]
+            }
+        );
     }
 }

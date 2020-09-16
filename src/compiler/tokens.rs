@@ -37,6 +37,9 @@ pub enum Token {
     Identifier {
         name: String,
     },
+    Coll {
+        values: Vec<Token>,
+    },
     Real {
         value: f64,
     },
