@@ -11,9 +11,8 @@ use nom::types::CompleteStr;
 use std::fmt;
 
 #[derive(Debug, PartialEq)]
+// TODO: Split this into Instructions, Directives, and Labels and clean up all the type safety bits.
 pub struct AssemblerInstruction {
-    // TODO: these are pub for directive_parsers. maybe private and
-    // add a ctor.
     pub label: Option<Token>,
     pub directive: Option<Token>,
     pub opcode: Option<Token>,
