@@ -414,39 +414,25 @@ impl VM {
             rb = Some(self.rregisters[idx_from_real_register(b_reg) as usize]);
         }
 
-        // FIXME: this isn't right. we shouldn't use the destination to assume something about the operands.
-        // See `self.jeq()` which does this right by always doing the comparison as float.
-        // Specifically this should first do the comparison by float (which will trivially pass if they're ints)
-        // and then write the appropriate value to the output register.
-        if is_int_register(register) {
-            let a: i32 = match ia {
-                Some(i) => i,
-                None => ra.unwrap() as i32,
-            };
+        let a: f64 = match ra {
+            Some(f) => f,
+            None => ia.unwrap() as f64,
+        };
 
-            let b: i32 = match ib {
-                Some(i) => i,
-                None => rb.unwrap() as i32,
-            };
+        let b: f64 = match rb {
+            Some(f) => f,
+            None => ib.unwrap() as f64,
+        };
 
-            if a == b {
+        if (a - b).abs() < f64::EPSILON {
+            if is_int_register(register) {
                 self.iregisters[register as usize] = 1;
             } else {
-                self.iregisters[register as usize] = 0;
+                self.rregisters[idx_from_real_register(register) as usize] = 1.0;
             }
         } else {
-            let a: f64 = match ra {
-                Some(r) => r,
-                None => ia.unwrap() as f64,
-            };
-
-            let b: f64 = match rb {
-                Some(r) => r,
-                None => ib.unwrap() as f64,
-            };
-
-            if (a - b).abs() < f64::EPSILON {
-                self.rregisters[idx_from_real_register(register) as usize] = 1.0;
+            if is_int_register(register) {
+                self.iregisters[register as usize] = 0;
             } else {
                 self.rregisters[idx_from_real_register(register) as usize] = 0.0;
             }
@@ -474,35 +460,25 @@ impl VM {
             rb = Some(self.rregisters[idx_from_real_register(b_reg) as usize]);
         }
 
-        if is_int_register(register) {
-            let a: i32 = match ia {
-                Some(i) => i,
-                None => ra.unwrap() as i32,
-            };
+        let a: f64 = match ra {
+            Some(f) => f,
+            None => ia.unwrap() as f64,
+        };
 
-            let b: i32 = match ib {
-                Some(i) => i,
-                None => rb.unwrap() as i32,
-            };
+        let b: f64 = match rb {
+            Some(f) => f,
+            None => ib.unwrap() as f64,
+        };
 
-            if a != b {
+        if (a - b).abs() > f64::EPSILON {
+            if is_int_register(register) {
                 self.iregisters[register as usize] = 1;
             } else {
-                self.iregisters[register as usize] = 0;
+                self.rregisters[idx_from_real_register(register) as usize] = 1.0;
             }
         } else {
-            let a: f64 = match ra {
-                Some(r) => r,
-                None => ia.unwrap() as f64,
-            };
-
-            let b: f64 = match rb {
-                Some(r) => r,
-                None => ib.unwrap() as f64,
-            };
-
-            if (a - b).abs() > f64::EPSILON {
-                self.rregisters[idx_from_real_register(register) as usize] = 1.0;
+            if is_int_register(register) {
+                self.iregisters[register as usize] = 0;
             } else {
                 self.rregisters[idx_from_real_register(register) as usize] = 0.0;
             }
@@ -530,35 +506,25 @@ impl VM {
             rb = Some(self.rregisters[idx_from_real_register(b_reg) as usize]);
         }
 
-        if is_int_register(register) {
-            let a: i32 = match ia {
-                Some(i) => i,
-                None => ra.unwrap() as i32,
-            };
+        let a: f64 = match ra {
+            Some(f) => f,
+            None => ia.unwrap() as f64,
+        };
 
-            let b: i32 = match ib {
-                Some(i) => i,
-                None => rb.unwrap() as i32,
-            };
+        let b: f64 = match rb {
+            Some(f) => f,
+            None => ib.unwrap() as f64,
+        };
 
-            if a > b {
+        if a > b {
+            if is_int_register(register) {
                 self.iregisters[register as usize] = 1;
             } else {
-                self.iregisters[register as usize] = 0;
+                self.rregisters[idx_from_real_register(register) as usize] = 1.0;
             }
         } else {
-            let a: f64 = match ra {
-                Some(r) => r,
-                None => ia.unwrap() as f64,
-            };
-
-            let b: f64 = match rb {
-                Some(r) => r,
-                None => ib.unwrap() as f64,
-            };
-
-            if a > b {
-                self.rregisters[idx_from_real_register(register) as usize] = 1.0;
+            if is_int_register(register) {
+                self.iregisters[register as usize] = 0;
             } else {
                 self.rregisters[idx_from_real_register(register) as usize] = 0.0;
             }
@@ -586,35 +552,25 @@ impl VM {
             rb = Some(self.rregisters[idx_from_real_register(b_reg) as usize]);
         }
 
-        if is_int_register(register) {
-            let a: i32 = match ia {
-                Some(i) => i,
-                None => ra.unwrap() as i32,
-            };
+        let a: f64 = match ra {
+            Some(f) => f,
+            None => ia.unwrap() as f64,
+        };
 
-            let b: i32 = match ib {
-                Some(i) => i,
-                None => rb.unwrap() as i32,
-            };
+        let b: f64 = match rb {
+            Some(f) => f,
+            None => ib.unwrap() as f64,
+        };
 
-            if a < b {
+        if a < b {
+            if is_int_register(register) {
                 self.iregisters[register as usize] = 1;
             } else {
-                self.iregisters[register as usize] = 0;
+                self.rregisters[idx_from_real_register(register) as usize] = 1.0;
             }
         } else {
-            let a: f64 = match ra {
-                Some(r) => r,
-                None => ia.unwrap() as f64,
-            };
-
-            let b: f64 = match rb {
-                Some(r) => r,
-                None => ib.unwrap() as f64,
-            };
-
-            if a < b {
-                self.rregisters[idx_from_real_register(register) as usize] = 1.0;
+            if is_int_register(register) {
+                self.iregisters[register as usize] = 0;
             } else {
                 self.rregisters[idx_from_real_register(register) as usize] = 0.0;
             }
@@ -642,35 +598,25 @@ impl VM {
             rb = Some(self.rregisters[idx_from_real_register(b_reg) as usize]);
         }
 
-        if is_int_register(register) {
-            let a: i32 = match ia {
-                Some(i) => i,
-                None => ra.unwrap() as i32,
-            };
+        let a: f64 = match ra {
+            Some(f) => f,
+            None => ia.unwrap() as f64,
+        };
 
-            let b: i32 = match ib {
-                Some(i) => i,
-                None => rb.unwrap() as i32,
-            };
+        let b: f64 = match rb {
+            Some(f) => f,
+            None => ib.unwrap() as f64,
+        };
 
-            if a >= b {
+        if a >= b {
+            if is_int_register(register) {
                 self.iregisters[register as usize] = 1;
             } else {
-                self.iregisters[register as usize] = 0;
+                self.rregisters[idx_from_real_register(register) as usize] = 1.0;
             }
         } else {
-            let a: f64 = match ra {
-                Some(r) => r,
-                None => ia.unwrap() as f64,
-            };
-
-            let b: f64 = match rb {
-                Some(r) => r,
-                None => ib.unwrap() as f64,
-            };
-
-            if a > b - f64::EPSILON {
-                self.rregisters[idx_from_real_register(register) as usize] = 1.0;
+            if is_int_register(register) {
+                self.iregisters[register as usize] = 0;
             } else {
                 self.rregisters[idx_from_real_register(register) as usize] = 0.0;
             }
@@ -698,35 +644,25 @@ impl VM {
             rb = Some(self.rregisters[idx_from_real_register(b_reg) as usize]);
         }
 
-        if is_int_register(register) {
-            let a: i32 = match ia {
-                Some(i) => i,
-                None => ra.unwrap() as i32,
-            };
+        let a: f64 = match ra {
+            Some(f) => f,
+            None => ia.unwrap() as f64,
+        };
 
-            let b: i32 = match ib {
-                Some(i) => i,
-                None => rb.unwrap() as i32,
-            };
+        let b: f64 = match rb {
+            Some(f) => f,
+            None => ib.unwrap() as f64,
+        };
 
-            if a <= b {
+        if a <= b {
+            if is_int_register(register) {
                 self.iregisters[register as usize] = 1;
             } else {
-                self.iregisters[register as usize] = 0;
+                self.rregisters[idx_from_real_register(register) as usize] = 1.0;
             }
         } else {
-            let a: f64 = match ra {
-                Some(r) => r,
-                None => ia.unwrap() as f64,
-            };
-
-            let b: f64 = match rb {
-                Some(r) => r,
-                None => ib.unwrap() as f64,
-            };
-
-            if a < b + f64::EPSILON {
-                self.rregisters[idx_from_real_register(register) as usize] = 1.0;
+            if is_int_register(register) {
+                self.iregisters[register as usize] = 0;
             } else {
                 self.rregisters[idx_from_real_register(register) as usize] = 0.0;
             }
