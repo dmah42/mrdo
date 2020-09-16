@@ -198,7 +198,8 @@ impl Visitor for Compiler {
                             self.visit_token(expr)?;
                         }
                         let reg = self.used_reg.pop().unwrap();
-                        // TODO: unclear how to print the contents of a register...
+                        // TODO: create a "printmem" instruction in assembly to print out the contents of the heap at some offset.
+                        // then use that to print out whatever is being passed in to write.
                         self.assembly.push(format!("somestr: .str 'reg ${}'", reg));
                         self.assembly.push("print @somestr".to_string());
                     }
