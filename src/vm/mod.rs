@@ -113,10 +113,18 @@ impl VM {
             Opcode::LTE => self.lte(),
             Opcode::JEQ => self.jeq()?,
             Opcode::ALLOC => {
-                // TODO: check this is an int register. See `self.jeq()` for how.
-                let register = self.next_u8() as usize;
-                let bytes = self.iregisters[self.next_u8() as usize];
-                self.iregisters[register] = self.heap.len() as i32;
+                let register = self.next_u8();
+                if !is_int_register(register) {
+                    return Err(Error::new(
+                        "Cannot write heap location to non-integer register",
+                    ));
+                }
+                let bytes_reg = self.next_u8();
+                if !is_int_register(register) {
+                    return Err(Error::new("Cannot allocate non-integer number of bytes"));
+                }
+                let bytes = self.iregisters[bytes_reg as usize];
+                self.iregisters[register as usize] = self.heap.len() as i32;
                 let new_end = self.heap.len() as i32 + bytes;
                 self.heap.resize(new_end as usize, 0);
             }

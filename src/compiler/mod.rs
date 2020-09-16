@@ -190,7 +190,6 @@ impl Visitor for Compiler {
             }
 
             Token::Builtin { builtin, args } => {
-                // TODO: some sort of error return?
                 match builtin.as_str() {
                     "write" => {
                         for expr in args {
