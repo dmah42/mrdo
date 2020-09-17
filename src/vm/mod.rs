@@ -815,7 +815,6 @@ mod tests {
 
     #[test]
     fn test_opcode_lw() {
-        // TODO: test error cases
         let mut vm = VM::new();
         vm.heap = vec![0, 0, 0, 0, 0, 0, 0, 42];
         vm.program = vec![Opcode::LW as u8, 0, 0, 0, 0, 4];
@@ -823,11 +822,20 @@ mod tests {
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
         assert_eq!(vm.iregisters[0], 42);
+
+        let mut vm = VM::new();
+        vm.heap = vec![0,0,0,0,0,0,0,42];
+        vm.program = vec![Opcode::LW as u8, 128,0,0,0,4];
+        assert!(!vm.step().is_ok());
+
+        let mut vm = VM::new();
+        vm.heap = vec![0,0,0,0,0,0,0,42];
+        vm.program = vec![Opcode::LW as u8, 128,128,0,0,4];
+        assert!(!vm.step().is_ok());
     }
 
     #[test]
     fn test_opcode_sw() {
-        // TODO: test error cases
         let mut vm = VM::new();
         vm.iregisters[1] = 42;
         vm.heap = vec![0, 0, 0, 0];
@@ -836,6 +844,18 @@ mod tests {
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
         assert_eq!(vm.heap, vec![0, 0, 0, 42]);
+
+        let mut vm = VM::new();
+        vm.iregisters[1] = 42;
+        vm.heap = vec![0, 0, 0, 0];
+        vm.program = vec![Opcode::SW as u8, 128, 0, 0, 1, 1];
+        assert!(!vm.step().is_ok());
+
+        let mut vm = VM::new();
+        vm.iregisters[1] = 42;
+        vm.heap = vec![0, 0, 0, 0];
+        vm.program = vec![Opcode::SW as u8, 128, 0, 0, 1, 128];
+        assert!(!vm.step().is_ok());
     }
 
     #[test]
