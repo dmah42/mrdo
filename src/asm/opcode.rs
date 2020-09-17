@@ -6,6 +6,8 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 pub enum Opcode {
     HLT,
     LOAD,
+    LW,
+    SW,
     ADD,
     SUB,
     MUL,
@@ -29,6 +31,8 @@ impl<'a> From<CompleteStr<'a>> for Opcode {
         match CompleteStr(&lowercase_opcode) {
             CompleteStr("halt") => Opcode::HLT,
             CompleteStr("load") => Opcode::LOAD,
+            CompleteStr("lw") => Opcode::LW,
+            CompleteStr("sw") => Opcode::SW,
             CompleteStr("add") => Opcode::ADD,
             CompleteStr("sub") => Opcode::SUB,
             CompleteStr("mul") => Opcode::MUL,

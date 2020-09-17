@@ -96,6 +96,48 @@ impl VM {
                     self.rregisters[idx_from_real_register(register) as usize] = self.next_f64();
                 }
             }
+            Opcode::LW => {
+                // LW $r, [addr]
+                let register = self.next_u8();
+                if !is_int_register(register) {
+                    return Err(Error::new("Cannot load word into non-integer register"));
+                }
+
+                let address = self.next_i32();
+                if address < 0 {
+                    return Err(Error::new("Cannot load word from negative address offset"));
+                }
+
+                let address = address as usize;
+
+                let bytes = [
+                    self.heap[address],
+                    self.heap[address + 1],
+                    self.heap[address + 2],
+                    self.heap[address + 3],
+                ];
+
+                self.iregisters[register as usize] = i32::from_be_bytes(bytes);
+            }
+            Opcode::SW => {
+                // SW [addr], $r
+                let address = self.next_i32();
+                if address < 0 {
+                    return Err(Error::new("Cannot store word to negative address offset"));
+                }
+
+                let address = address as usize;
+
+                let register = self.next_u8();
+                if !is_int_register(register) {
+                    return Err(Error::new("Cannot store work from non-integer register"));
+                }
+
+                let bytes = i32::to_be_bytes(self.iregisters[register as usize]);
+                for i in 0..4 {
+                    self.heap[address + i] = bytes[0 + i];
+                }
+            }
             Opcode::ADD => self.add(),
             Opcode::SUB => self.sub(),
             Opcode::MUL => self.mul(),
@@ -149,9 +191,7 @@ impl VM {
                     }
                 };
             }
-            _ => {
-                return Err(Error::new(&format!("Unrecognized opcode '{:?}'", opcode)));
-            }
+            Opcode::IGL => return Err(Error::new("Illegal opcode")),
         }
         Ok(false)
     }
@@ -748,14 +788,25 @@ mod tests {
     #[test]
     fn test_opcode_load() {
         let mut vm = VM::new();
-        vm.program = vec![1, 0, 0, 0, 1, 244];
+        vm.program = vec![Opcode::LOAD as u8, 0, 0, 0, 1, 244];
         let exit = vm.step();
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
         assert_eq!(vm.iregisters[0], 500);
 
         let mut vm = VM::new();
-        vm.program = vec![1, 128, 64, 16, 204, 204, 204, 204, 204, 205];
+        vm.program = vec![
+            Opcode::LOAD as u8,
+            128,
+            64,
+            16,
+            204,
+            204,
+            204,
+            204,
+            204,
+            205,
+        ];
         let exit = vm.step();
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
@@ -763,11 +814,36 @@ mod tests {
     }
 
     #[test]
+    fn test_opcode_lw() {
+        // TODO: test error cases
+        let mut vm = VM::new();
+        vm.heap = vec![0, 0, 0, 0, 0, 0, 0, 42];
+        vm.program = vec![Opcode::LW as u8, 0, 0, 0, 0, 4];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert_eq!(exit.unwrap(), false);
+        assert_eq!(vm.iregisters[0], 42);
+    }
+
+    #[test]
+    fn test_opcode_sw() {
+        // TODO: test error cases
+        let mut vm = VM::new();
+        vm.iregisters[1] = 42;
+        vm.heap = vec![0, 0, 0, 0];
+        vm.program = vec![Opcode::SW as u8, 0, 0, 0, 0, 1];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert_eq!(exit.unwrap(), false);
+        assert_eq!(vm.heap, vec![0, 0, 0, 42]);
+    }
+
+    #[test]
     fn test_opcode_add() {
         let mut vm = VM::new();
         vm.iregisters[0] = 3;
         vm.iregisters[1] = 2;
-        vm.program = vec![2, 0, 0, 1];
+        vm.program = vec![Opcode::ADD as u8, 0, 0, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
@@ -779,7 +855,7 @@ mod tests {
         let mut vm = VM::new();
         vm.rregisters[0] = 3.0;
         vm.iregisters[1] = 2;
-        vm.program = vec![3, 128, 128, 1];
+        vm.program = vec![Opcode::SUB as u8, 128, 128, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
@@ -791,7 +867,7 @@ mod tests {
         let mut vm = VM::new();
         vm.iregisters[0] = 3;
         vm.rregisters[1] = 2.0;
-        vm.program = vec![4, 0, 0, 129];
+        vm.program = vec![Opcode::MUL as u8, 0, 0, 129];
         let exit = vm.step();
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
@@ -803,7 +879,7 @@ mod tests {
         let mut vm = VM::new();
         vm.rregisters[0] = 3.0;
         vm.rregisters[1] = 2.0;
-        vm.program = vec![5, 128, 128, 129];
+        vm.program = vec![Opcode::DIV as u8, 128, 128, 129];
         let exit = vm.step();
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
@@ -813,7 +889,7 @@ mod tests {
     #[test]
     fn test_opcode_jmp() {
         let mut vm = VM::new();
-        vm.program = vec![6, 0, 0, 0];
+        vm.program = vec![Opcode::JMP as u8, 0, 0, 0];
         vm.iregisters[0] = 100;
         let exit = vm.step();
         assert!(exit.is_ok());
@@ -826,7 +902,7 @@ mod tests {
         let mut vm = VM::new();
         vm.iregisters[0] = 3;
         vm.iregisters[1] = 2;
-        vm.program = vec![7, 0, 0, 1];
+        vm.program = vec![Opcode::EQ as u8, 0, 0, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
@@ -838,7 +914,7 @@ mod tests {
         let mut vm = VM::new();
         vm.iregisters[0] = 3;
         vm.iregisters[1] = 2;
-        vm.program = vec![8, 0, 0, 1];
+        vm.program = vec![Opcode::NEQ as u8, 0, 0, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
@@ -850,7 +926,7 @@ mod tests {
         let mut vm = VM::new();
         vm.iregisters[0] = 3;
         vm.iregisters[1] = 2;
-        vm.program = vec![9, 0, 0, 1];
+        vm.program = vec![Opcode::GT as u8, 0, 0, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
@@ -862,7 +938,7 @@ mod tests {
         let mut vm = VM::new();
         vm.iregisters[0] = 3;
         vm.iregisters[1] = 2;
-        vm.program = vec![10, 0, 0, 1];
+        vm.program = vec![Opcode::LT as u8, 0, 0, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
@@ -874,7 +950,7 @@ mod tests {
         let mut vm = VM::new();
         vm.iregisters[0] = 3;
         vm.iregisters[1] = 2;
-        vm.program = vec![11, 0, 0, 1];
+        vm.program = vec![Opcode::GTE as u8, 0, 0, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
@@ -886,7 +962,7 @@ mod tests {
         let mut vm = VM::new();
         vm.iregisters[0] = 3;
         vm.iregisters[1] = 2;
-        vm.program = vec![12, 0, 0, 1];
+        vm.program = vec![Opcode::LTE as u8, 0, 0, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
@@ -899,7 +975,7 @@ mod tests {
         vm.iregisters[0] = 100;
         vm.iregisters[1] = 3;
         vm.iregisters[2] = 3;
-        vm.program = vec![13, 0, 1, 2];
+        vm.program = vec![Opcode::JEQ as u8, 0, 1, 2];
         let exit = vm.step();
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
@@ -910,7 +986,7 @@ mod tests {
     fn test_opcode_alloc() {
         let mut vm = VM::new();
         vm.iregisters[0] = 1024;
-        vm.program = vec![14, 0, 0, 0];
+        vm.program = vec![Opcode::ALLOC as u8, 0, 0, 0];
         let exit = vm.step();
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
@@ -921,7 +997,7 @@ mod tests {
     fn test_print_opcode() {
         let mut vm = VM::new();
         vm.ro_data.append(&mut vec![72, 101, 108, 108, 111, 0]);
-        vm.program = vec![15, 0, 0, 0];
+        vm.program = vec![Opcode::PRINT as u8, 0, 0, 0];
         let exit = vm.step();
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
