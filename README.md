@@ -53,10 +53,21 @@ The usual operations are available within a function for elements of a
 collection (reals):
 
 * arithmetical: +, -, /, *
-* comparitive: gt, ge, lt, le, eq, ne
-* TODO: logical: and, or, not, xor
+* comparitive: `gt`, `ge`, `lt`, `le`, `eq`, `ne`
+* TODO: logical: `and`, `or`, `not`, `xor`
 
 Logical operations treat 0.0 as false and all other values as true.
+
+#### arithmetical operations
+TODO
+
+if left and right are `real`, arithmetical operations work as expected.
+
+if both are `coll`, they must be the same size and the operations are applied pairwise.
+
+if one is `real` and one is `coll`, the real is applied to every element in the coll.
+
+#### collection-specific operations
 
 Collections themselves have the following operations defined:
 
