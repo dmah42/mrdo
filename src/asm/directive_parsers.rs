@@ -16,7 +16,7 @@ named!(directive_decl<CompleteStr, Token>,
     )
 );
 
-named!(directive_comb<CompleteStr, Instruction>,
+named!(pub directive<CompleteStr, Instruction>,
     ws!(
         do_parse!(
             l: opt!(label_decl) >>
@@ -25,26 +25,8 @@ named!(directive_comb<CompleteStr, Instruction>,
             o1: opt!(operand) >>
             o2: opt!(operand) >>
             (
-                Instruction{
-                    opcode: None,
-                    directive: Some(name),
-                    label: l,
-                    operand0: o0,
-                    operand1: o1,
-                    operand2: o2,
-                }
+                Instruction::new_directive(name, l, o0)
             )
-        )
-    )
-);
-
-named!(pub directive<CompleteStr, Instruction>,
-    do_parse!(
-        instr: alt!(
-            directive_comb
-        ) >>
-        (
-            instr
         )
     )
 );
@@ -68,24 +50,21 @@ mod tests {
 
     #[test]
     fn test_string_directive() {
-        let result = directive_comb(CompleteStr("test: .str 'Hello'"));
+        let result = directive(CompleteStr("test: .str 'Hello'"));
         assert!(result.is_ok());
         let (_, directive) = result.unwrap();
 
-        let expected = Instruction {
-            opcode: None,
-            label: Some(Token::LabelDecl {
+        let expected = Instruction::new_directive(
+            Token::Directive {
+                name: "str".to_string(),
+            },
+            Some(Token::LabelDecl {
                 name: "test".to_string(),
             }),
-            directive: Some(Token::Directive {
-                name: "str".to_string(),
-            }),
-            operand0: Some(Token::DoString {
+            Some(Token::DoString {
                 value: "Hello".to_string(),
             }),
-            operand1: None,
-            operand2: None,
-        };
+        );
 
         assert_eq!(directive, expected);
     }

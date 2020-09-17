@@ -34,22 +34,18 @@ mod tests {
         assert_eq!(
             program.instructions,
             vec![
-                Instruction {
-                    label: None,
-                    directive: None,
-                    opcode: Some(Token::Op { code: Opcode::LOAD }),
-                    operand0: Some(Token::IntRegister { idx: 1 }),
-                    operand1: Some(Token::Integer { value: 42 }),
-                    operand2: None,
-                },
-                Instruction {
-                    label: None,
-                    directive: None,
-                    opcode: Some(Token::Op { code: Opcode::LOAD }),
-                    operand0: Some(Token::RealRegister { idx: 2 }),
-                    operand1: Some(Token::Real { value: 10.4 }),
-                    operand2: None,
-                }
+                Instruction::new_opcode(
+                    Token::Op { code: Opcode::LOAD },
+                    Some(Token::IntRegister { idx: 1 }),
+                    Some(Token::Integer { value: 42 }),
+                    None
+                ),
+                Instruction::new_opcode(
+                    Token::Op { code: Opcode::LOAD },
+                    Some(Token::RealRegister { idx: 2 }),
+                    Some(Token::Real { value: 10.4 }),
+                    None
+                ),
             ]
         )
     }

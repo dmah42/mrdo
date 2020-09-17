@@ -11,17 +11,58 @@ use nom::types::CompleteStr;
 use std::fmt;
 
 #[derive(Debug, PartialEq)]
-// TODO: Split this into Instructions, Directives, and Labels and clean up all the type safety bits.
 pub struct Instruction {
-    pub label: Option<Token>,
-    pub directive: Option<Token>,
-    pub opcode: Option<Token>,
-    pub operand0: Option<Token>,
-    pub operand1: Option<Token>,
-    pub operand2: Option<Token>,
+    label: Option<Token>,
+    directive: Option<Token>,
+    opcode: Option<Token>,
+    operand0: Option<Token>,
+    operand1: Option<Token>,
+    operand2: Option<Token>,
 }
 
 impl Instruction {
+    pub fn new_directive(
+        directive: Token,
+        label: Option<Token>,
+        operand: Option<Token>,
+    ) -> Instruction {
+        Instruction {
+            label,
+            directive: Some(directive),
+            opcode: None,
+            operand0: operand,
+            operand1: None,
+            operand2: None,
+        }
+    }
+
+    pub fn new_label(label: Token) -> Instruction {
+        Instruction {
+            label: Some(label),
+            directive: None,
+            opcode: None,
+            operand0: None,
+            operand1: None,
+            operand2: None,
+        }
+    }
+
+    pub fn new_opcode(
+        opcode: Token,
+        operand0: Option<Token>,
+        operand1: Option<Token>,
+        operand2: Option<Token>,
+    ) -> Instruction {
+        Instruction {
+            label: None,
+            directive: None,
+            opcode: Some(opcode),
+            operand0,
+            operand1,
+            operand2,
+        }
+    }
+
     pub fn is_label(&self) -> bool {
         self.label.is_some()
     }
@@ -161,14 +202,7 @@ named!(instruction_comb<CompleteStr, Instruction>,
         o1: opt!(operand) >>
         o2: opt!(operand) >>
         (
-            Instruction{
-                label: l,
-                directive: None,
-                opcode: Some(o),
-                operand0: o0,
-                operand1: o1,
-                operand2: o2,
-            }
+            Instruction::new_opcode(o, o0, o1, o2)
         )
     )
 );
