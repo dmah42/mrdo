@@ -175,24 +175,7 @@ impl VM {
                 }
             }
             Opcode::LW => self.lw()?,
-            Opcode::SW => {
-                let address = self.next_i32();
-                if address < 0 {
-                    return Err(Error::new("Cannot store word to negative address offset"));
-                }
-
-                let address = address as usize;
-
-                let register = self.next_u8();
-                if !is_int_register(register) {
-                    return Err(Error::new("Cannot store work from non-integer register"));
-                }
-
-                let bytes = i32::to_be_bytes(self.iregisters[register as usize]);
-                for i in 0..4 {
-                    self.heap[address + i] = bytes[0 + i];
-                }
-            }
+            Opcode::SW => self.sw()?,
             Opcode::ADD => self.add()?,
             Opcode::SUB => self.sub(),
             Opcode::MUL => self.mul(),
@@ -321,7 +304,12 @@ impl VM {
             return Err(Error::new("Cannot load word into non-integer register"));
         }
 
-        let address = self.next_i32();
+        let address_reg = self.next_u8();
+        if !is_int_register(address_reg) {
+            return Err(Error::new("Cannot load word from non-integer address"));
+        }
+
+        let address = self.iregisters[address_reg as usize];
         if address < 0 {
             return Err(Error::new("Cannot load word from negative address offset"));
         }
@@ -337,6 +325,30 @@ impl VM {
         ];
 
         self.iregisters[register as usize] = i32::from_be_bytes(bytes);
+        Ok(())
+    }
+
+    fn sw(&mut self) -> Result<(), Error> {
+        let address_reg = self.next_u8();
+        if !is_int_register(address_reg) {
+            return Err(Error::new("Cannot store word into non-integer address"));
+        }
+        let address = self.iregisters[address_reg as usize];
+        if address < 0 {
+            return Err(Error::new("Cannot store word to negative address offset"));
+        }
+
+        let address = address as usize;
+
+        let register = self.next_u8();
+        if !is_int_register(register) {
+            return Err(Error::new("Cannot store word from non-integer register"));
+        }
+
+        let bytes = i32::to_be_bytes(self.iregisters[register as usize]);
+        for i in 0..4 {
+            self.heap[address + i] = bytes[0 + i];
+        }
         Ok(())
     }
 
@@ -944,30 +956,35 @@ mod tests {
     fn test_opcode_lw() {
         let mut vm = VM::new();
         vm.heap = vec![0, 0, 0, 0, 0, 0, 0, 42];
-        vm.program = vec![Opcode::LW as u8, 0, 0, 0, 0, 4];
+        vm.iregisters[1] = 4;
+        vm.program = vec![Opcode::LW as u8, 0, 1];
         let exit = vm.step();
-        println!("{:?}", exit);
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
         assert_eq!(vm.iregisters[0], 42);
 
         let mut vm = VM::new();
         vm.heap = vec![0, 0, 0, 0, 0, 0, 0, 42];
-        vm.program = vec![Opcode::LW as u8, 128, 0, 0, 0, 4];
-        assert!(!vm.step().is_ok());
+        vm.rregisters[1] = 4.0;
+        vm.program = vec![Opcode::LW as u8, 0, real_register_to_idx(1)];
+        let exit = vm.step();
+        assert!(!exit.is_ok());
 
         let mut vm = VM::new();
         vm.heap = vec![0, 0, 0, 0, 0, 0, 0, 42];
-        vm.program = vec![Opcode::LW as u8, 128, 128, 0, 0, 4];
-        assert!(!vm.step().is_ok());
+        vm.iregisters[1] = 4;
+        vm.program = vec![Opcode::LW as u8, real_register_to_idx(0), 1];
+        let exit = vm.step();
+        assert!(!exit.is_ok());
     }
 
     #[test]
     fn test_opcode_sw() {
         let mut vm = VM::new();
+        vm.iregisters[0] = 0;
         vm.iregisters[1] = 42;
         vm.heap = vec![0, 0, 0, 0];
-        vm.program = vec![Opcode::SW as u8, 0, 0, 0, 0, 1];
+        vm.program = vec![Opcode::SW as u8, 0, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
@@ -976,13 +993,13 @@ mod tests {
         let mut vm = VM::new();
         vm.iregisters[1] = 42;
         vm.heap = vec![0, 0, 0, 0];
-        vm.program = vec![Opcode::SW as u8, real_register_to_idx(0), 0, 0, 1, 1];
+        vm.program = vec![Opcode::SW as u8, real_register_to_idx(0), 1];
         assert!(!vm.step().is_ok());
 
         let mut vm = VM::new();
-        vm.iregisters[1] = 42;
+        vm.iregisters[1] = -42;
         vm.heap = vec![0, 0, 0, 0];
-        vm.program = vec![Opcode::SW as u8, real_register_to_idx(0), 0, 0, 1, 128];
+        vm.program = vec![Opcode::SW as u8, 1, 0];
         assert!(!vm.step().is_ok());
     }
 

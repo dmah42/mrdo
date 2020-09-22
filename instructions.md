@@ -16,14 +16,14 @@ Loads a real (*r*) into a real register (*R*).
 Loads a vector from memory (offset *addr*, length *l*) into a vector register (*V*).
 
 ## LW
-*LW $rI #addr*
+*LW $rI $rA*
 
-Loads a word from memory at offset *addr* into an integer register *I*.
+Loads a word from memory at offset stored in register *A* to an integer register *I*.
 
 ## SW
-*SW #addr $rI*
+*SW $rA $rI*
 
-Stores a word from register *I* into memory at offset *addr*.
+Stores a word from register *I* into memory at offset stored in register *A*.
 
 (* TODO *)
 ## ADD,
