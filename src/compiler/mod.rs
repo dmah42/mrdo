@@ -64,8 +64,10 @@ impl Visitor for Compiler {
                 let result_reg = self.free_reg.pop().unwrap();
                 let right_reg = self.used_reg.pop().unwrap();
                 let left_reg = self.used_reg.pop().unwrap();
-                self.assembly
-                    .push(format!("add %{} %{} %{}", result_reg, left_reg, right_reg));
+                self.assembly.push(format!(
+                    "add $r{} $r{} $r{}",
+                    result_reg, left_reg, right_reg
+                ));
                 self.free_reg.insert(left_reg);
                 self.free_reg.insert(right_reg);
                 self.used_reg.insert(result_reg);
@@ -74,8 +76,10 @@ impl Visitor for Compiler {
                 let result_reg = self.free_reg.pop().unwrap();
                 let right_reg = self.used_reg.pop().unwrap();
                 let left_reg = self.used_reg.pop().unwrap();
-                self.assembly
-                    .push(format!("sub %{} %{} %{}", result_reg, left_reg, right_reg));
+                self.assembly.push(format!(
+                    "sub $r{} $r{} $r{}",
+                    result_reg, left_reg, right_reg
+                ));
                 self.free_reg.insert(left_reg);
                 self.free_reg.insert(right_reg);
                 self.used_reg.insert(result_reg);
@@ -84,8 +88,10 @@ impl Visitor for Compiler {
                 let result_reg = self.free_reg.pop().unwrap();
                 let right_reg = self.used_reg.pop().unwrap();
                 let left_reg = self.used_reg.pop().unwrap();
-                self.assembly
-                    .push(format!("mul %{} %{} %{}", result_reg, left_reg, right_reg));
+                self.assembly.push(format!(
+                    "mul $r{} $r{} $r{}",
+                    result_reg, left_reg, right_reg
+                ));
                 self.free_reg.insert(left_reg);
                 self.free_reg.insert(right_reg);
                 self.used_reg.insert(result_reg);
@@ -94,8 +100,10 @@ impl Visitor for Compiler {
                 let result_reg = self.free_reg.pop().unwrap();
                 let right_reg = self.used_reg.pop().unwrap();
                 let left_reg = self.used_reg.pop().unwrap();
-                self.assembly
-                    .push(format!("div %{} %{} %{}", result_reg, left_reg, right_reg));
+                self.assembly.push(format!(
+                    "div $r{} $r{} $r{}",
+                    result_reg, left_reg, right_reg
+                ));
                 self.free_reg.insert(left_reg);
                 self.free_reg.insert(right_reg);
                 self.used_reg.insert(result_reg);
@@ -106,8 +114,10 @@ impl Visitor for Compiler {
                 let result_reg = self.free_reg.pop().unwrap();
                 let right_reg = self.used_reg.pop().unwrap();
                 let left_reg = self.used_reg.pop().unwrap();
-                self.assembly
-                    .push(format!("eq %{} %{} %{}", result_reg, left_reg, right_reg));
+                self.assembly.push(format!(
+                    "eq $r{} $r{} $r{}",
+                    result_reg, left_reg, right_reg
+                ));
                 self.free_reg.insert(left_reg);
                 self.free_reg.insert(right_reg);
                 self.used_reg.insert(result_reg);
@@ -116,8 +126,10 @@ impl Visitor for Compiler {
                 let result_reg = self.free_reg.pop().unwrap();
                 let right_reg = self.used_reg.pop().unwrap();
                 let left_reg = self.used_reg.pop().unwrap();
-                self.assembly
-                    .push(format!("neq %{} %{} %{}", result_reg, left_reg, right_reg));
+                self.assembly.push(format!(
+                    "neq $r{} $r{} $r{}",
+                    result_reg, left_reg, right_reg
+                ));
                 self.free_reg.insert(left_reg);
                 self.free_reg.insert(right_reg);
                 self.used_reg.insert(result_reg);
@@ -126,8 +138,10 @@ impl Visitor for Compiler {
                 let result_reg = self.free_reg.pop().unwrap();
                 let right_reg = self.used_reg.pop().unwrap();
                 let left_reg = self.used_reg.pop().unwrap();
-                self.assembly
-                    .push(format!("gt %{} %{} %{}", result_reg, left_reg, right_reg));
+                self.assembly.push(format!(
+                    "gt $r{} $r{} $r{}",
+                    result_reg, left_reg, right_reg
+                ));
                 self.free_reg.insert(left_reg);
                 self.free_reg.insert(right_reg);
                 self.used_reg.insert(result_reg);
@@ -136,8 +150,10 @@ impl Visitor for Compiler {
                 let result_reg = self.free_reg.pop().unwrap();
                 let right_reg = self.used_reg.pop().unwrap();
                 let left_reg = self.used_reg.pop().unwrap();
-                self.assembly
-                    .push(format!("gte %{} %{} %{}", result_reg, left_reg, right_reg));
+                self.assembly.push(format!(
+                    "gte $r{} $r{} $r{}",
+                    result_reg, left_reg, right_reg
+                ));
                 self.free_reg.insert(left_reg);
                 self.free_reg.insert(right_reg);
                 self.used_reg.insert(result_reg);
@@ -146,8 +162,10 @@ impl Visitor for Compiler {
                 let result_reg = self.free_reg.pop().unwrap();
                 let right_reg = self.used_reg.pop().unwrap();
                 let left_reg = self.used_reg.pop().unwrap();
-                self.assembly
-                    .push(format!("lt %{} %{} %{}", result_reg, left_reg, right_reg));
+                self.assembly.push(format!(
+                    "lt $r{} $r{} $r{}",
+                    result_reg, left_reg, right_reg
+                ));
                 self.free_reg.insert(left_reg);
                 self.free_reg.insert(right_reg);
                 self.used_reg.insert(result_reg);
@@ -156,8 +174,10 @@ impl Visitor for Compiler {
                 let result_reg = self.free_reg.pop().unwrap();
                 let right_reg = self.used_reg.pop().unwrap();
                 let left_reg = self.used_reg.pop().unwrap();
-                self.assembly
-                    .push(format!("lte %{} %{} %{}", result_reg, left_reg, right_reg));
+                self.assembly.push(format!(
+                    "lte $r{} $r{} $r{}",
+                    result_reg, left_reg, right_reg
+                ));
                 self.free_reg.insert(left_reg);
                 self.free_reg.insert(right_reg);
                 self.used_reg.insert(result_reg);
@@ -198,8 +218,9 @@ impl Visitor for Compiler {
                             self.visit_token(expr)?;
                         }
                         let reg = self.used_reg.pop().unwrap();
-                        // TODO: create a "printmem" instruction in assembly to print out the contents of the heap at some offset.
-                        // then use that to print out whatever is being passed in to write.
+                        // TODO: create a "syscall" instruction in assembly and a syscall
+                        // to print from an address, then use that to print out whatever is
+                        // being passed in to write.
                         self.assembly.push(format!("somestr: .str 'reg ${}'", reg));
                         self.assembly.push("print @somestr".to_string());
                     }
@@ -216,11 +237,11 @@ impl Visitor for Compiler {
                 // This adds the current variables register to zero to get the value into a
                 // new register ready to be referenced in whatever binary ops are expected.
                 let zero_reg = self.free_reg.pop().unwrap();
-                self.assembly.push(format!("load %{} #0", zero_reg));
+                self.assembly.push(format!("load $r{} #0", zero_reg));
 
                 let next_reg = self.free_reg.pop().unwrap();
                 self.assembly.push(format!(
-                    "add %{} %{} %{}",
+                    "add $r{} $r{} $r{}",
                     next_reg, zero_reg, self.variables[name]
                 ));
 
@@ -231,14 +252,13 @@ impl Visitor for Compiler {
             // TODO: allow for 'Integer' types maybe.
             Token::Real { value } => {
                 let next_reg = self.free_reg.pop().unwrap();
-                let line = format!("load %{} #{:.2}", next_reg, value);
+                let line = format!("load $r{} #{:.2}", next_reg, value);
                 self.assembly.push(line);
                 self.used_reg.insert(next_reg);
             }
             Token::Coll { values } => {
-                // FIXME: figure out how to best use a heap here instead of registers.
-                // Maybe something like allocating the space and then after each visit
-                // loading the register contents into the heap...
+                // FIXME: use new vector registers. alloc the space and then
+                // pass that in to the vector load variant.
                 for v in values {
                     self.visit_token(v)?;
                 }
