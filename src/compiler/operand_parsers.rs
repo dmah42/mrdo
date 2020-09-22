@@ -4,9 +4,7 @@ use crate::compiler::tokens::Token;
 use nom::types::CompleteStr;
 use nom::*;
 
-// TODO: extend real to be "operand" with multiple types. requres rules to
-// be set for operators (arithmetic and logical) for coll vs coll and coll vs real
-// (see readme)
+// TODO: extend real to be "operand" with multiple types.
 named!(pub real<CompleteStr, Token>,
     ws!(
         do_parse!(
