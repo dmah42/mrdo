@@ -153,45 +153,28 @@ impl VM {
             Opcode::LOAD => {
                 // NOTE: `LOAD %1 10` will fail, as will `LOAD $1 3.14`, but in odd ways.
                 let register = self.next_u8();
-                println!("Checking reg '{:?}'", register);
-                if is_int_register(register) {
-                    self.iregisters[register as usize] = self.next_i32();
-                } else if is_real_register(register) {
-                    self.rregisters[idx_from_real_register(register) as usize] = self.next_f64();
-                } else if is_vector_register(register) {
-                    let base_addr = self.next_i32() as usize;
-                    let len = self.next_i32() as usize;
-
-                    let mut v = vec![];
-                    let mut addr = base_addr;
-                    while addr < base_addr + (len * 8) {
-                        let bytes: [u8; 8] = self.heap[addr..(addr + 8)].try_into().unwrap();
-                        v.push(f64::from_be_bytes(bytes));
-                        addr += 8;
+                match self.get_register(register)? {
+                    Register::I(_) => self.iregisters[register as usize] = self.next_i32(),
+                    Register::R(_) => {
+                        self.rregisters[idx_from_real_register(register) as usize] = self.next_f64()
                     }
+                    Register::V(_) => {
+                        let base_addr = self.next_i32() as usize;
+                        let len = self.next_i32() as usize;
 
-                    self.vregisters[idx_from_vector_register(register) as usize] = v;
-                } else {
-                    return Err(Error::new("UNKNOWN register type"));
+                        let mut v = vec![];
+                        let mut addr = base_addr;
+                        while addr < base_addr + (len * 8) {
+                            let bytes: [u8; 8] = self.heap[addr..(addr + 8)].try_into().unwrap();
+                            v.push(f64::from_be_bytes(bytes));
+                            addr += 8;
+                        }
+
+                        self.vregisters[idx_from_vector_register(register) as usize] = v;
+                    }
                 }
             }
-            Opcode::LW => {
-                let register = self.next_u8();
-                if !is_int_register(register) {
-                    return Err(Error::new("Cannot load word into non-integer register"));
-                }
-
-                let address = self.next_i32();
-                if address < 0 {
-                    return Err(Error::new("Cannot load word from negative address offset"));
-                }
-
-                let address = address as usize;
-
-                let bytes = self.heap[address..address + 3].try_into().unwrap();
-
-                self.iregisters[register as usize] = i32::from_be_bytes(bytes);
-            }
+            Opcode::LW => self.lw()?,
             Opcode::SW => {
                 let address = self.next_i32();
                 if address < 0 {
@@ -330,6 +313,31 @@ impl VM {
         ];
         self.pc += 8;
         f64::from_be_bytes(bytes)
+    }
+
+    fn lw(&mut self) -> Result<(), Error> {
+        let register = self.next_u8();
+        if !is_int_register(register) {
+            return Err(Error::new("Cannot load word into non-integer register"));
+        }
+
+        let address = self.next_i32();
+        if address < 0 {
+            return Err(Error::new("Cannot load word from negative address offset"));
+        }
+
+        let address = address as usize;
+
+        // TODO: convert from slice of heap.
+        let bytes = [
+            self.heap[address],
+            self.heap[address + 1],
+            self.heap[address + 2],
+            self.heap[address + 3],
+        ];
+
+        self.iregisters[register as usize] = i32::from_be_bytes(bytes);
+        Ok(())
     }
 
     fn add(&mut self) -> Result<(), Error> {
@@ -938,6 +946,7 @@ mod tests {
         vm.heap = vec![0, 0, 0, 0, 0, 0, 0, 42];
         vm.program = vec![Opcode::LW as u8, 0, 0, 0, 0, 4];
         let exit = vm.step();
+        println!("{:?}", exit);
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
         assert_eq!(vm.iregisters[0], 42);

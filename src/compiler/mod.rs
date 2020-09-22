@@ -252,16 +252,44 @@ impl Visitor for Compiler {
             // TODO: allow for 'Integer' types maybe.
             Token::Real { value } => {
                 let next_reg = self.free_reg.pop().unwrap();
-                let line = format!("load $r{} #{:.2}", next_reg, value);
-                self.assembly.push(line);
+                self.assembly
+                    .push(format!("load $r{} #{:.2}", next_reg, value));
                 self.used_reg.insert(next_reg);
             }
             Token::Coll { values } => {
-                // FIXME: use new vector registers. alloc the space and then
-                // pass that in to the vector load variant.
+                // Allocate memory for the heap and put the base address into a register.
+                let alloc_reg = self.free_reg.pop().unwrap();
+                self.assembly
+                    .push(format!("alloc $i{} #{}", alloc_reg, values.len() * 8));
+
+                // Go through the collection and store each generated real to the heap.
+                let vec_reg = self.free_reg.pop().unwrap();
+                self.assembly.push(format!("load $i{} #0", vec_reg));
+                self.assembly
+                    .push(format!("add $i{} $i{} $i{}", vec_reg, vec_reg, alloc_reg));
                 for v in values {
+                    // Note: this assumes visiting a token ends up with a used reg
+                    // equivalent to a real.
                     self.visit_token(v)?;
+                    let used_reg = self.used_reg.pop().unwrap();
+                    self.assembly
+                        .push(format!("sw $i{} $r{}", vec_reg, used_reg));
+                    self.free_reg.insert(used_reg);
+                    // TODO: skip this last add.
+                    self.assembly.push(format!("add $i{} #8", vec_reg));
                 }
+                self.free_reg.insert(vec_reg);
+
+                // And finally load the heap info into a register.
+                let next_reg = self.free_reg.pop().unwrap();
+                self.assembly.push(format!(
+                    "load $v{} $i{} #{}",
+                    next_reg,
+                    alloc_reg,
+                    values.len() * 8
+                ));
+                self.free_reg.insert(alloc_reg);
+                self.used_reg.insert(next_reg);
             }
 
             Token::Factor { ref value } => self.visit_token(value)?,
@@ -323,8 +351,26 @@ mod tests {
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
-            vec![".data", ".code", "load %31 #0.00", "load %30 #1.20", "halt"]
+            vec![
+                ".data",
+                ".code",
+                "alloc $i31 #16",
+                "load $i30 #0",
+                "add $i30 $i30 $i31",
+                "load $r29 #0.00",
+                "sw $i30 $r29",
+                "add $i30 #8",
+                "load $r29 #1.20",
+                "sw $i30 $r29",
+                "add $i30 #8",
+                "load $v30 $i31 #16",
+                "halt"
+            ],
         );
+        let mut expected_free: IndexSet<u8> = (0..30).collect();
+        expected_free.insert(31);
+        assert_eq!(compiler.free_reg, expected_free);
+        assert_eq!(compiler.used_reg, indexset! {30});
     }
 
     #[test]
@@ -337,9 +383,9 @@ mod tests {
             vec![
                 ".data",
                 ".code",
-                "load %31 #1.20",
-                "load %30 #3.40",
-                "add %29 %31 %30",
+                "load $r31 #1.20",
+                "load $r30 #3.40",
+                "add $r29 $r31 $r30",
                 "halt"
             ]
         );
@@ -360,9 +406,9 @@ mod tests {
             vec![
                 ".data",
                 ".code",
-                "load %31 #1.20",
-                "load %30 #3.40",
-                "sub %29 %31 %30",
+                "load $r31 #1.20",
+                "load $r30 #3.40",
+                "sub $r29 $r31 $r30",
                 "halt"
             ]
         );
@@ -383,9 +429,9 @@ mod tests {
             vec![
                 ".data",
                 ".code",
-                "load %31 #1.20",
-                "load %30 #3.40",
-                "mul %29 %31 %30",
+                "load $r31 #1.20",
+                "load $r30 #3.40",
+                "mul $r29 $r31 $r30",
                 "halt"
             ]
         );
@@ -406,9 +452,9 @@ mod tests {
             vec![
                 ".data",
                 ".code",
-                "load %31 #1.20",
-                "load %30 #3.40",
-                "div %29 %31 %30",
+                "load $r31 #1.20",
+                "load $r30 #3.40",
+                "div $r29 $r31 $r30",
                 "halt"
             ]
         );
@@ -429,11 +475,11 @@ mod tests {
             vec![
                 ".data",
                 ".code",
-                "load %31 #1.20",
-                "load %30 #4.10",
-                "add %29 %31 %30",
-                "load %30 #3.40",
-                "eq %31 %29 %30",
+                "load $r31 #1.20",
+                "load $r30 #4.10",
+                "add $r29 $r31 $r30",
+                "load $r30 #3.40",
+                "eq $r31 $r29 $r30",
                 "halt"
             ]
         );
@@ -452,9 +498,9 @@ mod tests {
             vec![
                 ".data",
                 ".code",
-                "load %31 #1.20",
-                "load %30 #3.40",
-                "neq %29 %31 %30",
+                "load $r31 #1.20",
+                "load $r30 #3.40",
+                "neq $r29 $r31 $r30",
                 "halt"
             ]
         );
@@ -475,9 +521,9 @@ mod tests {
             vec![
                 ".data",
                 ".code",
-                "load %31 #1.20",
-                "load %30 #3.40",
-                "gt %29 %31 %30",
+                "load $r31 #1.20",
+                "load $r30 #3.40",
+                "gt $r29 $r31 $r30",
                 "halt"
             ]
         );
@@ -498,9 +544,9 @@ mod tests {
             vec![
                 ".data",
                 ".code",
-                "load %31 #1.20",
-                "load %30 #3.40",
-                "gte %29 %31 %30",
+                "load $r31 #1.20",
+                "load $r30 #3.40",
+                "gte $r29 $r31 $r30",
                 "halt"
             ]
         );
@@ -521,9 +567,9 @@ mod tests {
             vec![
                 ".data",
                 ".code",
-                "load %31 #1.20",
-                "load %30 #3.40",
-                "lt %29 %31 %30",
+                "load $r31 #1.20",
+                "load $r30 #3.40",
+                "lt $r29 $r31 $r30",
                 "halt"
             ]
         );
@@ -544,9 +590,9 @@ mod tests {
             vec![
                 ".data",
                 ".code",
-                "load %31 #1.20",
-                "load %30 #3.40",
-                "lte %29 %31 %30",
+                "load $r31 #1.20",
+                "load $r30 #3.40",
+                "lte $r29 $r31 $r30",
                 "halt"
             ]
         );

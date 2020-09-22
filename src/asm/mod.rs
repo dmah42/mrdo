@@ -265,7 +265,7 @@ mod tests {
     fn test_assemble_program() {
         let mut asm = Assembler::new();
         let test_string =
-            ".data\nhello: .str 'Hello'\n.code\nload $0 #100\nload %1 #1.4\ntest: add $0 $0 %1\n";
+            ".data\nhello: .str 'Hello'\n.code\nload $i0 #100\nload $r1 #1.4\ntest: add $i0 $i0 $r1\n";
 
         let result = asm.assemble(test_string);
         assert!(result.is_ok());

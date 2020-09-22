@@ -270,7 +270,7 @@ mod tests {
 
     #[test]
     fn test_parse_instruction_form_one() {
-        let result = instruction_comb(CompleteStr("load $0 #100\n"));
+        let result = instruction_comb(CompleteStr("load $i0 #100\n"));
         assert_eq!(
             result,
             Ok((
@@ -289,7 +289,7 @@ mod tests {
 
     #[test]
     fn test_parse_instruction_form_one_with_label() {
-        let result = instruction_comb(CompleteStr("load $0 @test1\n"));
+        let result = instruction_comb(CompleteStr("load $i0 @test1\n"));
         assert_eq!(
             result,
             Ok((
@@ -329,7 +329,7 @@ mod tests {
 
     #[test]
     fn test_parse_instruction_form_three() {
-        let result = instruction_comb(CompleteStr("add %0 $1 $2\n"));
+        let result = instruction_comb(CompleteStr("add $r0 $i1 $i2\n"));
         assert_eq!(
             result,
             Ok((

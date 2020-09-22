@@ -25,7 +25,7 @@ mod tests {
 
     #[test]
     fn test_parse_program() {
-        let result = program(CompleteStr("load $1 #42\nload %2 #10.4\n"));
+        let result = program(CompleteStr("load $i1 #42\nload $r2 #10.4\n"));
         assert!(result.is_ok());
 
         let (left, program) = result.unwrap();
