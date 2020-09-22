@@ -63,8 +63,6 @@ impl REPL {
                 self.execute_command(&buffer);
             } else {
                 let assembly = match self.mode {
-                    // TODO: figure out how to step enough in highlevel or halt if we run for
-                    // assembly.
                     Mode::Assembly => vec![buffer.into()],
                     Mode::Highlevel => match self.compiler.compile_expr(buffer) {
                         Ok(compiled) => compiled.to_vec(),
