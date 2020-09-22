@@ -4,8 +4,7 @@
 mrdo is a language in which variables may be either a:
 
 * real (mutable 64-bit floating point)
-* TODO: coll (an immutable collection of reals)
-* TODO: seq (an ordered immutable collection of reals)
+* coll (an immutable collection of reals)
 * TODO: dict (key-value immutable collection of reals)
 
 ## usage
@@ -59,7 +58,7 @@ collection (reals):
 Logical operations treat 0.0 as false and all other values as true.
 
 #### arithmetical operations
-TODO
+TODO (adding works now)
 
 if left and right are `real`, arithmetical operations work as expected.
 

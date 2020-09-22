@@ -2,13 +2,15 @@ use crate::asm::opcode::Opcode;
 use crate::asm::{DO_HEADER_LEN, DO_HEADER_PREFIX};
 use crate::vm::error::Error;
 
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
+use std::default::Default;
 
 pub mod error;
 
 pub struct VM {
     pub iregisters: [i32; 32],
     pub rregisters: [f64; 32],
+    pub vregisters: [Vec<f64>; 32],
     pub program: Vec<u8>,
     heap: Vec<u8>,
     pc: usize,
@@ -19,23 +21,84 @@ pub fn is_valid_bytecode(bytecode: &[u8]) -> bool {
     bytecode.len() > DO_HEADER_LEN && bytecode[0..4] == DO_HEADER_PREFIX
 }
 
+// TODO: use from/into to convert a register into an value.
+enum Register<'a> {
+    I(i32),
+    R(f64),
+    V(&'a Vec<f64>),
+}
+
+impl TryInto<i32> for Register<'_> {
+    type Error = Error;
+
+    fn try_into(self) -> Result<i32, Self::Error> {
+        match self {
+            Register::I(i) => Ok(i),
+            Register::R(r) => Ok(r as i32),
+            Register::V(_) => Err(Error::new("Cannot convert vector register into i32")),
+        }
+    }
+}
+
+impl TryInto<f64> for Register<'_> {
+    type Error = Error;
+
+    fn try_into(self) -> Result<f64, Self::Error> {
+        match self {
+            Register::I(i) => Ok(i as f64),
+            Register::R(r) => Ok(r),
+            Register::V(_) => Err(Error::new("Cannot convert vector register into f64")),
+        }
+    }
+}
+
+impl<'a> TryInto<&'a Vec<f64>> for Register<'a> {
+    type Error = Error;
+
+    fn try_into(self) -> Result<&'a Vec<f64>, Self::Error> {
+        match self {
+            Register::I(_) => Err(Error::new("Cannot convert integer register into vector")),
+            Register::R(_) => Err(Error::new("Cannot convert real register into vector")),
+            Register::V(v) => Ok(v),
+        }
+    }
+}
+
+// TODO: test these
 fn is_int_register(reg: u8) -> bool {
-    (reg & 0b10000000) == 0
+    !is_real_register(reg) && !is_vector_register(reg)
+}
+
+fn is_real_register(reg: u8) -> bool {
+    (reg & 0b10000000) == 0b10000000
+}
+
+fn is_vector_register(reg: u8) -> bool {
+    (reg & 0b01000000) == 0b01000000
 }
 
 fn idx_from_real_register(reg: u8) -> u8 {
     reg & 0b01111111
 }
 
+fn idx_from_vector_register(reg: u8) -> u8 {
+    reg & 0b10111111
+}
+
 pub fn real_register_to_idx(reg: u8) -> u8 {
     reg | 0b10000000
+}
+
+pub fn vector_register_to_idx(reg: u8) -> u8 {
+    reg | 0b01000000
 }
 
 impl VM {
     pub fn new() -> VM {
         VM {
-            iregisters: [0; 32],
-            rregisters: [0.0; 32],
+            iregisters: Default::default(),
+            rregisters: Default::default(),
+            vregisters: Default::default(),
             program: vec![],
             heap: vec![],
             pc: 0,
@@ -90,14 +153,29 @@ impl VM {
             Opcode::LOAD => {
                 // NOTE: `LOAD %1 10` will fail, as will `LOAD $1 3.14`, but in odd ways.
                 let register = self.next_u8();
+                println!("Checking reg '{:?}'", register);
                 if is_int_register(register) {
                     self.iregisters[register as usize] = self.next_i32();
-                } else {
+                } else if is_real_register(register) {
                     self.rregisters[idx_from_real_register(register) as usize] = self.next_f64();
+                } else if is_vector_register(register) {
+                    let base_addr = self.next_i32() as usize;
+                    let len = self.next_i32() as usize;
+
+                    let mut v = vec![];
+                    let mut addr = base_addr;
+                    while addr < base_addr + (len * 8) {
+                        let bytes: [u8; 8] = self.heap[addr..(addr + 8)].try_into().unwrap();
+                        v.push(f64::from_be_bytes(bytes));
+                        addr += 8;
+                    }
+
+                    self.vregisters[idx_from_vector_register(register) as usize] = v;
+                } else {
+                    return Err(Error::new("UNKNOWN register type"));
                 }
             }
             Opcode::LW => {
-                // LW $r, [addr]
                 let register = self.next_u8();
                 if !is_int_register(register) {
                     return Err(Error::new("Cannot load word into non-integer register"));
@@ -110,17 +188,11 @@ impl VM {
 
                 let address = address as usize;
 
-                let bytes = [
-                    self.heap[address],
-                    self.heap[address + 1],
-                    self.heap[address + 2],
-                    self.heap[address + 3],
-                ];
+                let bytes = self.heap[address..address + 3].try_into().unwrap();
 
                 self.iregisters[register as usize] = i32::from_be_bytes(bytes);
             }
             Opcode::SW => {
-                // SW [addr], $r
                 let address = self.next_i32();
                 if address < 0 {
                     return Err(Error::new("Cannot store word to negative address offset"));
@@ -138,7 +210,7 @@ impl VM {
                     self.heap[address + i] = bytes[0 + i];
                 }
             }
-            Opcode::ADD => self.add(),
+            Opcode::ADD => self.add()?,
             Opcode::SUB => self.sub(),
             Opcode::MUL => self.mul(),
             Opcode::DIV => self.div(),
@@ -202,6 +274,26 @@ impl VM {
         opcode
     }
 
+    fn get_register(&self, reg: u8) -> Result<Register, Error> {
+        if is_int_register(reg) {
+            return Ok(Register::I(self.iregisters[reg as usize]));
+        }
+        if is_real_register(reg) {
+            return Ok(Register::R(
+                self.rregisters[idx_from_real_register(reg) as usize],
+            ));
+        }
+        if is_vector_register(reg) {
+            return Ok(Register::V(
+                &self.vregisters[idx_from_vector_register(reg) as usize],
+            ));
+        }
+
+        return Err(Error::new(
+            format!("Unknown register type {}", reg).as_str(),
+        ));
+    }
+
     fn next_u8(&mut self) -> u8 {
         let result = self.program[self.pc];
         self.pc += 1;
@@ -240,52 +332,55 @@ impl VM {
         f64::from_be_bytes(bytes)
     }
 
-    fn add(&mut self) {
-        let register = self.next_u8();
-        let a_reg = self.next_u8();
-        let b_reg = self.next_u8();
+    fn add(&mut self) -> Result<(), Error> {
+        let out_idx = self.next_u8();
+        let a_idx = self.next_u8();
+        let b_idx = self.next_u8();
 
-        let mut ia: Option<i32> = None;
-        let mut ra: Option<f64> = None;
-        if is_int_register(a_reg) {
-            ia = Some(self.iregisters[a_reg as usize]);
-        } else {
-            ra = Some(self.rregisters[idx_from_real_register(a_reg) as usize]);
+        let a_reg = self.get_register(a_idx)?;
+        let b_reg = self.get_register(b_idx)?;
+
+        match self.get_register(out_idx)? {
+            Register::I(_) => {
+                let a: i32 = a_reg.try_into()?;
+                let b: i32 = b_reg.try_into()?;
+
+                self.iregisters[out_idx as usize] = a + b;
+            }
+            Register::R(_) => {
+                let a: f64 = a_reg.try_into()?;
+                let b: f64 = b_reg.try_into()?;
+
+                self.rregisters[idx_from_real_register(out_idx) as usize] = a + b;
+            }
+            Register::V(_) => {
+                if let Register::V(va) = a_reg {
+                    if let Register::V(vb) = b_reg {
+                        // pairwise add across vectors.
+                        if va.len() != vb.len() {
+                            return Err(Error::new("Cannot add vectors with unequal lengths"));
+                        }
+                        self.vregisters[idx_from_vector_register(out_idx) as usize] =
+                            va.iter().zip(vb).map(|(a, b)| a + b).collect();
+                    } else {
+                        // add b to every element of a
+                        let b: f64 = b_reg.try_into()?;
+                        self.vregisters[idx_from_vector_register(out_idx) as usize] =
+                            va.iter().map(|a| a + b).collect();
+                    }
+                } else if let Register::V(vb) = b_reg {
+                    // add a to every element of b
+                    let a: f64 = a_reg.try_into()?;
+                    self.vregisters[idx_from_vector_register(out_idx) as usize] =
+                        vb.iter().map(|b| a + b).collect();
+                } else {
+                    return Err(Error::new(
+                        "Cannot add two non-vector registers into a vector register",
+                    ));
+                }
+            }
         }
-
-        let mut ib: Option<i32> = None;
-        let mut rb: Option<f64> = None;
-        if is_int_register(b_reg) {
-            ib = Some(self.iregisters[b_reg as usize]);
-        } else {
-            rb = Some(self.rregisters[idx_from_real_register(b_reg) as usize]);
-        }
-
-        if is_int_register(register) {
-            let a: i32 = match ia {
-                Some(i) => i,
-                None => ra.unwrap() as i32,
-            };
-
-            let b: i32 = match ib {
-                Some(i) => i,
-                None => rb.unwrap() as i32,
-            };
-
-            self.iregisters[register as usize] = a + b;
-        } else {
-            let a: f64 = match ra {
-                Some(r) => r,
-                None => ia.unwrap() as f64,
-            };
-
-            let b: f64 = match rb {
-                Some(r) => r,
-                None => ib.unwrap() as f64,
-            };
-
-            self.rregisters[idx_from_real_register(register) as usize] = a + b;
-        }
+        Ok(())
     }
 
     fn sub(&mut self) {
@@ -787,6 +882,7 @@ mod tests {
 
     #[test]
     fn test_opcode_load() {
+        // integer load
         let mut vm = VM::new();
         vm.program = vec![Opcode::LOAD as u8, 0, 0, 0, 1, 244];
         let exit = vm.step();
@@ -794,10 +890,11 @@ mod tests {
         assert_eq!(exit.unwrap(), false);
         assert_eq!(vm.iregisters[0], 500);
 
+        // real load
         let mut vm = VM::new();
         vm.program = vec![
             Opcode::LOAD as u8,
-            128,
+            real_register_to_idx(0),
             64,
             16,
             204,
@@ -811,6 +908,28 @@ mod tests {
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
         assert_eq!(vm.rregisters[0], 4.2);
+
+        // vector load
+        let mut vm = VM::new();
+        vm.heap = vec![
+            64, 16, 204, 204, 204, 204, 204, 205, 64, 20, 204, 204, 204, 204, 204, 205,
+        ];
+        vm.program = vec![
+            Opcode::LOAD as u8,
+            vector_register_to_idx(0),
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+        ];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert_eq!(exit.unwrap(), false);
+        assert_eq!(vm.vregisters[0], vec![4.2, 5.2]);
     }
 
     #[test]
@@ -824,13 +943,13 @@ mod tests {
         assert_eq!(vm.iregisters[0], 42);
 
         let mut vm = VM::new();
-        vm.heap = vec![0,0,0,0,0,0,0,42];
-        vm.program = vec![Opcode::LW as u8, 128,0,0,0,4];
+        vm.heap = vec![0, 0, 0, 0, 0, 0, 0, 42];
+        vm.program = vec![Opcode::LW as u8, 128, 0, 0, 0, 4];
         assert!(!vm.step().is_ok());
 
         let mut vm = VM::new();
-        vm.heap = vec![0,0,0,0,0,0,0,42];
-        vm.program = vec![Opcode::LW as u8, 128,128,0,0,4];
+        vm.heap = vec![0, 0, 0, 0, 0, 0, 0, 42];
+        vm.program = vec![Opcode::LW as u8, 128, 128, 0, 0, 4];
         assert!(!vm.step().is_ok());
     }
 
@@ -848,18 +967,19 @@ mod tests {
         let mut vm = VM::new();
         vm.iregisters[1] = 42;
         vm.heap = vec![0, 0, 0, 0];
-        vm.program = vec![Opcode::SW as u8, 128, 0, 0, 1, 1];
+        vm.program = vec![Opcode::SW as u8, real_register_to_idx(0), 0, 0, 1, 1];
         assert!(!vm.step().is_ok());
 
         let mut vm = VM::new();
         vm.iregisters[1] = 42;
         vm.heap = vec![0, 0, 0, 0];
-        vm.program = vec![Opcode::SW as u8, 128, 0, 0, 1, 128];
+        vm.program = vec![Opcode::SW as u8, real_register_to_idx(0), 0, 0, 1, 128];
         assert!(!vm.step().is_ok());
     }
 
     #[test]
     fn test_opcode_add() {
+        // integer
         let mut vm = VM::new();
         vm.iregisters[0] = 3;
         vm.iregisters[1] = 2;
@@ -868,6 +988,78 @@ mod tests {
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
         assert_eq!(vm.iregisters[0], 5);
+
+        // real to integer
+        let mut vm = VM::new();
+        vm.rregisters[0] = 3.2;
+        vm.iregisters[1] = 2;
+        vm.program = vec![Opcode::ADD as u8, 0, real_register_to_idx(0), 1];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert_eq!(exit.unwrap(), false);
+        assert_eq!(vm.iregisters[0], 5);
+
+        // integer to real
+        let mut vm = VM::new();
+        vm.rregisters[0] = 3.2;
+        vm.iregisters[1] = 2;
+        vm.program = vec![
+            Opcode::ADD as u8,
+            real_register_to_idx(0),
+            real_register_to_idx(0),
+            1,
+        ];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert_eq!(exit.unwrap(), false);
+        assert_eq!(vm.rregisters[0], 5.2);
+
+        // vector to vector
+        let mut vm = VM::new();
+        vm.vregisters[0] = vec![1.0, 2.0, 3.1];
+        vm.vregisters[1] = vec![2.0, 3.0, 4.0];
+        vm.program = vec![
+            Opcode::ADD as u8,
+            vector_register_to_idx(0),
+            vector_register_to_idx(0),
+            vector_register_to_idx(1),
+        ];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert_eq!(exit.unwrap(), false);
+        assert_eq!(vm.vregisters[0], vec![3.0, 5.0, 7.1]);
+
+        // real to vector
+        let mut vm = VM::new();
+        vm.vregisters[0] = vec![1.0, 2.0, 3.1];
+        vm.rregisters[0] = 1.2;
+        vm.program = vec![
+            Opcode::ADD as u8,
+            vector_register_to_idx(0),
+            vector_register_to_idx(0),
+            real_register_to_idx(0),
+        ];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert_eq!(exit.unwrap(), false);
+        assert_eq!(vm.vregisters[0], vec![2.2, 3.2, 4.3]);
+
+        // vector to real
+        let mut vm = VM::new();
+        vm.vregisters[0] = vec![1.0, 2.0, 3.1];
+        vm.rregisters[0] = 1.2;
+        vm.program = vec![
+            Opcode::ADD as u8,
+            vector_register_to_idx(0),
+            real_register_to_idx(0),
+            vector_register_to_idx(0),
+        ];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert_eq!(exit.unwrap(), false);
+        assert_eq!(vm.vregisters[0], vec![2.2, 3.2, 4.3]);
+
+        // TODO: test error cases
     }
 
     #[test]

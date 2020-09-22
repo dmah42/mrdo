@@ -25,6 +25,7 @@ pub enum Token {
     Op { code: Opcode },
     IntRegister { idx: u8 },
     RealRegister { idx: u8 },
+    VectorRegister { idx: u8 },
     Integer { value: i32 },
     Real { value: f64 },
     LabelDecl { name: String },
