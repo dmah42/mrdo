@@ -214,7 +214,7 @@ impl Visitor for Compiler {
             Token::Builtin { builtin, args } => {
                 match builtin.as_str() {
                     "write" => {
-                        /*                         for expr in args {
+                        for expr in args {
                             self.visit_token(expr)?;
                         }
                         let reg = self.used_reg.pop().unwrap();
@@ -222,8 +222,12 @@ impl Visitor for Compiler {
                         // to print from an address, then use that to print out whatever is
                         // being passed in to write.
                         // TODO: add the string to rodata.
-                        self.assembly.push(format!("somestr: .str 'reg ${}'", reg));
-                        self.assembly.push("print @somestr".to_string()); */
+                        self.assembly.push(format!(
+                            "somestr: .str 'reg ${}{}'",
+                            reg.1.get_char(),
+                            reg.0
+                        ));
+                        self.assembly.push("print @somestr".to_string());
                     }
                     _ => return Err(Error::new(format!("Unknown builtin: {}", builtin))),
                 };
