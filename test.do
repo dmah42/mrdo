@@ -7,3 +7,4 @@ foo / 2.0
 do(write, foo)
 
 bar = [4, 3.0, 2]
+baz = bar + 1

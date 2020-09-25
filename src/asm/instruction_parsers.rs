@@ -5,7 +5,7 @@ use crate::asm::opcode_parsers::*;
 use crate::asm::operand_parsers::operand;
 use crate::asm::symbols::*;
 use crate::asm::Token;
-use crate::vm::{real_register_to_idx, vector_register_to_idx};
+use crate::vm::register::{real_register_to_idx, vector_register_to_idx};
 
 use nom::types::CompleteStr;
 use std::fmt;

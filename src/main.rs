@@ -127,6 +127,12 @@ fn run_bytecode(bytecode: &[u8], list_bc: bool, list_reg: bool) {
                     );
                 }
                 println!("EOF");
+
+                println!("Listing vector registers:");
+                for (i, reg) in vm.vregisters.iter().enumerate() {
+                    println!("  [{}]\t{:?}", i, reg);
+                }
+                println!("EOF");
             }
             std::process::exit(0);
         }

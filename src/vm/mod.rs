@@ -1,11 +1,13 @@
 use crate::asm::opcode::Opcode;
 use crate::asm::{DO_HEADER_LEN, DO_HEADER_PREFIX};
 use crate::vm::error::Error;
+use crate::vm::register::*;
 
 use std::convert::{TryFrom, TryInto};
 use std::default::Default;
 
 pub mod error;
+pub mod register;
 
 pub struct VM {
     pub iregisters: [i32; 32],
@@ -19,78 +21,6 @@ pub struct VM {
 
 pub fn is_valid_bytecode(bytecode: &[u8]) -> bool {
     bytecode.len() > DO_HEADER_LEN && bytecode[0..4] == DO_HEADER_PREFIX
-}
-
-// TODO: use from/into to convert a register into an value.
-enum Register<'a> {
-    I(i32),
-    R(f64),
-    V(&'a Vec<f64>),
-}
-
-impl TryInto<i32> for Register<'_> {
-    type Error = Error;
-
-    fn try_into(self) -> Result<i32, Self::Error> {
-        match self {
-            Register::I(i) => Ok(i),
-            Register::R(r) => Ok(r as i32),
-            Register::V(_) => Err(Error::new("Cannot convert vector register into i32")),
-        }
-    }
-}
-
-impl TryInto<f64> for Register<'_> {
-    type Error = Error;
-
-    fn try_into(self) -> Result<f64, Self::Error> {
-        match self {
-            Register::I(i) => Ok(i as f64),
-            Register::R(r) => Ok(r),
-            Register::V(_) => Err(Error::new("Cannot convert vector register into f64")),
-        }
-    }
-}
-
-impl<'a> TryInto<&'a Vec<f64>> for Register<'a> {
-    type Error = Error;
-
-    fn try_into(self) -> Result<&'a Vec<f64>, Self::Error> {
-        match self {
-            Register::I(_) => Err(Error::new("Cannot convert integer register into vector")),
-            Register::R(_) => Err(Error::new("Cannot convert real register into vector")),
-            Register::V(v) => Ok(v),
-        }
-    }
-}
-
-// TODO: test these
-fn is_int_register(reg: u8) -> bool {
-    !is_real_register(reg) && !is_vector_register(reg)
-}
-
-fn is_real_register(reg: u8) -> bool {
-    (reg & 0b10000000) == 0b10000000
-}
-
-fn is_vector_register(reg: u8) -> bool {
-    (reg & 0b01000000) == 0b01000000
-}
-
-fn idx_from_real_register(reg: u8) -> u8 {
-    reg & 0b01111111
-}
-
-fn idx_from_vector_register(reg: u8) -> u8 {
-    reg & 0b10111111
-}
-
-pub fn real_register_to_idx(reg: u8) -> u8 {
-    reg | 0b10000000
-}
-
-pub fn vector_register_to_idx(reg: u8) -> u8 {
-    reg | 0b01000000
 }
 
 impl VM {
@@ -251,7 +181,7 @@ impl VM {
         }
         if is_vector_register(reg) {
             return Ok(Register::V(
-                &self.vregisters[idx_from_vector_register(reg) as usize],
+                self.vregisters[idx_from_vector_register(reg) as usize].clone(),
             ));
         }
 
