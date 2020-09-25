@@ -202,11 +202,11 @@ impl Visitor for Compiler {
                 self.variables
                     .insert(ident.to_string(), self.used_reg.len());
 
-                println!(
+                /*                 println!(
                     "inserted variable '{}': {:?}",
                     ident.to_string(),
                     &result_reg,
-                );
+                ); */
 
                 self.used_reg.push(result_reg);
             }
@@ -234,14 +234,14 @@ impl Visitor for Compiler {
             }
 
             Token::Identifier { name } => {
-                println!("referencing variable '{}'", name.to_string());
+                // println!("referencing variable '{}'", name.to_string());
                 if !self.variables.contains_key(name) {
                     return Err(Error::new(format!("Unknown variable '{}'", name)));
                 }
 
                 let index = self.variables[name];
 
-                println!(".. found at {}", index);
+                // println!(".. found at {}", index);
 
                 let copy_reg = match &self.used_reg[index].1 {
                     Register::I(_) => self.next_free_int_reg(),
@@ -302,8 +302,14 @@ impl Visitor for Compiler {
                         .push(format!("sw $i{} $r{}", vec_base_reg.0, used_reg.0));
                     self.free_real_reg.push(used_reg.1);
                     // TODO: skip this last add on the last iteration.
+                    let inc_reg = self.next_free_int_reg();
                     self.assembly
-                        .push(format!("add $i{} #{}", vec_base_reg.0, size_of::<f64>()));
+                        .push(format!("load $i{} #{}", inc_reg.0, size_of::<f64>()));
+                    self.assembly.push(format!(
+                        "add $i{} $i{} $i{}",
+                        vec_base_reg.0, vec_base_reg.0, inc_reg.0
+                    ));
+                    self.free_int_reg.push(inc_reg.1);
                 }
                 self.free_int_reg.push(vec_base_reg.1);
 
@@ -666,10 +672,12 @@ mod tests {
                 "add $i30 $i30 $i31",
                 "load $r31 #0.00",
                 "sw $i30 $r31",
-                "add $i30 #8",
+                "load $i29 #8",
+                "add $i30 $i30 $i29",
                 "load $r31 #1.20",
                 "sw $i30 $r31",
-                "add $i30 #8",
+                "load $i29 #8",
+                "add $i30 $i30 $i29",
                 "load $v31 $i31 #16",
                 "halt"
             ],

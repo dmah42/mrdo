@@ -89,16 +89,34 @@ impl VM {
                         self.rregisters[idx_from_real_register(register) as usize] = self.next_f64()
                     }
                     Register::V(_) => {
-                        let base_addr = self.next_i32() as usize;
+                        let base_addr_reg = self.next_u8();
+                        if !is_int_register(base_addr_reg) {
+                            return Err(Error::new(
+                                "Cannot load vector from non-integer base address",
+                            ));
+                        }
+                        let base_addr = self.iregisters[base_addr_reg as usize];
+                        if base_addr < 0 {
+                            return Err(Error::new(
+                                "Cannot load vector from negative base address",
+                            ));
+                        }
+
+                        let base_addr = base_addr as usize;
+
                         let len = self.next_i32() as usize;
+                        // println!("Loading {} bytes from {}", len, base_addr);
 
                         let mut v = vec![];
                         let mut addr = base_addr;
-                        while addr < base_addr + (len * 8) {
+                        while addr < base_addr + len {
+                            // println!(".. loading 8 bytes from {}", addr);
                             let bytes: [u8; 8] = self.heap[addr..(addr + 8)].try_into().unwrap();
                             v.push(f64::from_be_bytes(bytes));
                             addr += 8;
                         }
+
+                        // println!("storing {:?} to vreg {}", v, register);
 
                         self.vregisters[idx_from_vector_register(register) as usize] = v;
                     }
@@ -128,11 +146,10 @@ impl VM {
                         "Cannot write heap location to non-integer register",
                     ));
                 }
-                let bytes_reg = self.next_u8();
-                if !is_int_register(register) {
-                    return Err(Error::new("Cannot allocate non-integer number of bytes"));
+                let bytes = self.next_i32();
+                if bytes < 0 {
+                    return Err(Error::new("Cannot allocate negative number of bytes"));
                 }
-                let bytes = self.iregisters[bytes_reg as usize];
                 self.iregisters[register as usize] = self.heap.len() as i32;
                 let new_end = self.heap.len() as i32 + bytes;
                 self.heap.resize(new_end as usize, 0);
@@ -165,7 +182,9 @@ impl VM {
     }
 
     fn decode_opcode(&mut self) -> Opcode {
-        let opcode = Opcode::try_from(self.program[self.pc]).unwrap();
+        let raw_opcode = self.program[self.pc];
+        let opcode = Opcode::try_from(raw_opcode).unwrap();
+        // println!("opcode {}: {:?}", raw_opcode, opcode);
         self.pc += 1;
         opcode
     }
@@ -185,9 +204,9 @@ impl VM {
             ));
         }
 
-        return Err(Error::new(
+        Err(Error::new(
             format!("Unknown register type {}", reg).as_str(),
-        ));
+        ))
     }
 
     fn next_u8(&mut self) -> u8 {
@@ -270,15 +289,23 @@ impl VM {
 
         let address = address as usize;
 
-        let register = self.next_u8();
-        if !is_int_register(register) {
-            return Err(Error::new("Cannot store word from non-integer register"));
+        let reg_idx = self.next_u8();
+        let reg = self.get_register(reg_idx)?;
+        let bytes = match reg {
+            Register::I(i) => i32::to_be_bytes(i).to_vec(),
+            Register::R(r) => f64::to_be_bytes(r).to_vec(),
+            Register::V(_) => {
+                return Err(Error::new("Cannot store word from vector register"));
+            }
+        };
+
+        for (i, b) in bytes.iter().enumerate() {
+            self.heap[address + i] = *b;
         }
 
-        let bytes = i32::to_be_bytes(self.iregisters[register as usize]);
-        for i in 0..4 {
-            self.heap[address + i] = bytes[0 + i];
-        }
+        // swallow the next byte.
+        self.next_u8();
+
         Ok(())
     }
 
@@ -877,10 +904,7 @@ mod tests {
             0,
             0,
             0,
-            0,
-            0,
-            0,
-            2,
+            16,
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
@@ -920,7 +944,7 @@ mod tests {
         vm.iregisters[0] = 0;
         vm.iregisters[1] = 42;
         vm.heap = vec![0, 0, 0, 0];
-        vm.program = vec![Opcode::SW as u8, 0, 1];
+        vm.program = vec![Opcode::SW as u8, 0, 1, 0];
         let exit = vm.step();
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
@@ -929,13 +953,13 @@ mod tests {
         let mut vm = VM::new();
         vm.iregisters[1] = 42;
         vm.heap = vec![0, 0, 0, 0];
-        vm.program = vec![Opcode::SW as u8, real_register_to_idx(0), 1];
+        vm.program = vec![Opcode::SW as u8, real_register_to_idx(0), 1, 0];
         assert!(!vm.step().is_ok());
 
         let mut vm = VM::new();
         vm.iregisters[1] = -42;
         vm.heap = vec![0, 0, 0, 0];
-        vm.program = vec![Opcode::SW as u8, 1, 0];
+        vm.program = vec![Opcode::SW as u8, 1, 0, 0];
         assert!(!vm.step().is_ok());
     }
 
@@ -1379,12 +1403,16 @@ mod tests {
     #[test]
     fn test_opcode_alloc() {
         let mut vm = VM::new();
-        vm.iregisters[0] = 1024;
-        vm.program = vec![Opcode::ALLOC as u8, 0, 0, 0];
+        vm.program = vec![Opcode::ALLOC as u8, 0, 120, 0, 0, 0];
         let exit = vm.step();
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
-        assert_eq!(vm.heap.len(), 1024);
+        assert_eq!(vm.heap.len(), 120);
+
+        let mut vm = VM::new();
+        vm.program = vec![Opcode::ALLOC as u8, 0, 220, 0, 0, 0];
+        let exit = vm.step();
+        assert!(exit.is_err());
     }
 
     #[test]

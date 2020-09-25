@@ -5,8 +5,6 @@ use crate::asm::Token;
 use nom::digit;
 use nom::types::CompleteStr;
 
-// TODO: if asm can understand variables then the compiler gets a bit
-// simpler.
 named!(pub operand<CompleteStr, Token>,
     alt!(
         real_operand |

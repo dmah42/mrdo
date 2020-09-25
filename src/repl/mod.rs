@@ -106,7 +106,7 @@ impl REPL {
                     println!("  {}", command);
                 }
             }
-            ":list" => self.list_program(),
+            ":list" => self.list_program(&args[1..]),
             ":load" => self.load_file(&args[1..]),
             ":m" => self.toggle_mode(),
             ":q" => {
@@ -127,7 +127,7 @@ impl REPL {
         println!(":c clears the VM");
         println!(":h prints this help");
         println!(":history shows the command buffer");
-        println!(":list lists the current program");
+        println!(":list [asm|bc] lists the current program");
         println!(":load loads a program from the given path");
         println!(":m toggles the mode between assembly and high-level language");
         println!(":q quits");
@@ -135,17 +135,20 @@ impl REPL {
         println!(":s lists the known symbols");
     }
 
-    fn list_program(&self) {
-        println!("{} Listing assembly:", INFO_TAG);
-        for line in &self.assembly_buffer {
-            println!("  {}", line);
+    fn list_program(&self, args: &[&str]) {
+        if args.is_empty() || args[0] == "asm" {
+            println!("{} Listing assembly:", INFO_TAG);
+            for line in &self.assembly_buffer {
+                println!("  {}", line);
+            }
+            println!("{} EOF", INFO_TAG);
+        } else if args[0] == "bc" {
+            println!("{} Listing bytecode:", INFO_TAG);
+            for instr in self.vm.program.chunks(4) {
+                println!("  {:?}", instr);
+            }
+            println!("{} EOF", INFO_TAG);
         }
-        println!("{} EOF", INFO_TAG);
-        println!("{} Listing instructions:", INFO_TAG);
-        for instr in self.vm.program.chunks(4) {
-            println!("  {:?}", instr);
-        }
-        println!("{} EOF", INFO_TAG);
     }
 
     fn list_registers(&self) {
@@ -195,7 +198,7 @@ impl REPL {
                 println!("{} Sending program to VM", INFO_TAG);
                 self.vm = VM::new();
                 self.vm.set_bytecode(&assembled).unwrap();
-                self.list_program();
+                self.list_program(&[]);
                 let result = self.vm.run();
                 if result.is_err() {
                     println!("{} Runtime error: {}", ERROR_TAG, result.unwrap_err());

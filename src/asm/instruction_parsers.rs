@@ -111,6 +111,7 @@ impl Instruction {
 
     pub fn to_bytes(&self, symbols: &Table) -> Result<Vec<u8>, Error> {
         let mut results = vec![];
+        // println!(".. writing {}", self);
         if let Some(ref token) = self.opcode {
             match token {
                 Token::Op { code } => {
@@ -137,23 +138,30 @@ impl Instruction {
     fn extract_operand(t: &Token, symbols: &Table, results: &mut Vec<u8>) -> Result<(), Error> {
         match t {
             Token::IntRegister { idx } => {
+                // println!("IntRegister {}", *idx);
                 results.push(*idx);
             }
             Token::RealRegister { idx } => {
                 let idx = real_register_to_idx(*idx);
+                // println!("RealRegister {}", idx);
                 results.push(idx);
             }
             Token::VectorRegister { idx } => {
                 let idx = vector_register_to_idx(*idx);
+                // println!("VectorRegister {}", idx);
                 results.push(idx);
             }
             Token::Integer { value } => {
+                // println!("Integer {}", value);
                 for b in value.to_be_bytes().iter() {
+                    // println!("  pushing {}", *b);
                     results.push(*b);
                 }
             }
             Token::Real { value } => {
+                // println!("Real {}", value);
                 for b in value.to_be_bytes().iter() {
+                    // println!("  pushing {}", *b);
                     results.push(*b);
                 }
             }
@@ -181,7 +189,7 @@ impl fmt::Display for Instruction {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "(Label: {:?}, Opcode: {:?}\nOp 0: {:?}, Op 1: {:?}, Op 2: {:?})",
+            "\tLabel: {:?}, Opcode: {:?}\tOp 0: {:?}, Op 1: {:?}, Op 2: {:?}",
             self.label, self.opcode, self.operand0, self.operand1, self.operand2
         )
     }
