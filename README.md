@@ -32,6 +32,18 @@ bytecode. If the provided program is already bytecode, it will be run directly.
 
 ## language features
 
+### variables
+
+Variables can be defined and have values assigned using the `=` operator. Assignment
+is a copy operation, ie:
+
+```
+foo = 42.0
+bar = foo
+```
+
+will copy the value from `foo` to `bar`, resulting in two instances being defined.
+
 ### functions
 
 TODO

@@ -148,6 +148,8 @@ impl Compiler {
 
 impl Visitor for Compiler {
     fn visit_token(&mut self, node: &Token) -> Result<(), Error> {
+        //println!(".. visiting {:?}", node);
+        // println!("  [before] {:?}\n    {:?}", self.variables, self.used_reg);
         match node {
             Token::Comment { comment: _ } => {
                 //println!("Skipping comment '{}'", comment);
@@ -226,24 +228,36 @@ impl Visitor for Compiler {
             }
 
             Token::Identifier { name } => {
-                /*                 println!("referencing variable '{}'", name.to_string());
+                println!("referencing variable '{}'", name.to_string());
                 if !self.variables.contains_key(name) {
                     return Err(Error::new(format!("Unknown variable '{}'", name)));
                 }
 
-                // This adds the current variables register to zero to get the value into a
-                // new register ready to be referenced in whatever binary ops are expected.
-                let zero_reg = self.free_reg.pop().unwrap();
-                self.assembly.push(format!("load $r{} #0", zero_reg));
+                let index = self.variables[name];
 
-                let next_reg = self.free_reg.pop().unwrap();
+                println!(".. found at {}", index);
+
+                let copy_reg = match &self.used_reg[index].1 {
+                    Register::I(_) => self.next_free_int_reg(),
+                    Register::R(_) => self.next_free_real_reg(),
+                    Register::V(_) => self.next_free_vec_reg(),
+                };
+
+                // Copy the value of the current identifier into the new reg
+                // by adding it to zero.
+                let zero_reg = self.next_free_int_reg();
+                self.assembly.push(format!("load $i{} #0", zero_reg.0));
                 self.assembly.push(format!(
-                    "add $r{} $r{} $r{}",
-                    next_reg, zero_reg, self.variables[name]
+                    "add ${}{} $i{} ${}{}",
+                    copy_reg.1.get_char(),
+                    copy_reg.0,
+                    zero_reg.0,
+                    self.used_reg[index].1.get_char(),
+                    self.used_reg[index].0
                 ));
 
-                self.used_reg.insert(next_reg);
-                self.free_reg.insert(zero_reg); */
+                self.used_reg.push(copy_reg);
+                self.free_int_reg.push(zero_reg.1);
             }
 
             Token::Real { value } => {
@@ -316,12 +330,12 @@ impl Visitor for Compiler {
                 self.assembly.push(".data".into());
                 self.assembly.push(".code".into());
                 for expr in expressions {
-                    println!(".. visiting {:?}", expr);
                     self.visit_token(expr)?;
                 }
                 self.assembly.push("halt".into());
             }
-        }
+        };
+        //println!("  [after] {:?}\n    {:?}", self.variables, self.used_reg);
         Ok(())
     }
 }
@@ -581,6 +595,41 @@ mod tests {
         assert_eq!(
             compiler.variables,
             [("foo".to_string(), 0 as usize)].iter().cloned().collect()
+        );
+    }
+
+    #[test]
+    fn test_identifier() {
+        let mut compiler = Compiler::new();
+        let test_program = generate_test_program("foo = 42.0\nbar = foo");
+        assert!(compiler.visit_token(&test_program).is_ok());
+        assert_eq!(
+            compiler.assembly,
+            vec![
+                ".data",
+                ".code",
+                "load $r31 #42.00",
+                "load $i31 #0",
+                "add $r30 $i31 $r31",
+                "halt"
+            ]
+        );
+        assert_eq!(compiler.free_int_reg.len(), 32);
+        assert_eq!(compiler.free_real_reg.len(), 30);
+        assert_eq!(compiler.free_vec_reg.len(), 32);
+        assert_eq!(
+            compiler.used_reg,
+            vec![(31, Register::R(0.0)), (30, Register::R(0.0))]
+        );
+        assert_eq!(
+            compiler.variables,
+            [
+                ("foo".to_string(), 0 as usize),
+                ("bar".to_string(), 1 as usize)
+            ]
+            .iter()
+            .cloned()
+            .collect()
         );
     }
 
