@@ -182,15 +182,16 @@ impl Visitor for Compiler {
                 self.visit_token(expr)?;
                 let result_reg = self.used_reg.pop().unwrap();
 
-                // TODO: Allocate storage for the identifier and write value to heap.
-                // TODO: Map identifier name to heap offset.
-                // TODO: create a 'load from heap' operation in assembly.
-
-                // Temporary: ensure result reg remains 'used' and map name to result reg.
+                // Ensure result reg remains 'used' and map name to result reg.
                 // 'unassign' old result reg if the variable already exists.
                 if self.variables.contains_key(ident) {
                     let old_used_reg = self.used_reg.remove(self.variables[ident]);
-                    // TODO: check that result reg is the same type as the existing variable.
+                    if result_reg.1 != old_used_reg.1 {
+                        return Err(Error::new(format!(
+                            "Variable '{}' was {:?} and is now {:?}",
+                            ident, old_used_reg.1, result_reg.1
+                        )));
+                    }
                     match old_used_reg.1 {
                         Register::I(_) => self.free_int_reg.push(old_used_reg.1),
                         Register::R(_) => self.free_real_reg.push(old_used_reg.1),
@@ -605,6 +606,10 @@ mod tests {
             compiler.variables,
             [("foo".to_string(), 0 as usize)].iter().cloned().collect()
         );
+
+        let mut compiler = Compiler::new();
+        let test_program = generate_test_program("foo = 42.0\nfoo=[1,2]");
+        assert!(compiler.visit_token(&test_program).is_err());
     }
 
     #[test]
