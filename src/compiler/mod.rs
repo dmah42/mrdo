@@ -7,6 +7,7 @@ use crate::vm::register::Register;
 
 use nom::types::CompleteStr;
 use std::collections::HashMap;
+use std::mem::size_of;
 
 pub mod builtin_parsers;
 pub mod error;
@@ -261,48 +262,56 @@ impl Visitor for Compiler {
             }
 
             Token::Real { value } => {
-                let next_reg = (
-                    self.free_real_reg.len() as u8 - 1,
-                    self.free_real_reg.pop().unwrap(),
-                );
+                let next_reg = self.next_free_real_reg();
                 self.assembly
                     .push(format!("load $r{} #{:.2}", next_reg.0, value));
                 self.used_reg.push(next_reg);
             }
             Token::Coll { values } => {
-                /*                 // Allocate memory for the heap and put the base address into a register.
-                let alloc_reg = self.free_reg.pop().unwrap();
+                // Allocate memory for the heap and put the base address into a register.
+                let alloc_reg = self.next_free_int_reg();
                 self.assembly
-                    .push(format!("alloc $i{} #{}", alloc_reg, values.len() * 8));
+                    .push(format!("alloc $i{} #{}", alloc_reg.0, values.len() * 8));
 
                 // Go through the collection and store each generated real to the heap.
-                let vec_reg = self.free_reg.pop().unwrap();
-                self.assembly.push(format!("load $i{} #0", vec_reg));
-                self.assembly
-                    .push(format!("add $i{} $i{} $i{}", vec_reg, vec_reg, alloc_reg));
+                let vec_base_reg = self.next_free_int_reg();
+                self.assembly.push(format!("load $i{} #0", vec_base_reg.0));
+                self.assembly.push(format!(
+                    "add $i{} $i{} $i{}",
+                    vec_base_reg.0, vec_base_reg.0, alloc_reg.0
+                ));
                 for v in values {
                     // Note: this assumes visiting a token ends up with a used reg
                     // equivalent to a real.
                     self.visit_token(v)?;
                     let used_reg = self.used_reg.pop().unwrap();
+                    match used_reg.1 {
+                        Register::R(_) => {}
+                        _ => {
+                            return Err(Error::new(
+                                "Unable to put non-real into a vector".to_string(),
+                            ));
+                        }
+                    };
                     self.assembly
-                        .push(format!("sw $i{} $r{}", vec_reg, used_reg));
-                    self.free_reg.insert(used_reg);
-                    // TODO: skip this last add.
-                    self.assembly.push(format!("add $i{} #8", vec_reg));
+                        .push(format!("sw $i{} $r{}", vec_base_reg.0, used_reg.0));
+                    self.free_real_reg.push(used_reg.1);
+                    // TODO: skip this last add on the last iteration.
+                    self.assembly
+                        .push(format!("add $i{} #{}", vec_base_reg.0, size_of::<f64>()));
                 }
-                self.free_reg.insert(vec_reg);
+                self.free_int_reg.push(vec_base_reg.1);
 
-                // And finally load the heap info into a register.
-                let next_reg = self.free_reg.pop().unwrap();
+                // And finally load the heap info into a vector register.
+                let vec_reg = self.next_free_vec_reg();
                 self.assembly.push(format!(
                     "load $v{} $i{} #{}",
-                    next_reg,
-                    alloc_reg,
-                    values.len() * 8
+                    vec_reg.0,
+                    alloc_reg.0,
+                    values.len() * size_of::<f64>()
                 ));
-                self.free_reg.insert(alloc_reg);
-                self.used_reg.insert(next_reg); */
+                self.free_int_reg.push(alloc_reg.1);
+                self.used_reg.push(vec_reg);
             }
 
             Token::Factor { ref value } => self.visit_token(value)?,
@@ -633,7 +642,6 @@ mod tests {
         );
     }
 
-    /*
     #[test]
     fn test_collection() {
         let mut compiler = Compiler::new();
@@ -647,19 +655,19 @@ mod tests {
                 "alloc $i31 #16",
                 "load $i30 #0",
                 "add $i30 $i30 $i31",
-                "load $r29 #0.00",
-                "sw $i30 $r29",
+                "load $r31 #0.00",
+                "sw $i30 $r31",
                 "add $i30 #8",
-                "load $r29 #1.20",
-                "sw $i30 $r29",
+                "load $r31 #1.20",
+                "sw $i30 $r31",
                 "add $i30 #8",
-                "load $v30 $i31 #16",
+                "load $v31 $i31 #16",
                 "halt"
             ],
         );
-        let mut expected_free: IndexSet<u8> = (0..30).collect();
-        expected_free.insert(31);
-        assert_eq!(compiler.free_reg, expected_free);
-        assert_eq!(compiler.used_reg, indexset! {30});
-    } */
+        assert_eq!(compiler.free_int_reg.len(), 32);
+        assert_eq!(compiler.free_real_reg.len(), 32);
+        assert_eq!(compiler.free_vec_reg.len(), 31);
+        assert_eq!(compiler.used_reg, vec![(31, Register::V(vec![]))]);
+    }
 }
