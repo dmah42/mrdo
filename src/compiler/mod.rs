@@ -25,7 +25,9 @@ pub struct Compiler {
     free_vec_reg: Vec<Register>,
     used_reg: Vec<(u8, Register)>,
     assembly: Vec<String>,
-    variables: HashMap<String, u8>,
+
+    // Maps from a name to an index into `used_reg`.
+    variables: HashMap<String, usize>,
 }
 
 impl Compiler {
@@ -172,7 +174,7 @@ impl Visitor for Compiler {
             }
 
             Token::Assign { ident, expr } => {
-                /*                 // First visit the rhs to make sure we do what we need
+                // First visit the rhs to make sure we do what we need
                 // to find the value we need.
                 self.visit_token(expr)?;
                 let result_reg = self.used_reg.pop().unwrap();
@@ -184,17 +186,25 @@ impl Visitor for Compiler {
                 // Temporary: ensure result reg remains 'used' and map name to result reg.
                 // 'unassign' old result reg if the variable already exists.
                 if self.variables.contains_key(ident) {
-                    self.free_reg.insert(self.variables[ident]);
+                    let old_used_reg = self.used_reg.remove(self.variables[ident]);
+                    // TODO: check that result reg is the same type as the existing variable.
+                    match old_used_reg.1 {
+                        Register::I(_) => self.free_int_reg.push(old_used_reg.1),
+                        Register::R(_) => self.free_real_reg.push(old_used_reg.1),
+                        Register::V(_) => self.free_vec_reg.push(old_used_reg.1),
+                    }
                 }
 
-                self.used_reg.insert(result_reg);
-                self.variables.insert(ident.to_string(), result_reg);
+                self.variables
+                    .insert(ident.to_string(), self.used_reg.len());
 
                 println!(
-                    "inserted variable '{}': $r{}",
+                    "inserted variable '{}': {:?}",
                     ident.to_string(),
-                    result_reg
-                ); */
+                    &result_reg,
+                );
+
+                self.used_reg.push(result_reg);
             }
 
             Token::Builtin { builtin, args } => {
@@ -554,6 +564,26 @@ mod tests {
         assert_eq!(compiler.free_vec_reg.len(), 32);
         assert_eq!(compiler.used_reg, vec![(31, Register::I(0))]);
     }
+
+    #[test]
+    fn test_assign() {
+        let mut compiler = Compiler::new();
+        let test_program = generate_test_program("foo = 42.0");
+        assert!(compiler.visit_token(&test_program).is_ok());
+        assert_eq!(
+            compiler.assembly,
+            vec![".data", ".code", "load $r31 #42.00", "halt"]
+        );
+        assert_eq!(compiler.free_int_reg.len(), 32);
+        assert_eq!(compiler.free_real_reg.len(), 31);
+        assert_eq!(compiler.free_vec_reg.len(), 32);
+        assert_eq!(compiler.used_reg, vec![(31, Register::R(0.0))]);
+        assert_eq!(
+            compiler.variables,
+            [("foo".to_string(), 0 as usize)].iter().cloned().collect()
+        );
+    }
+
     /*
     #[test]
     fn test_collection() {
