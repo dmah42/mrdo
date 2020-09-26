@@ -25,6 +25,7 @@ pub struct Compiler {
     free_real_reg: Vec<Register>,
     free_vec_reg: Vec<Register>,
     used_reg: Vec<(u8, Register)>,
+    rodata: Vec<String>,
     assembly: Vec<String>,
 
     // Maps from a name to an index into `used_reg`.
@@ -38,6 +39,7 @@ impl Compiler {
             free_real_reg: (0..32).map(|_| Register::R(0.0)).collect(),
             free_vec_reg: (0..32).map(|_| Register::V(vec![])).collect(),
             used_reg: vec![],
+            rodata: vec![],
             assembly: vec![],
             variables: HashMap::new(),
         }
@@ -47,7 +49,7 @@ impl Compiler {
         self.assembly.clear();
         let (_, tree) = program(CompleteStr(source)).unwrap();
         self.visit_token(&tree)?;
-        Ok(self.assembly.join("\n"))
+        Ok([self.rodata.join("\n"), self.assembly.join("\n")].join("\n"))
     }
 
     // NOTE: public for the repl
@@ -221,8 +223,7 @@ impl Visitor for Compiler {
                         // TODO: create a "syscall" instruction in assembly and a syscall
                         // to print from an address, then use that to print out whatever is
                         // being passed in to write.
-                        // TODO: add the string to rodata.
-                        self.assembly.push(format!(
+                        self.rodata.push(format!(
                             "somestr: .str 'reg ${}{}'",
                             reg.1.get_char(),
                             reg.0
@@ -347,7 +348,7 @@ impl Visitor for Compiler {
                 }
             }
             Token::Program { ref expressions } => {
-                self.assembly.push(".data".into());
+                self.rodata.push(".data".into());
                 self.assembly.push(".code".into());
                 for expr in expressions {
                     self.visit_token(expr)?;

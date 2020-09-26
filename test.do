@@ -5,7 +5,7 @@ foo = 41.0 + 1.0
 foo / 2.0
 ; let's write it out
 ; TODO: figure out why this causes a halt.
-; do(write, foo)
+do(write, foo)
 
 bar = [4, 3.0, 2]
 baz = bar + 1
