@@ -255,9 +255,6 @@ impl VM {
     // TODO: convert to new register and add real support.
     fn lw(&mut self) -> Result<(), Error> {
         let register = self.next_u8();
-        if !is_int_register(register) {
-            return Err(Error::new("Cannot load word into non-integer register"));
-        }
 
         let address_reg = self.next_u8();
         if !is_int_register(address_reg) {
@@ -271,15 +268,36 @@ impl VM {
 
         let address = address as usize;
 
-        // TODO: convert from slice of heap.
-        let bytes = [
-            self.heap[address],
-            self.heap[address + 1],
-            self.heap[address + 2],
-            self.heap[address + 3],
-        ];
+        match self.get_register(register)? {
+            Register::I(_) => {
+                // TODO: convert from slice of heap.
+                let bytes = [
+                    self.heap[address],
+                    self.heap[address + 1],
+                    self.heap[address + 2],
+                    self.heap[address + 3],
+                ];
 
-        self.iregisters[register as usize] = i32::from_be_bytes(bytes);
+                self.iregisters[register as usize] = i32::from_be_bytes(bytes);
+            }
+            Register::R(_) => {
+                // TODO: convert from slice of heap.
+                let bytes = [
+                    self.heap[address],
+                    self.heap[address + 1],
+                    self.heap[address + 2],
+                    self.heap[address + 3],
+                    self.heap[address + 4],
+                    self.heap[address + 5],
+                    self.heap[address + 6],
+                    self.heap[address + 7],
+                ];
+                self.rregisters[idx_from_real_register(register) as usize] =
+                    f64::from_be_bytes(bytes);
+            }
+            Register::V(_) => return Err(Error::new("Cannot load word into vector register")),
+        }
+
         Ok(())
     }
 
@@ -369,6 +387,8 @@ impl Default for VM {
 mod tests {
     use super::*;
 
+    use assert_approx_eq::assert_approx_eq;
+
     #[test]
     fn test_create_vm() {
         let vm = VM::new();
@@ -454,6 +474,15 @@ mod tests {
         assert_eq!(vm.iregisters[0], 42);
 
         let mut vm = VM::new();
+        vm.heap = vec![64, 16, 204, 204, 204, 204, 204, 255];
+        vm.iregisters[0] = 0;
+        vm.program = vec![Opcode::LW as u8, real_register_to_idx(0), 0];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert_eq!(exit.unwrap(), false);
+        assert_approx_eq!(vm.rregisters[0], 4.2);
+
+        let mut vm = VM::new();
         vm.heap = vec![0, 0, 0, 0, 0, 0, 0, 42];
         vm.rregisters[1] = 4.0;
         vm.program = vec![Opcode::LW as u8, 0, real_register_to_idx(1)];
@@ -461,9 +490,9 @@ mod tests {
         assert!(!exit.is_ok());
 
         let mut vm = VM::new();
-        vm.heap = vec![0, 0, 0, 0, 0, 0, 0, 42];
-        vm.iregisters[1] = 4;
-        vm.program = vec![Opcode::LW as u8, real_register_to_idx(0), 1];
+        vm.heap = vec![0, 0, 0, 42];
+        vm.iregisters[1] = 0;
+        vm.program = vec![Opcode::LW as u8, vector_register_to_idx(0), 1];
         let exit = vm.step();
         assert!(!exit.is_ok());
     }
