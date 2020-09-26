@@ -221,33 +221,19 @@ impl VM {
     }
 
     fn next_u16(&mut self) -> u16 {
-        let bytes = [self.program[self.pc], self.program[self.pc + 1]];
+        let bytes: [u8; 2] = [self.program[self.pc], self.program[self.pc + 1]];
         self.pc += 2;
         u16::from_be_bytes(bytes)
     }
 
     fn next_i32(&mut self) -> i32 {
-        let bytes = [
-            self.program[self.pc],
-            self.program[self.pc + 1],
-            self.program[self.pc + 2],
-            self.program[self.pc + 3],
-        ];
+        let bytes: [u8; 4] = self.program[self.pc..self.pc + 4].try_into().unwrap();
         self.pc += 4;
         i32::from_be_bytes(bytes)
     }
 
     fn next_f64(&mut self) -> f64 {
-        let bytes = [
-            self.program[self.pc],
-            self.program[self.pc + 1],
-            self.program[self.pc + 2],
-            self.program[self.pc + 3],
-            self.program[self.pc + 4],
-            self.program[self.pc + 5],
-            self.program[self.pc + 6],
-            self.program[self.pc + 7],
-        ];
+        let bytes: [u8; 8] = self.program[self.pc..self.pc + 8].try_into().unwrap();
         self.pc += 8;
         f64::from_be_bytes(bytes)
     }
@@ -270,28 +256,12 @@ impl VM {
 
         match self.get_register(register)? {
             Register::I(_) => {
-                // TODO: convert from slice of heap.
-                let bytes = [
-                    self.heap[address],
-                    self.heap[address + 1],
-                    self.heap[address + 2],
-                    self.heap[address + 3],
-                ];
+                let bytes: [u8; 4] = self.heap[address..address + 4].try_into().unwrap();
 
                 self.iregisters[register as usize] = i32::from_be_bytes(bytes);
             }
             Register::R(_) => {
-                // TODO: convert from slice of heap.
-                let bytes = [
-                    self.heap[address],
-                    self.heap[address + 1],
-                    self.heap[address + 2],
-                    self.heap[address + 3],
-                    self.heap[address + 4],
-                    self.heap[address + 5],
-                    self.heap[address + 6],
-                    self.heap[address + 7],
-                ];
+                let bytes: [u8; 8] = self.heap[address..address + 8].try_into().unwrap();
                 self.rregisters[idx_from_real_register(register) as usize] =
                     f64::from_be_bytes(bytes);
             }
