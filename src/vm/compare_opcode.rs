@@ -5,7 +5,6 @@ use crate::vm::VM;
 use std::convert::TryInto;
 
 impl VM {
-    // TODO: vector support for other compare ops.
     pub fn eq(&mut self) -> Result<(), Error> {
         let out_idx = self.next_u8();
 
@@ -146,7 +145,6 @@ impl VM {
             }
             Register::V(va) => {
                 if let Register::V(vb) = b_reg {
-                    // TODO: what does this mean?
                     if va > vb {
                         self.iregisters[out_idx as usize] = 1;
                     } else {
@@ -198,7 +196,6 @@ impl VM {
             }
             Register::V(va) => {
                 if let Register::V(vb) = b_reg {
-                    // TODO: what does this mean?
                     if va < vb {
                         self.iregisters[out_idx as usize] = 1;
                     } else {

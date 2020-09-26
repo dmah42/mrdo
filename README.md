@@ -1,19 +1,21 @@
 ![Rust](https://github.com/dominichamon/mrdo/workflows/Rust/badge.svg)
 # mrdo
 mrdo is a language in which variables may be either a:
-* real (mutable 64-bit floating point) coll (an immutable collection of reals)
+* real (mutable 64-bit floating point)
+* coll (an immutable collection of reals)
 * TODO: dict (key-value immutable collection of reals)
 
 ## usage
 ```bash $ ./mrdo ```
 
-will start a repl (that currently only understands assembly).
+will start a repl. Use `:h` in the repl to get a list of meta-commands.
 
 ```bash $ ./mrdo <filename> [-o <output>] ```
 
 will compile the program provided and run it, optionally outputting the
 bytecode. If the provided program is already bytecode, it will be run
 directly.
+
 ## submodules
 **compiler** compiles from high-level to assembly
 
@@ -46,16 +48,18 @@ TODO
 Functions operate on collections in parallel and are either a:
 * `map` (convert each element in the input collection to one element in the
 output collection)
-* `filter` (conditionally output each element in the input collection) `fold`
-* (accumulate a collection to a single element)
+* `filter` (conditionally output each element in the input collection)
+* `fold` (accumulate a collection to a single element)
+
 For `map`, the input and output collections may be different types.
 
 More function types may be added later.
 
 ### operations
-The usual operations are available within a function for elements of a
-collection (reals):
-* arithmetical: +, -, /, * comparitive: `gt`, `ge`, `lt`, `le`, `eq`, `ne`
+The usual operations are available:
+
+* arithmetical: +, -, /, *
+* comparitive: `gt`, `gte`, `lt`, `lte`, `eq`, `ne`
 * TODO: logical: `and`, `or`, `not`, `xor`
 Logical operations treat 0.0 as false and all other values as true.
 
@@ -67,6 +71,11 @@ pairwise.
 
 if one is `real` and one is `coll`, the real is applied to every element in
 the coll.
+
+#### comparitive operations
+for `coll` types, comparisons follow the rustlang model. specifically, if any
+element of a collection compares true for the operation, then the operation
+as a whole will return true (or 1, actually).
 
 #### collection-specific operations
 Collections themselves have the following operations defined:
@@ -80,7 +89,8 @@ type.
 
 ### io
 TODO: Collections can be read or written using the functions
-* read write
+* read
+* write
 which used stdin and stdout
 
 old
