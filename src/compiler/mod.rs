@@ -384,7 +384,6 @@ mod tests {
         assert_eq!(
             compiler.assembly,
             vec![
-                ".data",
                 ".code",
                 "load $r31 #1.20",
                 "load $r30 #3.40",
@@ -408,7 +407,6 @@ mod tests {
         assert_eq!(
             compiler.assembly,
             vec![
-                ".data",
                 ".code",
                 "load $r31 #1.20",
                 "load $r30 #3.40",
@@ -430,7 +428,6 @@ mod tests {
         assert_eq!(
             compiler.assembly,
             vec![
-                ".data",
                 ".code",
                 "load $r31 #1.20",
                 "load $r30 #3.40",
@@ -452,7 +449,6 @@ mod tests {
         assert_eq!(
             compiler.assembly,
             vec![
-                ".data",
                 ".code",
                 "load $r31 #1.20",
                 "load $r30 #3.40",
@@ -474,7 +470,6 @@ mod tests {
         assert_eq!(
             compiler.assembly,
             vec![
-                ".data",
                 ".code",
                 "load $r31 #1.20",
                 "load $r30 #4.10",
@@ -498,7 +493,6 @@ mod tests {
         assert_eq!(
             compiler.assembly,
             vec![
-                ".data",
                 ".code",
                 "load $r31 #1.20",
                 "load $r30 #3.40",
@@ -520,7 +514,6 @@ mod tests {
         assert_eq!(
             compiler.assembly,
             vec![
-                ".data",
                 ".code",
                 "load $r31 #1.20",
                 "load $r30 #3.40",
@@ -542,7 +535,6 @@ mod tests {
         assert_eq!(
             compiler.assembly,
             vec![
-                ".data",
                 ".code",
                 "load $r31 #1.20",
                 "load $r30 #3.40",
@@ -564,7 +556,6 @@ mod tests {
         assert_eq!(
             compiler.assembly,
             vec![
-                ".data",
                 ".code",
                 "load $r31 #1.20",
                 "load $r30 #3.40",
@@ -586,7 +577,6 @@ mod tests {
         assert_eq!(
             compiler.assembly,
             vec![
-                ".data",
                 ".code",
                 "load $r31 #1.20",
                 "load $r30 #3.40",
@@ -605,10 +595,7 @@ mod tests {
         let mut compiler = Compiler::new();
         let test_program = generate_test_program("foo = 42.0");
         assert!(compiler.visit_token(&test_program).is_ok());
-        assert_eq!(
-            compiler.assembly,
-            vec![".data", ".code", "load $r31 #42.00", "halt"]
-        );
+        assert_eq!(compiler.assembly, vec![".code", "load $r31 #42.00", "halt"]);
         assert_eq!(compiler.free_int_reg.len(), 32);
         assert_eq!(compiler.free_real_reg.len(), 31);
         assert_eq!(compiler.free_vec_reg.len(), 32);
@@ -631,7 +618,6 @@ mod tests {
         assert_eq!(
             compiler.assembly,
             vec![
-                ".data",
                 ".code",
                 "load $r31 #42.00",
                 "load $i31 #0",
@@ -666,7 +652,6 @@ mod tests {
         assert_eq!(
             compiler.assembly,
             vec![
-                ".data",
                 ".code",
                 "alloc $i31 #16",
                 "load $i30 #0",
@@ -688,4 +673,6 @@ mod tests {
         assert_eq!(compiler.free_vec_reg.len(), 31);
         assert_eq!(compiler.used_reg, vec![(31, Register::V(vec![]))]);
     }
+
+    // TODO: test_builtin
 }
