@@ -88,8 +88,8 @@ governed by a given comparison operation.
 type.
 
 ### io
-TODO: Collections can be read or written using the functions
-* read
+Collections can be read or written using the functions
+* TODO: read
 * write
 which used stdin and stdout
 

@@ -21,7 +21,6 @@ pub enum Opcode {
     LTE,
     JEQ,
     ALLOC,
-    PRINT, // TODO: replace with syscall.
     SYSCALL,
     IGL = 255,
 }
@@ -47,7 +46,6 @@ impl<'a> From<CompleteStr<'a>> for Opcode {
             CompleteStr("lte") => Opcode::LTE,
             CompleteStr("jeq") => Opcode::JEQ,
             CompleteStr("alloc") => Opcode::ALLOC,
-            CompleteStr("print") => Opcode::PRINT,
             CompleteStr("syscall") => Opcode::SYSCALL,
             _ => Opcode::IGL,
         }

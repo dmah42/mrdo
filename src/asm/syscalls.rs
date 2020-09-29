@@ -5,4 +5,5 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 pub enum Syscall {
     PrintReg,
     PrintMem,
+    PrintStr,
 }

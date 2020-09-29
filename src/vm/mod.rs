@@ -157,30 +157,6 @@ impl VM {
                 let new_end = self.heap.len() as i32 + bytes;
                 self.heap.resize(new_end as usize, 0);
             }
-            Opcode::PRINT => {
-                let offset = self.next_u16() as usize;
-                let mut end = offset;
-                let slice = self.ro_data.as_slice();
-
-                while slice[end] != 0 {
-                    end += 1;
-                }
-
-                let result = std::str::from_utf8(&slice[offset..end]);
-                match result {
-                    Ok(s) => {
-                        println!("{}", s);
-                    }
-                    Err(e) => {
-                        return Err(Error::new(&format!(
-                            "Error decoding string to print: {:#?}",
-                            e
-                        )))
-                    }
-                };
-                // Swallow the last u8 in the instruction.
-                self.next_u8();
-            }
             Opcode::SYSCALL => {
                 let call_idx = self.next_u8();
                 if !is_int_register(call_idx) {
@@ -203,6 +179,28 @@ impl VM {
                                 self.next_u8();
                             }
                             Syscall::PrintMem => return Err(Error::new("Unimplemented")),
+                            Syscall::PrintStr => {
+                                let offset = self.next_u16() as usize;
+                                let mut end = offset;
+                                let slice = self.ro_data.as_slice();
+
+                                while slice[end] != 0 {
+                                    end += 1;
+                                }
+
+                                let result = std::str::from_utf8(&slice[offset..end]);
+                                match result {
+                                    Ok(s) => {
+                                        println!("{}", s);
+                                    }
+                                    Err(e) => {
+                                        return Err(Error::new(&format!(
+                                            "Error decoding string to print: {:#?}",
+                                            e
+                                        )))
+                                    }
+                                };
+                            }
                         }
                     }
                     Err(_) => {
@@ -603,17 +601,17 @@ mod tests {
     }
 
     #[test]
-    fn test_opcode_print() {
+    fn test_opcode_syscall_printstr() {
         let mut vm = VM::new();
         vm.ro_data.append(&mut vec![72, 101, 108, 108, 111, 0]);
-        vm.program = vec![Opcode::PRINT as u8, 0, 0, 0];
+        vm.program = vec![Opcode::SYSCALL as u8, Syscall::PrintStr as u8, 0, 0];
         let exit = vm.step();
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
     }
 
     #[test]
-    fn test_opcode_syscall() {
+    fn test_opcode_syscall_printreg() {
         let mut vm = VM::new();
         vm.rregisters[0] = 42.0;
         vm.program = vec![Opcode::SYSCALL as u8, Syscall::PrintReg as u8, 0, 0];
