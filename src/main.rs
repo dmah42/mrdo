@@ -102,48 +102,7 @@ fn run_bytecode(bytecode: &[u8], list_bc: bool, list_reg: bool) {
     match result {
         Ok(_) => {
             if list_reg {
-                // TODO: move this to repl and reuse it here.
-                println!("Listing integer registers:");
-                for (i, reg) in vm.iregisters.chunks(8).enumerate() {
-                    println!(
-                        "  [{}]\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
-                        i * 8,
-                        reg[0],
-                        reg[1],
-                        reg[2],
-                        reg[3],
-                        reg[4],
-                        reg[5],
-                        reg[6],
-                        reg[7]
-                    );
-                }
-                println!("EOF");
-
-                println!("Listing real registers:");
-                for (i, reg) in vm.rregisters.chunks(8).enumerate() {
-                    println!(
-                        "  [{}]\t{:.03}\t{:.03}\t{:.03}\t{:.03}\t{:.03}\t{:.03}\t{:.03}\t{:.03}",
-                        i * 8,
-                        reg[0],
-                        reg[1],
-                        reg[2],
-                        reg[3],
-                        reg[4],
-                        reg[5],
-                        reg[6],
-                        reg[7],
-                    );
-                }
-                println!("EOF");
-
-                println!("Listing (non-empty) vector registers:");
-                for (i, reg) in vm.vregisters.iter().enumerate() {
-                    if !reg.is_empty() {
-                        println!("  [{}]\t{:?}", i, reg);
-                    }
-                }
-                println!("EOF");
+                vm.print_registers();
             }
             std::process::exit(0);
         }

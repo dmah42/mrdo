@@ -16,6 +16,7 @@ pub mod operand_parsers;
 pub mod program_parsers;
 pub mod register_parsers;
 pub mod symbols;
+pub mod syscalls;
 
 pub const DO_HEADER_PREFIX: [u8; 4] = [68, 79, 86, 77]; // "DOVM"
 pub const DO_HEADER_LEN: usize = 32;

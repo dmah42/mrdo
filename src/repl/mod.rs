@@ -113,7 +113,7 @@ impl REPL {
                 println!("{} Buh-bye!", INFO_TAG);
                 std::process::exit(0);
             }
-            ":r" => self.list_registers(),
+            ":r" => self.vm.print_registers(),
             ":s" => {
                 println!("{} Listing symbols:", INFO_TAG);
                 println!("{:#?}", self.asm.symbols);
@@ -149,20 +149,6 @@ impl REPL {
             }
             println!("{} EOF", INFO_TAG);
         }
-    }
-
-    fn list_registers(&self) {
-        println!("{} Listing integer registers:", INFO_TAG);
-        for reg in self.vm.iregisters.chunks(4) {
-            println!("  {}\t{}\t{}\t{}", reg[0], reg[1], reg[2], reg[3]);
-        }
-        println!("{} EOF", INFO_TAG);
-
-        println!("{} Listing real registers:", INFO_TAG);
-        for reg in self.vm.rregisters.chunks(4) {
-            println!("  {}\t{}\t{}\t{}", reg[0], reg[1], reg[2], reg[3]);
-        }
-        println!("{} EOF", INFO_TAG);
     }
 
     fn load_file(&mut self, args: &[&str]) {

@@ -1,4 +1,5 @@
 use crate::asm::opcode::Opcode;
+use crate::asm::syscalls::Syscall;
 use crate::asm::{DO_HEADER_LEN, DO_HEADER_PREFIX};
 use crate::vm::error::Error;
 use crate::vm::register::*;
@@ -154,7 +155,6 @@ impl VM {
                 }
                 self.iregisters[register as usize] = self.heap.len() as i32;
                 let new_end = self.heap.len() as i32 + bytes;
-                println!("resizing heap to {}", new_end);
                 self.heap.resize(new_end as usize, 0);
             }
             Opcode::PRINT => {
@@ -181,9 +181,82 @@ impl VM {
                 // Swallow the last u8 in the instruction.
                 self.next_u8();
             }
+            Opcode::SYSCALL => {
+                let call_idx = self.next_u8();
+                if !is_int_register(call_idx) {
+                    return Err(Error::new("Expected integer register for syscall"));
+                }
+
+                let call_num = self.iregisters[call_idx as usize];
+                match Syscall::try_from(call_num) {
+                    Ok(call) => {
+                        match call {
+                            Syscall::PrintReg => {
+                                let reg_idx = self.next_u8();
+                                let reg = self.get_register(reg_idx)?;
+                                match reg {
+                                    Register::I(i) => println!("{}", i),
+                                    Register::R(r) => println!("{}", r),
+                                    Register::V(v) => println!("{:?}", v),
+                                };
+                                // Swallow the remaining u8.
+                                self.next_u8();
+                            }
+                            Syscall::PrintMem => return Err(Error::new("Unimplemented")),
+                        }
+                    }
+                    Err(_) => {
+                        return Err(Error::new(format!("Unknown syscall {}", call_num).as_str()));
+                    }
+                }
+            }
             Opcode::IGL => return Err(Error::new("Illegal opcode")),
         }
         Ok(false)
+    }
+
+    pub fn print_registers(&self) {
+        println!("Listing integer registers:");
+        for (i, reg) in self.iregisters.chunks(8).enumerate() {
+            println!(
+                "  [{}]\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                i * 8,
+                reg[0],
+                reg[1],
+                reg[2],
+                reg[3],
+                reg[4],
+                reg[5],
+                reg[6],
+                reg[7]
+            );
+        }
+        println!("EOF");
+
+        println!("Listing real registers:");
+        for (i, reg) in self.rregisters.chunks(8).enumerate() {
+            println!(
+                "  [{}]\t{:.03}\t{:.03}\t{:.03}\t{:.03}\t{:.03}\t{:.03}\t{:.03}\t{:.03}",
+                i * 8,
+                reg[0],
+                reg[1],
+                reg[2],
+                reg[3],
+                reg[4],
+                reg[5],
+                reg[6],
+                reg[7],
+            );
+        }
+        println!("EOF");
+
+        println!("Listing (non-empty) vector registers:");
+        for (i, reg) in self.vregisters.iter().enumerate() {
+            if !reg.is_empty() {
+                println!("  [{}]\t{:?}", i, reg);
+            }
+        }
+        println!("EOF");
     }
 
     fn decode_opcode(&mut self) -> Opcode {
@@ -238,7 +311,6 @@ impl VM {
         f64::from_be_bytes(bytes)
     }
 
-    // TODO: convert to new register and add real support.
     fn lw(&mut self) -> Result<(), Error> {
         let register = self.next_u8();
 
@@ -531,10 +603,20 @@ mod tests {
     }
 
     #[test]
-    fn test_print_opcode() {
+    fn test_opcode_print() {
         let mut vm = VM::new();
         vm.ro_data.append(&mut vec![72, 101, 108, 108, 111, 0]);
         vm.program = vec![Opcode::PRINT as u8, 0, 0, 0];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert_eq!(exit.unwrap(), false);
+    }
+
+    #[test]
+    fn test_opcode_syscall() {
+        let mut vm = VM::new();
+        vm.rregisters[0] = 42.0;
+        vm.program = vec![Opcode::SYSCALL as u8, Syscall::PrintReg as u8, 0, 0];
         let exit = vm.step();
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);

@@ -9,16 +9,6 @@ pub enum Register {
     V(Vec<f64>),
 }
 
-impl Register {
-    pub fn get_char(&self) -> char {
-        match self {
-            Register::I(_) => 'i',
-            Register::R(_) => 'r',
-            Register::V(_) => 'v',
-        }
-    }
-}
-
 impl TryInto<i32> for Register {
     type Error = Error;
 
@@ -111,17 +101,5 @@ mod tests {
 
         let r: Result<f64, Error> = Register::V(vec![1.0f64, 2.0]).try_into();
         assert!(r.is_err());
-    }
-
-    #[test]
-    fn test_get_char() {
-        let i: char = Register::I(42).get_char();
-        assert_eq!(i, 'i');
-
-        let r: char = Register::R(42.0).get_char();
-        assert_eq!(r, 'r');
-
-        let v: char = Register::V(vec![]).get_char();
-        assert_eq!(v, 'v');
     }
 }

@@ -6,5 +6,7 @@ foo / 2.0
 ; let's write it out
 do(write, foo)
 
-bar = [4, 3.0, 2]
+bar = [42.0, 3, 1]
 baz = bar + 1
+do(write, bar)
+do(write, baz)

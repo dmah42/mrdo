@@ -1,9 +1,10 @@
+use crate::asm::syscalls::Syscall;
 use crate::compiler::error::Error;
 use crate::compiler::expression_parsers::expression;
 use crate::compiler::program_parser::program;
 use crate::compiler::tokens::Token;
 use crate::compiler::visitor::Visitor;
-use crate::vm::register::Register;
+use crate::vm::register::Register as VmRegister;
 
 use nom::types::CompleteStr;
 use std::collections::HashMap;
@@ -20,11 +21,28 @@ pub mod term_parsers;
 pub mod tokens;
 pub mod visitor;
 
+#[derive(Debug, PartialEq)]
+struct Register {
+    idx: u8,
+    reg: VmRegister,
+}
+
+impl Register {
+    pub fn get_char(&self) -> char {
+        match self.reg {
+            VmRegister::I(_) => 'i',
+            VmRegister::R(_) => 'r',
+            VmRegister::V(_) => 'v',
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct Compiler {
     free_int_reg: Vec<Register>,
     free_real_reg: Vec<Register>,
     free_vec_reg: Vec<Register>,
-    used_reg: Vec<(u8, Register)>,
+    used_reg: Vec<Register>,
     rodata: Vec<String>,
     assembly: Vec<String>,
 
@@ -35,9 +53,26 @@ pub struct Compiler {
 impl Compiler {
     pub fn new() -> Compiler {
         Compiler {
-            free_int_reg: (0..32).map(|_| Register::I(0)).collect(),
-            free_real_reg: (0..32).map(|_| Register::R(0.0)).collect(),
-            free_vec_reg: (0..32).map(|_| Register::V(vec![])).collect(),
+            // TODO: these should go from [1, 32) so the 0 register can be kept
+            // free to be always 'zero'.
+            free_int_reg: (0..32)
+                .map(|i| Register {
+                    idx: i,
+                    reg: VmRegister::I(0),
+                })
+                .collect(),
+            free_real_reg: (0..32)
+                .map(|i| Register {
+                    idx: i,
+                    reg: VmRegister::R(0.0),
+                })
+                .collect(),
+            free_vec_reg: (0..32)
+                .map(|i| Register {
+                    idx: i,
+                    reg: VmRegister::V(vec![]),
+                })
+                .collect(),
             used_reg: vec![],
             rodata: vec![],
             assembly: vec![],
@@ -60,65 +95,57 @@ impl Compiler {
         Ok(&self.assembly)
     }
 
-    fn next_free_int_reg(&mut self) -> (u8, Register) {
-        (
-            self.free_int_reg.len() as u8 - 1,
-            self.free_int_reg.pop().unwrap(),
-        )
-    }
-
-    fn next_free_real_reg(&mut self) -> (u8, Register) {
-        (
-            self.free_real_reg.len() as u8 - 1,
-            self.free_real_reg.pop().unwrap(),
-        )
-    }
-
-    fn next_free_vec_reg(&mut self) -> (u8, Register) {
-        (
-            self.free_vec_reg.len() as u8 - 1,
-            self.free_vec_reg.pop().unwrap(),
-        )
+    fn integrity_check(&self) {
+        for used_reg in &self.used_reg {
+            let free_reg = match used_reg.reg {
+                VmRegister::I(_) => &self.free_int_reg,
+                VmRegister::R(_) => &self.free_real_reg,
+                VmRegister::V(_) => &self.free_vec_reg,
+            };
+            if free_reg.contains(&used_reg) {
+                panic!("Integrity check failed");
+            }
+        }
     }
 
     fn push_free_reg(&mut self, reg: Register) {
-        match reg {
-            Register::I(_) => self.free_int_reg.push(reg),
-            Register::R(_) => self.free_real_reg.push(reg),
-            Register::V(_) => self.free_vec_reg.push(reg),
+        match reg.reg {
+            VmRegister::I(_) => self.free_int_reg.push(reg),
+            VmRegister::R(_) => self.free_real_reg.push(reg),
+            VmRegister::V(_) => self.free_vec_reg.push(reg),
         };
     }
 
-    fn get_binop_result_reg(&mut self, left: &Register, right: &Register) -> (u8, Register) {
-        match left {
-            Register::I(_) => match right {
-                Register::I(_) => self.next_free_int_reg(),
-                Register::R(_) => self.next_free_real_reg(),
-                Register::V(_) => self.next_free_vec_reg(),
+    fn get_binop_result_reg(&mut self, left: &Register, right: &Register) -> Register {
+        match left.reg {
+            VmRegister::I(_) => match right.reg {
+                VmRegister::I(_) => self.free_int_reg.pop().unwrap(),
+                VmRegister::R(_) => self.free_real_reg.pop().unwrap(),
+                VmRegister::V(_) => self.free_vec_reg.pop().unwrap(),
             },
-            Register::R(_) => match right {
+            VmRegister::R(_) => match right.reg {
                 // Promote to a real register.
-                Register::I(_) => self.next_free_real_reg(),
-                Register::R(_) => self.next_free_real_reg(),
-                Register::V(_) => self.next_free_vec_reg(),
+                VmRegister::I(_) => self.free_real_reg.pop().unwrap(),
+                VmRegister::R(_) => self.free_real_reg.pop().unwrap(),
+                VmRegister::V(_) => self.free_vec_reg.pop().unwrap(),
             },
-            Register::V(_) => self.next_free_vec_reg(),
+            VmRegister::V(_) => self.free_vec_reg.pop().unwrap(),
         }
     }
 
     fn add_arith_instruction(&mut self, op: &str) {
-        let (right_idx, right_reg) = self.used_reg.pop().unwrap();
-        let (left_idx, left_reg) = self.used_reg.pop().unwrap();
+        let right_reg = self.used_reg.pop().unwrap();
+        let left_reg = self.used_reg.pop().unwrap();
 
         let result_reg = self.get_binop_result_reg(&left_reg, &right_reg);
 
-        let result_char = result_reg.1.get_char();
+        let result_char = result_reg.get_char();
         let left_char = left_reg.get_char();
         let right_char = right_reg.get_char();
 
         self.assembly.push(format!(
             "{} ${}{} ${}{} ${}{}",
-            op, result_char, result_reg.0, left_char, left_idx, right_char, right_idx
+            op, result_char, result_reg.idx, left_char, left_reg.idx, right_char, right_reg.idx
         ));
 
         self.used_reg.push(result_reg);
@@ -128,18 +155,18 @@ impl Compiler {
     }
 
     fn add_compare_instruction(&mut self, op: &str) {
-        let (right_idx, right_reg) = self.used_reg.pop().unwrap();
-        let (left_idx, left_reg) = self.used_reg.pop().unwrap();
+        let right_reg = self.used_reg.pop().unwrap();
+        let left_reg = self.used_reg.pop().unwrap();
 
-        let result_reg = self.next_free_int_reg();
+        let result_reg = self.free_int_reg.pop().unwrap();
 
-        let result_char = result_reg.1.get_char();
+        let result_char = result_reg.get_char();
         let left_char = left_reg.get_char();
         let right_char = right_reg.get_char();
 
         self.assembly.push(format!(
             "{} ${}{} ${}{} ${}{}",
-            op, result_char, result_reg.0, left_char, left_idx, right_char, right_idx
+            op, result_char, result_reg.idx, left_char, left_reg.idx, right_char, right_reg.idx
         ));
 
         self.used_reg.push(result_reg);
@@ -151,8 +178,8 @@ impl Compiler {
 
 impl Visitor for Compiler {
     fn visit_token(&mut self, node: &Token) -> Result<(), Error> {
-        //println!(".. visiting {:?}", node);
-        // println!("  [before] {:?}\n    {:?}", self.variables, self.used_reg);
+        // println!(".. visiting {:?}", node);
+        // println!("  [before] {:?}\t    {:?}", self.variables, self.used_reg);
         match node {
             Token::Comment { comment: _ } => {
                 //println!("Skipping comment '{}'", comment);
@@ -188,17 +215,13 @@ impl Visitor for Compiler {
                 // 'unassign' old result reg if the variable already exists.
                 if self.variables.contains_key(ident) {
                     let old_used_reg = self.used_reg.remove(self.variables[ident]);
-                    if result_reg.1 != old_used_reg.1 {
+                    if result_reg.reg != old_used_reg.reg {
                         return Err(Error::new(format!(
                             "Variable '{}' was {:?} and is now {:?}",
-                            ident, old_used_reg.1, result_reg.1
+                            ident, old_used_reg.reg, result_reg.reg
                         )));
                     }
-                    match old_used_reg.1 {
-                        Register::I(_) => self.free_int_reg.push(old_used_reg.1),
-                        Register::R(_) => self.free_real_reg.push(old_used_reg.1),
-                        Register::V(_) => self.free_vec_reg.push(old_used_reg.1),
-                    }
+                    self.push_free_reg(old_used_reg);
                 }
 
                 self.variables
@@ -216,20 +239,45 @@ impl Visitor for Compiler {
             Token::Builtin { builtin, args } => {
                 match builtin.as_str() {
                     "write" => {
-                        for expr in args {
-                            self.visit_token(expr)?;
+                        if args.len() != 1 {
+                            return Err(Error::new(
+                                "'write' expects a single argument".to_string(),
+                            ));
                         }
+                        // FIXME: this should take a copy of the used register
+                        // with a load/add.
+                        self.visit_token(&args[0])?;
                         let reg = self.used_reg.pop().unwrap();
-                        // TODO: create a "syscall" instruction in assembly and a syscall
-                        // to print from an address, then use that to print out whatever is
-                        // being passed in to write.
+                        let call_reg = self.free_int_reg.pop().unwrap();
+
+                        self.assembly.push(format!(
+                            "load $i{} #{}",
+                            call_reg.idx,
+                            Syscall::PrintReg as u8
+                        ));
+
+                        self.assembly.push(format!(
+                            "syscall $i{} ${}{}",
+                            call_reg.idx,
+                            reg.get_char(),
+                            reg.idx,
+                        ));
+
+                        self.free_int_reg.push(call_reg);
+
+                        self.push_free_reg(reg);
+                    }
+                    // TODO: string parser to create a constant and print it using
+                    // a syscall.
+                    /*
+                    "print" => {
                         self.rodata.push(format!(
                             "somestr: .str 'reg ${}{}'",
                             reg.1.get_char(),
                             reg.0
                         ));
                         self.assembly.push("print @somestr".to_string());
-                    }
+                    }*/
                     _ => return Err(Error::new(format!("Unknown builtin: {}", builtin))),
                 };
             }
@@ -244,55 +292,56 @@ impl Visitor for Compiler {
 
                 // println!(".. found at {}", index);
 
-                let copy_reg = match &self.used_reg[index].1 {
-                    Register::I(_) => self.next_free_int_reg(),
-                    Register::R(_) => self.next_free_real_reg(),
-                    Register::V(_) => self.next_free_vec_reg(),
+                let copy_reg = match &self.used_reg[index].reg {
+                    VmRegister::I(_) => self.free_int_reg.pop().unwrap(),
+                    VmRegister::R(_) => self.free_real_reg.pop().unwrap(),
+                    VmRegister::V(_) => self.free_vec_reg.pop().unwrap(),
                 };
 
                 // Copy the value of the current identifier into the new reg
                 // by adding it to zero.
-                let zero_reg = self.next_free_int_reg();
-                self.assembly.push(format!("load $i{} #0", zero_reg.0));
+                let zero_reg = self.free_int_reg.pop().unwrap();
+                self.assembly.push(format!("load $i{} #0", zero_reg.idx));
                 self.assembly.push(format!(
                     "add ${}{} $i{} ${}{}",
-                    copy_reg.1.get_char(),
-                    copy_reg.0,
-                    zero_reg.0,
-                    self.used_reg[index].1.get_char(),
-                    self.used_reg[index].0
+                    copy_reg.get_char(),
+                    copy_reg.idx,
+                    zero_reg.idx,
+                    self.used_reg[index].get_char(),
+                    self.used_reg[index].idx
                 ));
 
                 self.used_reg.push(copy_reg);
-                self.free_int_reg.push(zero_reg.1);
+                self.free_int_reg.push(zero_reg);
             }
 
             Token::Real { value } => {
-                let next_reg = self.next_free_real_reg();
+                let next_reg = self.free_real_reg.pop().unwrap();
                 self.assembly
-                    .push(format!("load $r{} #{:.2}", next_reg.0, value));
+                    .push(format!("load $r{} #{:.2}", next_reg.idx, value));
                 self.used_reg.push(next_reg);
             }
             Token::Coll { values } => {
                 // Allocate memory for the heap and put the base address into a register.
-                let alloc_reg = self.next_free_int_reg();
+                let alloc_reg = self.free_int_reg.pop().unwrap();
                 self.assembly
-                    .push(format!("alloc $i{} #{}", alloc_reg.0, values.len() * 8));
+                    .push(format!("alloc $i{} #{}", alloc_reg.idx, values.len() * 8));
 
                 // Go through the collection and store each generated real to the heap.
-                let vec_base_reg = self.next_free_int_reg();
-                self.assembly.push(format!("load $i{} #0", vec_base_reg.0));
+                let vec_base_reg = self.free_int_reg.pop().unwrap();
+                self.assembly
+                    .push(format!("load $i{} #0", vec_base_reg.idx));
                 self.assembly.push(format!(
                     "add $i{} $i{} $i{}",
-                    vec_base_reg.0, vec_base_reg.0, alloc_reg.0
+                    vec_base_reg.idx, vec_base_reg.idx, alloc_reg.idx
                 ));
                 for v in values {
                     // Note: this assumes visiting a token ends up with a used reg
                     // equivalent to a real.
                     self.visit_token(v)?;
                     let used_reg = self.used_reg.pop().unwrap();
-                    match used_reg.1 {
-                        Register::R(_) => {}
+                    match used_reg.reg {
+                        VmRegister::R(_) => {}
                         _ => {
                             return Err(Error::new(
                                 "Unable to put non-real into a vector".to_string(),
@@ -300,29 +349,29 @@ impl Visitor for Compiler {
                         }
                     };
                     self.assembly
-                        .push(format!("sw $i{} $r{}", vec_base_reg.0, used_reg.0));
-                    self.free_real_reg.push(used_reg.1);
+                        .push(format!("sw $i{} $r{}", vec_base_reg.idx, used_reg.idx));
+                    self.free_real_reg.push(used_reg);
                     // TODO: skip this last add on the last iteration.
-                    let inc_reg = self.next_free_int_reg();
+                    let inc_reg = self.free_int_reg.pop().unwrap();
                     self.assembly
-                        .push(format!("load $i{} #{}", inc_reg.0, size_of::<f64>()));
+                        .push(format!("load $i{} #{}", inc_reg.idx, size_of::<f64>()));
                     self.assembly.push(format!(
                         "add $i{} $i{} $i{}",
-                        vec_base_reg.0, vec_base_reg.0, inc_reg.0
+                        vec_base_reg.idx, vec_base_reg.idx, inc_reg.idx
                     ));
-                    self.free_int_reg.push(inc_reg.1);
+                    self.free_int_reg.push(inc_reg);
                 }
-                self.free_int_reg.push(vec_base_reg.1);
+                self.free_int_reg.push(vec_base_reg);
 
                 // And finally load the heap info into a vector register.
-                let vec_reg = self.next_free_vec_reg();
+                let vec_reg = self.free_vec_reg.pop().unwrap();
                 self.assembly.push(format!(
                     "load $v{} $i{} #{}",
-                    vec_reg.0,
-                    alloc_reg.0,
+                    vec_reg.idx,
+                    alloc_reg.idx,
                     values.len() * size_of::<f64>()
                 ));
-                self.free_int_reg.push(alloc_reg.1);
+                self.free_int_reg.push(alloc_reg);
                 self.used_reg.push(vec_reg);
             }
 
@@ -356,7 +405,9 @@ impl Visitor for Compiler {
                 self.assembly.push("halt".into());
             }
         };
-        //println!("  [after] {:?}\n    {:?}", self.variables, self.used_reg);
+        //println!("  [after] {:?}\t    {:?}", self.variables, self.used_reg);
+        //println!(".. done visiting {:?}", node);
+        self.integrity_check();
         Ok(())
     }
 }
@@ -370,6 +421,30 @@ impl Default for Compiler {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_get_char() {
+        let i: char = Register {
+            idx: 0,
+            reg: VmRegister::I(42),
+        }
+        .get_char();
+        assert_eq!(i, 'i');
+
+        let r: char = Register {
+            idx: 0,
+            reg: VmRegister::R(42.0),
+        }
+        .get_char();
+        assert_eq!(r, 'r');
+
+        let v: char = Register {
+            idx: 0,
+            reg: VmRegister::V(vec![]),
+        }
+        .get_char();
+        assert_eq!(v, 'v');
+    }
 
     fn generate_test_program(listing: &str) -> Token {
         let (_, tree) = program(CompleteStr(listing)).unwrap();
@@ -394,7 +469,13 @@ mod tests {
         assert_eq!(compiler.free_int_reg.len(), 32);
         assert_eq!(compiler.free_real_reg.len(), 31);
         assert_eq!(compiler.free_vec_reg.len(), 32);
-        assert_eq!(compiler.used_reg, vec![(29, Register::R(0.0))]);
+        assert_eq!(
+            compiler.used_reg,
+            vec![Register {
+                idx: 29,
+                reg: VmRegister::R(0.0)
+            }]
+        );
 
         // TODO: test integer and collection addition.
     }
@@ -417,7 +498,13 @@ mod tests {
         assert_eq!(compiler.free_int_reg.len(), 32);
         assert_eq!(compiler.free_real_reg.len(), 31);
         assert_eq!(compiler.free_vec_reg.len(), 32);
-        assert_eq!(compiler.used_reg, vec![(29, Register::R(0.0))]);
+        assert_eq!(
+            compiler.used_reg,
+            vec![Register {
+                idx: 29,
+                reg: VmRegister::R(0.0)
+            }]
+        );
     }
 
     #[test]
@@ -438,7 +525,13 @@ mod tests {
         assert_eq!(compiler.free_int_reg.len(), 32);
         assert_eq!(compiler.free_real_reg.len(), 31);
         assert_eq!(compiler.free_vec_reg.len(), 32);
-        assert_eq!(compiler.used_reg, vec![(29, Register::R(0.0))]);
+        assert_eq!(
+            compiler.used_reg,
+            vec![Register {
+                idx: 29,
+                reg: VmRegister::R(0.0)
+            }]
+        );
     }
 
     #[test]
@@ -459,7 +552,13 @@ mod tests {
         assert_eq!(compiler.free_int_reg.len(), 32);
         assert_eq!(compiler.free_real_reg.len(), 31);
         assert_eq!(compiler.free_vec_reg.len(), 32);
-        assert_eq!(compiler.used_reg, vec![(29, Register::R(0.0))]);
+        assert_eq!(
+            compiler.used_reg,
+            vec![Register {
+                idx: 29,
+                reg: VmRegister::R(0.0)
+            }]
+        );
     }
 
     #[test]
@@ -482,7 +581,13 @@ mod tests {
         assert_eq!(compiler.free_int_reg.len(), 31);
         assert_eq!(compiler.free_real_reg.len(), 32);
         assert_eq!(compiler.free_vec_reg.len(), 32);
-        assert_eq!(compiler.used_reg, vec![(31, Register::I(0))]);
+        assert_eq!(
+            compiler.used_reg,
+            vec![Register {
+                idx: 31,
+                reg: VmRegister::I(0)
+            }]
+        );
     }
 
     #[test]
@@ -503,7 +608,13 @@ mod tests {
         assert_eq!(compiler.free_int_reg.len(), 31);
         assert_eq!(compiler.free_real_reg.len(), 32);
         assert_eq!(compiler.free_vec_reg.len(), 32);
-        assert_eq!(compiler.used_reg, vec![(31, Register::I(0))]);
+        assert_eq!(
+            compiler.used_reg,
+            vec![Register {
+                idx: 31,
+                reg: VmRegister::I(0)
+            }]
+        );
     }
 
     #[test]
@@ -524,7 +635,13 @@ mod tests {
         assert_eq!(compiler.free_int_reg.len(), 31);
         assert_eq!(compiler.free_real_reg.len(), 32);
         assert_eq!(compiler.free_vec_reg.len(), 32);
-        assert_eq!(compiler.used_reg, vec![(31, Register::I(0))]);
+        assert_eq!(
+            compiler.used_reg,
+            vec![Register {
+                idx: 31,
+                reg: VmRegister::I(0)
+            }]
+        );
     }
 
     #[test]
@@ -545,7 +662,13 @@ mod tests {
         assert_eq!(compiler.free_int_reg.len(), 31);
         assert_eq!(compiler.free_real_reg.len(), 32);
         assert_eq!(compiler.free_vec_reg.len(), 32);
-        assert_eq!(compiler.used_reg, vec![(31, Register::I(0))]);
+        assert_eq!(
+            compiler.used_reg,
+            vec![Register {
+                idx: 31,
+                reg: VmRegister::I(0)
+            }]
+        );
     }
 
     #[test]
@@ -566,7 +689,13 @@ mod tests {
         assert_eq!(compiler.free_int_reg.len(), 31);
         assert_eq!(compiler.free_real_reg.len(), 32);
         assert_eq!(compiler.free_vec_reg.len(), 32);
-        assert_eq!(compiler.used_reg, vec![(31, Register::I(0))]);
+        assert_eq!(
+            compiler.used_reg,
+            vec![Register {
+                idx: 31,
+                reg: VmRegister::I(0)
+            }]
+        );
     }
 
     #[test]
@@ -587,7 +716,13 @@ mod tests {
         assert_eq!(compiler.free_int_reg.len(), 31);
         assert_eq!(compiler.free_real_reg.len(), 32);
         assert_eq!(compiler.free_vec_reg.len(), 32);
-        assert_eq!(compiler.used_reg, vec![(31, Register::I(0))]);
+        assert_eq!(
+            compiler.used_reg,
+            vec![Register {
+                idx: 31,
+                reg: VmRegister::I(0)
+            }]
+        );
     }
 
     #[test]
@@ -599,7 +734,13 @@ mod tests {
         assert_eq!(compiler.free_int_reg.len(), 32);
         assert_eq!(compiler.free_real_reg.len(), 31);
         assert_eq!(compiler.free_vec_reg.len(), 32);
-        assert_eq!(compiler.used_reg, vec![(31, Register::R(0.0))]);
+        assert_eq!(
+            compiler.used_reg,
+            vec![Register {
+                idx: 31,
+                reg: VmRegister::R(0.0)
+            }]
+        );
         assert_eq!(
             compiler.variables,
             [("foo".to_string(), 0 as usize)].iter().cloned().collect()
@@ -630,7 +771,16 @@ mod tests {
         assert_eq!(compiler.free_vec_reg.len(), 32);
         assert_eq!(
             compiler.used_reg,
-            vec![(31, Register::R(0.0)), (30, Register::R(0.0))]
+            vec![
+                Register {
+                    idx: 31,
+                    reg: VmRegister::R(0.0)
+                },
+                Register {
+                    idx: 30,
+                    reg: VmRegister::R(0.0)
+                }
+            ]
         );
         assert_eq!(
             compiler.variables,
@@ -671,8 +821,37 @@ mod tests {
         assert_eq!(compiler.free_int_reg.len(), 32);
         assert_eq!(compiler.free_real_reg.len(), 32);
         assert_eq!(compiler.free_vec_reg.len(), 31);
-        assert_eq!(compiler.used_reg, vec![(31, Register::V(vec![]))]);
+        assert_eq!(
+            compiler.used_reg,
+            vec![Register {
+                idx: 31,
+                reg: VmRegister::V(vec![])
+            }]
+        );
     }
 
-    // TODO: test_builtin
+    #[test]
+    fn test_builtin() {
+        let mut compiler = Compiler::new();
+        let test_program = generate_test_program("do(write, 42.0)");
+        assert!(compiler.visit_token(&test_program).is_ok());
+        assert_eq!(
+            compiler.assembly,
+            vec![
+                ".code",
+                "load $r31 #42.00",
+                "load $i31 #0",
+                "syscall $i31 $r31",
+                "halt"
+            ]
+        );
+        assert_eq!(compiler.free_int_reg.len(), 32);
+        assert_eq!(compiler.free_real_reg.len(), 32);
+        assert_eq!(compiler.free_vec_reg.len(), 32);
+        assert_eq!(compiler.used_reg, vec![]);
+
+        let mut compiler = Compiler::new();
+        let test_program = generate_test_program("do(foo)");
+        assert!(compiler.visit_token(&test_program).is_err());
+    }
 }
