@@ -125,6 +125,60 @@ impl VM {
                     }
                 }
             }
+            Opcode::COPY => {
+                let dest_reg = self.next_u8();
+                let src_reg = self.next_u8();
+
+                match self.get_register(src_reg)? {
+                    Register::I(si) => {
+                        match self.get_register(dest_reg)? {
+                            Register::I(_) => self.iregisters[dest_reg as usize] = si,
+                            Register::R(_) => {
+                                self.rregisters[idx_from_real_register(dest_reg) as usize] =
+                                    si as f64
+                            }
+                            Register::V(_) => {
+                                return Err(Error::new(
+                                    "Cannot copy from int register to vector register",
+                                ))
+                            }
+                        };
+                    }
+                    Register::R(sr) => {
+                        match self.get_register(dest_reg)? {
+                            Register::I(_) => self.iregisters[dest_reg as usize] = sr as i32,
+                            Register::R(_) => {
+                                self.rregisters[idx_from_real_register(dest_reg) as usize] = sr
+                            }
+                            Register::V(_) => {
+                                return Err(Error::new(
+                                    "Cannot copy from real register to vector register",
+                                ))
+                            }
+                        };
+                    }
+                    Register::V(sv) => {
+                        match self.get_register(dest_reg)? {
+                            Register::I(_) => {
+                                return Err(Error::new(
+                                    "Cannot copy from vector register to int register",
+                                ))
+                            }
+                            Register::R(_) => {
+                                return Err(Error::new(
+                                    "Cannot copy from vector register to real register",
+                                ))
+                            }
+                            Register::V(_) => {
+                                self.vregisters[idx_from_vector_register(dest_reg) as usize] = sv
+                            }
+                        };
+                    }
+                }
+
+                // Throw away the last byte.
+                self.next_u8();
+            }
             Opcode::LW => self.lw()?,
             Opcode::SW => self.sw()?,
             Opcode::ADD => self.add()?,
@@ -500,6 +554,102 @@ mod tests {
         assert!(exit.is_ok());
         assert_eq!(exit.unwrap(), false);
         assert_eq!(vm.vregisters[0], vec![4.2, 5.2]);
+    }
+
+    #[test]
+    fn test_opcode_copy() {
+        // int to int
+        let mut vm = VM::new();
+        vm.iregisters[1] = 42;
+        vm.program = vec![Opcode::COPY as u8, 0, 1, 0];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert_eq!(exit.unwrap(), false);
+        assert_eq!(vm.iregisters[0], 42);
+
+        // int to real
+        let mut vm = VM::new();
+        vm.iregisters[1] = 42;
+        vm.program = vec![Opcode::COPY as u8, real_register_to_idx(0), 1, 0];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert_eq!(exit.unwrap(), false);
+        assert_eq!(vm.rregisters[0], 42.0);
+
+        // int to vector
+        let mut vm = VM::new();
+        vm.iregisters[1] = 42;
+        vm.program = vec![Opcode::COPY as u8, vector_register_to_idx(0), 1, 0];
+        let exit = vm.step();
+        assert!(!exit.is_ok());
+
+        // real to int
+        let mut vm = VM::new();
+        vm.rregisters[1] = 42.0;
+        vm.program = vec![Opcode::COPY as u8, 0, real_register_to_idx(1), 0];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert_eq!(exit.unwrap(), false);
+        assert_eq!(vm.iregisters[0], 42);
+
+        // real to real
+        let mut vm = VM::new();
+        vm.rregisters[1] = 42.0;
+        vm.program = vec![
+            Opcode::COPY as u8,
+            real_register_to_idx(0),
+            real_register_to_idx(1),
+            0,
+        ];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert_eq!(exit.unwrap(), false);
+        assert_eq!(vm.rregisters[0], 42.0);
+
+        // real to vector
+        let mut vm = VM::new();
+        vm.rregisters[1] = 42.0;
+        vm.program = vec![
+            Opcode::COPY as u8,
+            vector_register_to_idx(0),
+            real_register_to_idx(1),
+            0,
+        ];
+        let exit = vm.step();
+        assert!(!exit.is_ok());
+
+        // vector to int
+        let mut vm = VM::new();
+        vm.vregisters[1] = vec![42.0];
+        vm.program = vec![Opcode::COPY as u8, 0, vector_register_to_idx(1), 0];
+        let exit = vm.step();
+        assert!(!exit.is_ok());
+
+        // vector to real
+        let mut vm = VM::new();
+        vm.vregisters[1] = vec![42.0];
+        vm.program = vec![
+            Opcode::COPY as u8,
+            real_register_to_idx(0),
+            vector_register_to_idx(1),
+            0,
+        ];
+        let exit = vm.step();
+        assert!(!exit.is_ok());
+
+        // vector to vector
+        let mut vm = VM::new();
+        vm.vregisters[1] = vec![42.0];
+        vm.program = vec![
+            Opcode::COPY as u8,
+            vector_register_to_idx(0),
+            vector_register_to_idx(1),
+            0,
+        ];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert_eq!(exit.unwrap(), false);
+        assert_eq!(vm.vregisters[0], vec![42.0]);
     }
 
     #[test]

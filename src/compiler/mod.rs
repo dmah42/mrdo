@@ -299,20 +299,15 @@ impl Visitor for Compiler {
                 };
 
                 // Copy the value of the current identifier into the new reg
-                // by adding it to zero.
-                let zero_reg = self.free_int_reg.pop().unwrap();
-                self.assembly.push(format!("load $i{} #0", zero_reg.idx));
                 self.assembly.push(format!(
-                    "add ${}{} $i{} ${}{}",
+                    "copy ${}{} ${}{}",
                     copy_reg.get_char(),
                     copy_reg.idx,
-                    zero_reg.idx,
                     self.used_reg[index].get_char(),
                     self.used_reg[index].idx
                 ));
 
                 self.used_reg.push(copy_reg);
-                self.free_int_reg.push(zero_reg);
             }
 
             Token::Real { value } => {
@@ -330,11 +325,7 @@ impl Visitor for Compiler {
                 // Go through the collection and store each generated real to the heap.
                 let vec_base_reg = self.free_int_reg.pop().unwrap();
                 self.assembly
-                    .push(format!("load $i{} #0", vec_base_reg.idx));
-                self.assembly.push(format!(
-                    "add $i{} $i{} $i{}",
-                    vec_base_reg.idx, vec_base_reg.idx, alloc_reg.idx
-                ));
+                    .push(format!("copy $i{} $i{}", vec_base_reg.idx, alloc_reg.idx));
                 for v in values {
                     // Note: this assumes visiting a token ends up with a used reg
                     // equivalent to a real.
@@ -758,13 +749,7 @@ mod tests {
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
-            vec![
-                ".code",
-                "load $r31 #42.00",
-                "load $i31 #0",
-                "add $r30 $i31 $r31",
-                "halt"
-            ]
+            vec![".code", "load $r31 #42.00", "copy $r30 $r31", "halt"]
         );
         assert_eq!(compiler.free_int_reg.len(), 32);
         assert_eq!(compiler.free_real_reg.len(), 30);
@@ -804,8 +789,7 @@ mod tests {
             vec![
                 ".code",
                 "alloc $i31 #16",
-                "load $i30 #0",
-                "add $i30 $i30 $i31",
+                "copy $i30 $i31",
                 "load $r31 #0.00",
                 "sw $i30 $r31",
                 "load $i29 #8",

@@ -15,6 +15,24 @@ Loads a real (*r*) into a real register (*R*).
 *LOAD $rV $iA #l*
 Loads a vector from memory (offset in integer register *A*, length *l*) into a vector register (*V*).
 
+## COPY
+Copies a value between registers. There are variants for different register types:
+
+*COPY $iD $iS*
+Copies an integer from *S* to *D*.
+
+*COPY $iD $rS*
+Copies a real from *S* to *D*, converting to int.
+
+*COPY $rD $rS*
+Copies a real from *S* to *D*.
+
+*COPY $rD $iS*
+Copies an integer from *S* to *D*, converting to real.
+
+*COPY $vD $vS*
+Copies a vector from *S* to *D*.
+
 ## LW
 *LW $rI $rA*
 

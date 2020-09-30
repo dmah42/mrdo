@@ -3,9 +3,11 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 #[derive(Debug, PartialEq, TryFromPrimitive, IntoPrimitive)]
 #[repr(u8)]
+// TODO: LW/SW already don't operate only on words so should be renamed. maybe find a vec version too?
 pub enum Opcode {
     HLT,
     LOAD,
+    COPY,
     LW,
     SW,
     ADD,
@@ -31,6 +33,7 @@ impl<'a> From<CompleteStr<'a>> for Opcode {
         match CompleteStr(&lowercase_opcode) {
             CompleteStr("halt") => Opcode::HLT,
             CompleteStr("load") => Opcode::LOAD,
+            CompleteStr("copy") => Opcode::COPY,
             CompleteStr("lw") => Opcode::LW,
             CompleteStr("sw") => Opcode::SW,
             CompleteStr("add") => Opcode::ADD,
