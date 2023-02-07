@@ -10,6 +10,7 @@ use std::default::Default;
 pub mod arith_opcode;
 pub mod compare_opcode;
 pub mod error;
+pub mod logic_opcode;
 pub mod register;
 
 pub struct VM {
@@ -196,6 +197,9 @@ impl VM {
             Opcode::GTE => self.gte()?,
             Opcode::LTE => self.lte()?,
             Opcode::JEQ => self.jeq()?,
+            Opcode::AND => self.and()?,
+            Opcode::OR => self.or()?,
+            Opcode::NOT => self.not()?,
             Opcode::ALLOC => {
                 let register = self.next_u8();
                 if !is_int_register(register) {
@@ -503,7 +507,7 @@ mod tests {
         vm.program = vec![0, 0, 0, 0];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), true);
+        assert!(exit.unwrap());
         assert_eq!(vm.pc, 1);
     }
 
@@ -514,7 +518,7 @@ mod tests {
         vm.program = vec![Opcode::LOAD as u8, 0, 0, 0, 1, 244];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 500);
 
         // real load
@@ -533,7 +537,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.rregisters[0], 4.2);
 
         // vector load
@@ -552,7 +556,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.vregisters[0], vec![4.2, 5.2]);
     }
 
@@ -564,7 +568,7 @@ mod tests {
         vm.program = vec![Opcode::COPY as u8, 0, 1, 0];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 42);
 
         // int to real
@@ -573,7 +577,7 @@ mod tests {
         vm.program = vec![Opcode::COPY as u8, real_register_to_idx(0), 1, 0];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.rregisters[0], 42.0);
 
         // int to vector
@@ -581,7 +585,7 @@ mod tests {
         vm.iregisters[1] = 42;
         vm.program = vec![Opcode::COPY as u8, vector_register_to_idx(0), 1, 0];
         let exit = vm.step();
-        assert!(!exit.is_ok());
+        assert!(exit.is_err());
 
         // real to int
         let mut vm = VM::new();
@@ -589,7 +593,7 @@ mod tests {
         vm.program = vec![Opcode::COPY as u8, 0, real_register_to_idx(1), 0];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 42);
 
         // real to real
@@ -603,7 +607,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.rregisters[0], 42.0);
 
         // real to vector
@@ -616,14 +620,14 @@ mod tests {
             0,
         ];
         let exit = vm.step();
-        assert!(!exit.is_ok());
+        assert!(exit.is_err());
 
         // vector to int
         let mut vm = VM::new();
         vm.vregisters[1] = vec![42.0];
         vm.program = vec![Opcode::COPY as u8, 0, vector_register_to_idx(1), 0];
         let exit = vm.step();
-        assert!(!exit.is_ok());
+        assert!(exit.is_err());
 
         // vector to real
         let mut vm = VM::new();
@@ -635,7 +639,7 @@ mod tests {
             0,
         ];
         let exit = vm.step();
-        assert!(!exit.is_ok());
+        assert!(exit.is_err());
 
         // vector to vector
         let mut vm = VM::new();
@@ -648,7 +652,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.vregisters[0], vec![42.0]);
     }
 
@@ -660,7 +664,7 @@ mod tests {
         vm.program = vec![Opcode::LW as u8, 0, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 42);
 
         let mut vm = VM::new();
@@ -669,7 +673,7 @@ mod tests {
         vm.program = vec![Opcode::LW as u8, real_register_to_idx(0), 0];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_approx_eq!(vm.rregisters[0], 4.2);
 
         let mut vm = VM::new();
@@ -677,14 +681,14 @@ mod tests {
         vm.rregisters[1] = 4.0;
         vm.program = vec![Opcode::LW as u8, 0, real_register_to_idx(1)];
         let exit = vm.step();
-        assert!(!exit.is_ok());
+        assert!(exit.is_err());
 
         let mut vm = VM::new();
         vm.heap = vec![0, 0, 0, 42];
         vm.iregisters[1] = 0;
         vm.program = vec![Opcode::LW as u8, vector_register_to_idx(0), 1];
         let exit = vm.step();
-        assert!(!exit.is_ok());
+        assert!(exit.is_err());
     }
 
     #[test]
@@ -696,20 +700,20 @@ mod tests {
         vm.program = vec![Opcode::SW as u8, 0, 1, 0];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.heap, vec![0, 0, 0, 42]);
 
         let mut vm = VM::new();
         vm.iregisters[1] = 42;
         vm.heap = vec![0, 0, 0, 0];
         vm.program = vec![Opcode::SW as u8, real_register_to_idx(0), 1, 0];
-        assert!(!vm.step().is_ok());
+        assert!(vm.step().is_err());
 
         let mut vm = VM::new();
         vm.iregisters[1] = -42;
         vm.heap = vec![0, 0, 0, 0];
         vm.program = vec![Opcode::SW as u8, 1, 0, 0];
-        assert!(!vm.step().is_ok());
+        assert!(vm.step().is_err());
     }
 
     #[test]
@@ -719,7 +723,7 @@ mod tests {
         vm.iregisters[0] = 100;
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.pc, 100);
     }
     #[test]
@@ -731,7 +735,7 @@ mod tests {
         vm.program = vec![Opcode::JEQ as u8, 0, 1, 2];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.pc, 100);
     }
 
@@ -741,7 +745,7 @@ mod tests {
         vm.program = vec![Opcode::ALLOC as u8, 0, 0, 0, 0, 120];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.heap.len(), 120);
 
         let mut vm = VM::new();
@@ -757,7 +761,7 @@ mod tests {
         vm.program = vec![Opcode::SYSCALL as u8, Syscall::PrintStr as u8, 0, 0];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
     }
 
     #[test]
@@ -767,7 +771,7 @@ mod tests {
         vm.program = vec![Opcode::SYSCALL as u8, Syscall::PrintReg as u8, 0, 0];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
     }
 
     #[test]
@@ -789,7 +793,7 @@ mod tests {
         let mut bytecode = vec![];
         bytecode.append(&mut DO_HEADER_PREFIX.to_vec());
         while bytecode.len() < DO_HEADER_LEN {
-            bytecode.push(0 as u8);
+            bytecode.push(0);
         }
         bytecode.append(&mut vec![1, 2, 3, 4]);
         let result = vm.set_bytecode(&bytecode);

@@ -3,6 +3,7 @@ use crate::vm::register::*;
 use crate::vm::VM;
 
 use std::convert::TryInto;
+use std::iter::zip;
 
 impl VM {
     pub fn add(&mut self) -> Result<(), Error> {
@@ -34,7 +35,7 @@ impl VM {
                             return Err(Error::new("Cannot add vectors with unequal lengths"));
                         }
                         self.vregisters[idx_from_vector_register(out_idx) as usize] =
-                            va.iter().zip(vb).map(|(a, b)| a + b).collect();
+                            zip(va, vb).map(|a| a.0 + a.1).collect();
                     } else {
                         // add b to every element of a
                         let b: f64 = b_reg.try_into()?;
@@ -221,7 +222,7 @@ mod tests {
         vm.program = vec![Opcode::ADD as u8, 0, 0, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 5);
 
         // real to integer
@@ -231,7 +232,7 @@ mod tests {
         vm.program = vec![Opcode::ADD as u8, 0, real_register_to_idx(0), 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 5);
 
         // integer to real
@@ -246,7 +247,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.rregisters[0], 5.2);
 
         // vector to vector
@@ -261,7 +262,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.vregisters[0], vec![3.0, 5.0, 7.1]);
 
         // real to vector
@@ -276,7 +277,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.vregisters[0], vec![2.2, 3.2, 4.3]);
 
         // vector to real
@@ -291,7 +292,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.vregisters[0], vec![2.2, 3.2, 4.3]);
 
         // TODO: test error cases
@@ -305,7 +306,7 @@ mod tests {
         vm.program = vec![Opcode::SUB as u8, 128, 128, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.rregisters[0], 1.0);
 
         // real to integer
@@ -315,7 +316,7 @@ mod tests {
         vm.program = vec![Opcode::SUB as u8, 0, real_register_to_idx(0), 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // integer to real
@@ -330,7 +331,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_approx_eq!(vm.rregisters[0], 1.2);
 
         // vector to vector
@@ -345,7 +346,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         for (i, vreg) in vec![-1.0, -1.0, -0.9].iter().enumerate() {
             assert_approx_eq!(vm.vregisters[0][i], vreg);
         }
@@ -362,7 +363,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         for (i, vreg) in vec![-0.2, 0.8, 1.9].iter().enumerate() {
             assert_approx_eq!(vm.vregisters[0][i], vreg);
         }
@@ -389,7 +390,7 @@ mod tests {
         vm.program = vec![Opcode::MUL as u8, 0, 0, 129];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 6);
 
         // real to integer
@@ -399,7 +400,7 @@ mod tests {
         vm.program = vec![Opcode::MUL as u8, 0, real_register_to_idx(0), 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 6);
 
         // integer to real
@@ -414,7 +415,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_approx_eq!(vm.rregisters[0], 6.4);
 
         // vector to vector
@@ -429,7 +430,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.vregisters[0], vec![2.0, 6.0, 12.4]);
 
         // real to vector
@@ -444,7 +445,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         for (i, vreg) in vec![1.2, 2.4, 3.72].iter().enumerate() {
             assert_approx_eq!(vm.vregisters[0][i], vreg);
         }
@@ -461,7 +462,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         for (i, vreg) in vec![1.2, 2.4, 3.72].iter().enumerate() {
             assert_approx_eq!(vm.vregisters[0][i], vreg);
         }
@@ -477,7 +478,7 @@ mod tests {
         vm.program = vec![Opcode::DIV as u8, 128, 128, 129];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.rregisters[0], 1.5);
 
         // real to integer
@@ -487,7 +488,7 @@ mod tests {
         vm.program = vec![Opcode::DIV as u8, 0, real_register_to_idx(0), 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // integer to real
@@ -502,7 +503,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_approx_eq!(vm.rregisters[0], 1.6);
 
         // vector to vector
@@ -517,7 +518,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         for (i, vreg) in vec![0.5, 0.6666666, 0.775].iter().enumerate() {
             assert_approx_eq!(vm.vregisters[0][i], vreg);
         }
@@ -534,7 +535,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         for (i, vreg) in vec![0.8333333, 1.6666666, 2.5833333].iter().enumerate() {
             assert_approx_eq!(vm.vregisters[0][i], vreg);
         }

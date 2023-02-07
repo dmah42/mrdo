@@ -25,9 +25,9 @@ named!(integer_operand<CompleteStr, Token>,
                 {
                     let mut tmp = String::from("");
                     if sign.is_some() {
-                        tmp.push_str("-");
+                        tmp.push('-');
                     }
-                    tmp.push_str(&integer.to_string());
+                    tmp.push_str(integer.as_ref());
                     Token::Integer{value: tmp.parse::<i32>().unwrap()}
                 }
             )
@@ -47,11 +47,11 @@ named!(real_operand<CompleteStr, Token>,
                 {
                     let mut tmp = String::from("");
                     if sign.is_some() {
-                        tmp.push_str("-");
+                        tmp.push('-');
                     }
-                    tmp.push_str(&left.to_string());
-                    tmp.push_str(".");
-                    tmp.push_str(&right.to_string());
+                    tmp.push_str(left.as_ref());
+                    tmp.push('.');
+                    tmp.push_str(right.as_ref());
                     Token::Real{value: tmp.parse::<f64>().unwrap()}
                 }
             )

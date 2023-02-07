@@ -1,7 +1,7 @@
 use nom::types::CompleteStr;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
-#[derive(Debug, PartialEq, TryFromPrimitive, IntoPrimitive)]
+#[derive(Debug, PartialEq, Eq, TryFromPrimitive, IntoPrimitive)]
 #[repr(u8)]
 // TODO: LW/SW already don't operate only on words so should be renamed. maybe find a vec version too?
 pub enum Opcode {
@@ -22,6 +22,9 @@ pub enum Opcode {
     GTE,
     LTE,
     JEQ,
+    AND,
+    OR,
+    NOT,
     ALLOC,
     SYSCALL,
     IGL = 255,
@@ -48,6 +51,9 @@ impl<'a> From<CompleteStr<'a>> for Opcode {
             CompleteStr("gte") => Opcode::GTE,
             CompleteStr("lte") => Opcode::LTE,
             CompleteStr("jeq") => Opcode::JEQ,
+            CompleteStr("and") => Opcode::AND,
+            CompleteStr("or") => Opcode::OR,
+            CompleteStr("not") => Opcode::NOT,
             CompleteStr("alloc") => Opcode::ALLOC,
             CompleteStr("syscall") => Opcode::SYSCALL,
             _ => Opcode::IGL,

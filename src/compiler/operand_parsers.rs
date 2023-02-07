@@ -14,7 +14,7 @@ named!(pub real<CompleteStr, Token>,
                 {
                     let mut tmp = String::from("");
                     if sign.is_some() {
-                        tmp.push_str("-");
+                        tmp.push('-');
                     }
                     tmp.push_str(&real.to_string());
                     let converted = tmp.parse::<f64>().unwrap();

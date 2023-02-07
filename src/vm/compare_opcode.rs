@@ -327,7 +327,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -336,7 +336,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // real == integer
@@ -346,7 +346,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, real_register_to_idx(0), 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -355,7 +355,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, real_register_to_idx(0), 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // integer == real
@@ -365,7 +365,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, real_register_to_idx(1)];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -374,7 +374,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, real_register_to_idx(1)];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // integer == real
@@ -389,7 +389,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -403,7 +403,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // vector == vector
@@ -418,7 +418,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -432,7 +432,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
     }
 
@@ -445,7 +445,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -454,7 +454,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // real == integer
@@ -464,7 +464,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, real_register_to_idx(0), 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -473,7 +473,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, real_register_to_idx(0), 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // integer == real
@@ -483,7 +483,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, real_register_to_idx(1)];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -492,7 +492,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, real_register_to_idx(1)];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // integer == real
@@ -507,7 +507,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -521,7 +521,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // vector == vector
@@ -536,7 +536,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -550,7 +550,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
     }
 
@@ -563,7 +563,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -572,7 +572,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // real == integer
@@ -582,7 +582,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, real_register_to_idx(0), 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -591,7 +591,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, real_register_to_idx(0), 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // integer == real
@@ -601,7 +601,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, real_register_to_idx(1)];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -610,7 +610,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, real_register_to_idx(1)];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // integer == real
@@ -625,7 +625,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -639,7 +639,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // vector == vector
@@ -654,7 +654,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -668,7 +668,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
     }
 
@@ -681,7 +681,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -690,7 +690,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // real == integer
@@ -700,7 +700,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, real_register_to_idx(0), 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -709,7 +709,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, real_register_to_idx(0), 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // integer == real
@@ -719,7 +719,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, real_register_to_idx(1)];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -728,7 +728,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, real_register_to_idx(1)];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // integer == real
@@ -743,7 +743,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -757,7 +757,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // vector == vector
@@ -772,7 +772,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -786,7 +786,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
     }
     #[test]
@@ -798,7 +798,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -807,7 +807,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // real == integer
@@ -817,7 +817,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, real_register_to_idx(0), 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -826,7 +826,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, real_register_to_idx(0), 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // integer == real
@@ -836,7 +836,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, real_register_to_idx(1)];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -845,7 +845,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, real_register_to_idx(1)];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // integer == real
@@ -860,7 +860,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -874,7 +874,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // vector == vector
@@ -889,7 +889,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -903,7 +903,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
     }
     #[test]
@@ -915,7 +915,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -924,7 +924,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // real == integer
@@ -934,7 +934,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, real_register_to_idx(0), 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -943,7 +943,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, real_register_to_idx(0), 1];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // integer == real
@@ -953,7 +953,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, real_register_to_idx(1)];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -962,7 +962,7 @@ mod tests {
         vm.program = vec![Opcode::EQ as u8, 0, 0, real_register_to_idx(1)];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // integer == real
@@ -977,7 +977,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -991,7 +991,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
 
         // vector == vector
@@ -1006,7 +1006,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 0);
 
         let mut vm = VM::new();
@@ -1020,7 +1020,7 @@ mod tests {
         ];
         let exit = vm.step();
         assert!(exit.is_ok());
-        assert_eq!(exit.unwrap(), false);
+        assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
     }
 }

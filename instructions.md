@@ -62,5 +62,8 @@ Stores a dword (8 bytes) from real register *R* into memory at offset stored in 
 ## GTE,
 ## LTE,
 ## JEQ,
+## AND,
+## OR,
+## NOT,
 ## ALLOC,
 ## PRINT,

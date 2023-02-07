@@ -22,8 +22,8 @@ named!(pub directive<CompleteStr, Instruction>,
             l: opt!(label_decl) >>
             name: directive_decl >>
             o0: opt!(operand) >>
-            o1: opt!(operand) >>
-            o2: opt!(operand) >>
+            _o1: opt!(operand) >>
+            _o2: opt!(operand) >>
             (
                 Instruction::new_directive(name, l, o0)
             )

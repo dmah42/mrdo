@@ -35,7 +35,7 @@ pub enum Token {
     DoString { value: String },
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Phase {
     First,
     Second,
@@ -223,7 +223,7 @@ impl Assembler {
         header.push((ro_len >> 8) as u8);
         header.push(ro_len as u8);
         while header.len() < DO_HEADER_LEN {
-            header.push(0 as u8);
+            header.push(0);
         }
         header
     }
@@ -235,7 +235,7 @@ impl Default for Assembler {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Section {
     Data { offset: Option<u32> },
     Code { offset: Option<u32> },

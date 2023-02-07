@@ -17,7 +17,7 @@ pub mod repl;
 pub mod vm;
 
 #[derive(StructOpt)]
-struct CLI {
+struct Cli {
     #[structopt(parse(from_os_str))]
     program: Option<std::path::PathBuf>,
 
@@ -38,7 +38,7 @@ struct CLI {
 }
 
 fn main() {
-    let args = CLI::from_args();
+    let args = Cli::from_args();
 
     match args.program {
         Some(p) => {
@@ -54,7 +54,7 @@ fn main() {
 }
 
 fn read_bytecode(tmp: &std::path::PathBuf) -> Option<Vec<u8>> {
-    let bytecode = fs::read(&tmp).unwrap();
+    let bytecode = fs::read(tmp).unwrap();
 
     match is_valid_bytecode(&bytecode) {
         true => Some(bytecode),
@@ -80,7 +80,7 @@ fn run_repl() {
 
 fn run_bytecode(bytecode: &[u8], list_bc: bool, list_reg: bool) {
     let mut vm = VM::new();
-    if let Err(e) = vm.set_bytecode(&bytecode) {
+    if let Err(e) = vm.set_bytecode(bytecode) {
         println!("vmerror: {}", e);
     }
 
@@ -120,7 +120,7 @@ fn compile(
 ) -> Vec<u8> {
     let mut compiler = Compiler::new();
 
-    let source = read_assembly(&assembly);
+    let source = read_assembly(assembly);
     let assembly = compiler.compile(&source);
     if let Err(e) = assembly {
         println!("compiler error: {}", e);

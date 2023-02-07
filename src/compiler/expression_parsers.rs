@@ -29,21 +29,35 @@ named!(arith<CompleteStr, Token>,
     )
 );
 
-named!(compare<CompleteStr, Token>,
+named!(bin_op<CompleteStr, Token>,
     ws!(
         do_parse!(
             left: rvalue >>
             op: alt!(
-                eq_op | neq_op | gte_op | gt_op | lte_op | lt_op
+                eq_op | neq_op | gte_op | gt_op | lte_op | lt_op |
+                and_op | or_op
             ) >>
             right: rvalue >>
             (
-                Token::Compare{ left: Box::new(left), op: Box::new(op), right: Box::new(right) }
+                Token::BinOp{ left: Box::new(left), op: Box::new(op), right: Box::new(right) }
             )
         )
     )
 );
 
+named!(unary_op<CompleteStr, Token>,
+    ws!(
+        do_parse!(
+            op: not_op >>
+            right: rvalue >>
+            (
+                Token::UnaryOp {op: Box::new(op), right: Box::new(right)}
+            )
+        )
+    )
+);
+
+// FIXME: unable to assign to expressions.  figure out the ebnf
 named!(assign<CompleteStr, Token>,
     ws!(
         do_parse!(
@@ -80,7 +94,7 @@ named!(pub rvalue<CompleteStr, Token>,
 
 named!(pub expression<CompleteStr, Token>,
     alt!(
-        comment  | assign | compare | rvalue
+        comment | assign | bin_op | unary_op | rvalue
     )
 );
 
@@ -143,13 +157,13 @@ mod tests {
     }
 
     #[test]
-    fn test_compare() {
-        let result = compare(CompleteStr("1.3 + 4.1 neq 2.1"));
+    fn test_binop() {
+        let result = bin_op(CompleteStr("1.3 + 4.1 neq 2.1"));
         assert!(result.is_ok());
         let (_, token) = result.unwrap();
         assert_eq!(
             token,
-            Token::Compare {
+            Token::BinOp {
                 left: Box::new(Token::Expression {
                     left: Box::new(Token::Term {
                         left: Box::new(Token::Factor {
@@ -177,6 +191,28 @@ mod tests {
                     }),
                     right: vec![],
                 })
+            }
+        );
+    }
+
+    #[test]
+    fn test_unary_op() {
+        let result = unary_op(CompleteStr("not 42.0"));
+        assert!(result.is_ok());
+        let (_, token) = result.unwrap();
+        assert_eq!(
+            token,
+            Token::UnaryOp {
+                op: Box::new(Token::NotOp),
+                right: Box::new(Token::Expression {
+                    left: Box::new(Token::Term {
+                        left: Box::new(Token::Factor {
+                            value: Box::new(Token::Real { value: 42.0 }),
+                        }),
+                        right: vec![],
+                    }),
+                    right: vec![],
+                }),
             }
         );
     }

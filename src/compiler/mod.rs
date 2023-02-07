@@ -90,7 +90,7 @@ impl Compiler {
     // NOTE: public for the repl
     pub fn compile_expr(&mut self, source: &str) -> Result<&Vec<String>, Error> {
         self.assembly.clear();
-        let (_, tree) = expression(CompleteStr(source)).unwrap();
+        let (_, tree) = expression(CompleteStr(source)).map_err(|e| Error::new(e.to_string()))?;
         self.visit_token(&tree)?;
         Ok(&self.assembly)
     }
@@ -102,7 +102,7 @@ impl Compiler {
                 VmRegister::R(_) => &self.free_real_reg,
                 VmRegister::V(_) => &self.free_vec_reg,
             };
-            if free_reg.contains(&used_reg) {
+            if free_reg.contains(used_reg) {
                 panic!("Integrity check failed");
             }
         }
@@ -174,6 +174,41 @@ impl Compiler {
         self.push_free_reg(left_reg);
         self.push_free_reg(right_reg);
     }
+
+    fn add_logical_instruction(&mut self, op: &str) {
+        if op == "not" {
+            let right_reg = self.used_reg.pop().unwrap();
+            let result_reg = self.free_int_reg.pop().unwrap();
+
+            let result_char = result_reg.get_char();
+            let right_char = right_reg.get_char();
+
+            self.assembly.push(format!(
+                "{} ${}{} ${}{}",
+                op, result_char, result_reg.idx, right_char, right_reg.idx
+            ));
+
+            self.used_reg.push(result_reg);
+            self.push_free_reg(right_reg);
+        } else {
+            let right_reg = self.used_reg.pop().unwrap();
+            let left_reg = self.used_reg.pop().unwrap();
+            let result_reg = self.free_int_reg.pop().unwrap();
+
+            let result_char = result_reg.get_char();
+            let left_char = left_reg.get_char();
+            let right_char = right_reg.get_char();
+
+            self.assembly.push(format!(
+                "{} ${}{} ${}{} ${}{}",
+                op, result_char, result_reg.idx, left_char, left_reg.idx, right_char, right_reg.idx
+            ));
+
+            self.used_reg.push(result_reg);
+            self.push_free_reg(left_reg);
+            self.push_free_reg(right_reg);
+        }
+    }
 }
 
 impl Visitor for Compiler {
@@ -199,7 +234,17 @@ impl Visitor for Compiler {
             Token::LessThanOp => self.add_compare_instruction("lt"),
             Token::LessThanEqualsOp => self.add_compare_instruction("lte"),
 
-            Token::Compare { left, op, right } => {
+            // Logical
+            Token::AndOp => self.add_logical_instruction("and"),
+            Token::OrOp => self.add_logical_instruction("or"),
+            Token::NotOp => self.add_logical_instruction("not"),
+
+            Token::UnaryOp { op, right } => {
+                self.visit_token(right)?;
+                self.visit_token(op)?;
+            }
+
+            Token::BinOp { left, op, right } => {
                 self.visit_token(left)?;
                 self.visit_token(right)?;
                 self.visit_token(op)?;
@@ -734,7 +779,7 @@ mod tests {
         );
         assert_eq!(
             compiler.variables,
-            [("foo".to_string(), 0 as usize)].iter().cloned().collect()
+            [("foo".to_string(), 0)].iter().cloned().collect()
         );
 
         let mut compiler = Compiler::new();
@@ -769,13 +814,10 @@ mod tests {
         );
         assert_eq!(
             compiler.variables,
-            [
-                ("foo".to_string(), 0 as usize),
-                ("bar".to_string(), 1 as usize)
-            ]
-            .iter()
-            .cloned()
-            .collect()
+            [("foo".to_string(), 0), ("bar".to_string(), 1)]
+                .iter()
+                .cloned()
+                .collect()
         );
     }
 

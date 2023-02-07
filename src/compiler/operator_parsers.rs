@@ -6,10 +6,7 @@ use nom::*;
 named!(pub addition_op<CompleteStr, Token>,
     ws!(
         do_parse!(
-            tag!("+") >>
-            (
-                Token::AdditionOp
-            )
+            tag!("+") >> ( Token::AdditionOp )
         )
     )
 );
@@ -17,10 +14,7 @@ named!(pub addition_op<CompleteStr, Token>,
 named!(pub subtraction_op<CompleteStr, Token>,
     ws!(
         do_parse!(
-            tag!("-") >>
-            (
-                Token::SubtractionOp
-            )
+            tag!("-") >> ( Token::SubtractionOp )
         )
     )
 );
@@ -28,10 +22,7 @@ named!(pub subtraction_op<CompleteStr, Token>,
 named!(pub multiplication_op<CompleteStr, Token>,
     ws!(
         do_parse!(
-            tag!("*") >>
-            (
-                Token::MultiplicationOp
-            )
+            tag!("*") >> ( Token::MultiplicationOp )
         )
     )
 );
@@ -39,10 +30,7 @@ named!(pub multiplication_op<CompleteStr, Token>,
 named!(pub division_op<CompleteStr, Token>,
     ws!(
         do_parse!(
-            tag!("/") >>
-            (
-                Token::DivisionOp
-            )
+            tag!("/") >> ( Token::DivisionOp )
         )
     )
 );
@@ -50,10 +38,7 @@ named!(pub division_op<CompleteStr, Token>,
 named!(pub eq_op<CompleteStr, Token>,
     ws!(
         do_parse!(
-            tag!("eq") >>
-            (
-                Token::EqualsOp
-            )
+            tag!("eq") >> ( Token::EqualsOp )
         )
     )
 );
@@ -61,10 +46,7 @@ named!(pub eq_op<CompleteStr, Token>,
 named!(pub neq_op<CompleteStr, Token>,
     ws!(
         do_parse!(
-            tag!("neq") >>
-            (
-                Token::NotEqualsOp
-            )
+            tag!("neq") >> ( Token::NotEqualsOp )
         )
     )
 );
@@ -72,10 +54,7 @@ named!(pub neq_op<CompleteStr, Token>,
 named!(pub gt_op<CompleteStr, Token>,
     ws!(
         do_parse!(
-            tag!("gt") >>
-            (
-                Token::GreaterThanOp
-            )
+            tag!("gt") >> ( Token::GreaterThanOp )
         )
     )
 );
@@ -83,10 +62,7 @@ named!(pub gt_op<CompleteStr, Token>,
 named!(pub gte_op<CompleteStr, Token>,
     ws!(
         do_parse!(
-            tag!("gte") >>
-            (
-                Token::GreaterThanEqualsOp
-            )
+            tag!("gte") >> ( Token::GreaterThanEqualsOp )
         )
     )
 );
@@ -94,10 +70,7 @@ named!(pub gte_op<CompleteStr, Token>,
 named!(pub lt_op<CompleteStr, Token>,
     ws!(
         do_parse!(
-            tag!("lt") >>
-            (
-                Token::LessThanOp
-            )
+            tag!("lt") >> ( Token::LessThanOp )
         )
     )
 );
@@ -105,10 +78,31 @@ named!(pub lt_op<CompleteStr, Token>,
 named!(pub lte_op<CompleteStr, Token>,
     ws!(
         do_parse!(
-            tag!("lte") >>
-            (
-                Token::LessThanEqualsOp
-            )
+            tag!("lte") >> ( Token::LessThanEqualsOp )
+        )
+    )
+);
+
+named!(pub and_op<CompleteStr, Token>,
+    ws!(
+        do_parse!(
+            tag!("and") >> ( Token::AndOp )
+        )
+    )
+);
+
+named!(pub or_op<CompleteStr, Token>,
+    ws!(
+        do_parse!(
+            tag!("or") >> ( Token::OrOp )
+        )
+    )
+);
+
+named!(pub not_op<CompleteStr, Token>,
+    ws!(
+        do_parse!(
+            tag!("not") >> ( Token::NotOp )
         )
     )
 );

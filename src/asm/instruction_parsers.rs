@@ -68,12 +68,10 @@ impl Instruction {
     }
 
     pub fn label_name(&self) -> Option<String> {
-        match &self.label {
-            Some(l) => match l {
-                Token::LabelDecl { name } => Some(name.clone()),
-                _ => None,
-            },
-            None => None,
+        if let Some(Token::LabelDecl { name }) = &self.label {
+            Some(name.clone())
+        } else {
+            None
         }
     }
 
@@ -82,12 +80,10 @@ impl Instruction {
     }
 
     pub fn directive_name(&self) -> Option<String> {
-        match &self.directive {
-            Some(d) => match d {
-                Token::Directive { name } => Some(name.to_string()),
-                _ => None,
-            },
-            None => None,
+        if let Some(Token::Directive { name }) = &self.directive {
+            Some(name.clone())
+        } else {
+            None
         }
     }
 
@@ -100,12 +96,10 @@ impl Instruction {
     }
 
     pub fn string_constant(&self) -> Option<String> {
-        match &self.operand0 {
-            Some(d) => match d {
-                Token::DoString { value } => Some(value.to_string()),
-                _ => None,
-            },
-            None => None,
+        if let Some(Token::DoString { value }) = &self.operand0 {
+            Some(value.clone())
+        } else {
+            None
         }
     }
 
@@ -122,11 +116,14 @@ impl Instruction {
             }
         };
 
-        for operand in &[&self.operand0, &self.operand1, &self.operand2] {
-            if let Some(token) = operand {
-                Instruction::extract_operand(token, symbols, &mut results)?
-            }
-        }
+        [&self.operand0, &self.operand1, &self.operand2]
+            .iter()
+            .copied()
+            .flatten()
+            .try_for_each(|token| -> Result<(), Error> {
+                Instruction::extract_operand(token, symbols, &mut results)?;
+                Ok(())
+            })?;
 
         while results.len() < 4 {
             results.push(0);
@@ -208,7 +205,7 @@ named!(pub instruction<CompleteStr, Instruction>,
 
 named!(instruction_comb<CompleteStr, Instruction>,
     do_parse!(
-        l: opt!(label_decl) >>
+        _l: opt!(label_decl) >>
         o: opcode >>
         o0: opt!(operand) >>
         o1: opt!(operand) >>

@@ -18,7 +18,17 @@ pub enum Token {
     LessThanOp,
     LessThanEqualsOp,
 
-    Compare {
+    // Logical
+    AndOp,
+    OrOp,
+    NotOp,
+
+    UnaryOp {
+        op: Box<Token>,
+        right: Box<Token>,
+    },
+
+    BinOp {
         left: Box<Token>,
         op: Box<Token>,
         right: Box<Token>,
