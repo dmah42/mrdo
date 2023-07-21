@@ -1,74 +1,43 @@
+use nom::branch::alt;
+use nom::bytes::complete::{tag, take_until};
+use nom::combinator::map_res;
+use nom::number::complete::double;
+use nom::sequence::{delimited, preceded};
+use nom::IResult;
+
 use crate::asm::label_parsers::label_ref;
 use crate::asm::register_parsers::register;
 use crate::asm::Token;
 
-use nom::digit;
-use nom::types::CompleteStr;
+pub fn operand(i: &str) -> IResult<&str, Token> {
+    alt((num_operand, label_ref, register, string))(i)
+}
 
-named!(pub operand<CompleteStr, Token>,
-    alt!(
-        real_operand |
-        integer_operand |
-        label_ref |
-        register |
-        string
-    )
-);
+pub fn num_operand(i: &str) -> IResult<&str, Token> {
+    map_res(
+        preceded(tag("#"), double),
+        |value| -> Result<Token, nom::error::Error<&str>> {
+            if value == (value as i32) as f64 {
+                Ok(Token::Integer {
+                    value: value as i32,
+                })
+            } else {
+                Ok(Token::Real { value })
+            }
+        },
+    )(i)
+}
 
-named!(integer_operand<CompleteStr, Token>,
-    ws!(
-        do_parse!(
-            tag!("#") >>
-            sign: opt!(tag!("-")) >>
-            integer: digit >>
-            (
-                {
-                    let mut tmp = String::from("");
-                    if sign.is_some() {
-                        tmp.push('-');
-                    }
-                    tmp.push_str(integer.as_ref());
-                    Token::Integer{value: tmp.parse::<i32>().unwrap()}
-                }
-            )
-        )
-    )
-);
-
-named!(real_operand<CompleteStr, Token>,
-    ws!(
-        do_parse!(
-            tag!("#") >>
-            sign: opt!(tag!("-")) >>
-            left: digit >>
-            tag!(".") >>
-            right: digit >>
-            (
-                {
-                    let mut tmp = String::from("");
-                    if sign.is_some() {
-                        tmp.push('-');
-                    }
-                    tmp.push_str(left.as_ref());
-                    tmp.push('.');
-                    tmp.push_str(right.as_ref());
-                    Token::Real{value: tmp.parse::<f64>().unwrap()}
-                }
-            )
-        )
-    )
-);
-
-named!(string<CompleteStr, Token>,
-    do_parse!(
-        tag!("'") >>
-        content: take_until!("'") >>
-        tag!("'") >>
-        (
-            Token::DoString{ value: content.to_string() }
-        )
-    )
-);
+pub fn string(i: &str) -> IResult<&str, Token> {
+    map_res(
+        delimited(tag("'"), take_until("'"), tag("'")),
+        |content| -> Result<Token, nom::error::Error<&str>> {
+            Ok(Token::DoString {
+                value: String::from(content),
+            })
+        },
+    )(i)
+}
 
 #[cfg(test)]
 mod tests {
@@ -76,54 +45,54 @@ mod tests {
 
     #[test]
     fn test_parse_integer() {
-        let result = integer_operand(CompleteStr("#42"));
+        let result = num_operand("#42");
         assert!(result.is_ok());
 
         let (rest, value) = result.unwrap();
-        assert_eq!(rest, CompleteStr(""));
+        assert_eq!(rest, "");
         assert_eq!(value, Token::Integer { value: 42 });
 
-        let result = integer_operand(CompleteStr("42"));
+        let result = num_operand("42");
         assert!(result.is_err());
     }
 
     #[test]
     fn test_parse_real() {
-        let result = real_operand(CompleteStr("#4.2"));
+        let result = num_operand("#4.2");
         assert!(result.is_ok());
 
         let (rest, value) = result.unwrap();
-        assert_eq!(rest, CompleteStr(""));
+        assert_eq!(rest, "");
         assert_eq!(value, Token::Real { value: 4.2 });
 
-        let result = real_operand(CompleteStr("4.2"));
+        let result = num_operand("4.2");
         assert!(result.is_err());
     }
 
     #[test]
     fn test_parse_operand() {
-        let result = operand(CompleteStr("#3.145"));
+        let result = operand("#3.145");
         assert!(result.is_ok());
 
         let (rest, value) = result.unwrap();
-        assert_eq!(rest, CompleteStr(""));
+        assert_eq!(rest, "");
         assert_eq!(value, Token::Real { value: 3.145 });
 
-        let result = operand(CompleteStr("#4"));
+        let result = operand("#4");
         assert!(result.is_ok());
 
         let (rest, value) = result.unwrap();
-        assert_eq!(rest, CompleteStr(""));
+        assert_eq!(rest, "");
         assert_eq!(value, Token::Integer { value: 4 });
     }
 
     #[test]
     fn test_parse_label() {
-        let result = operand(CompleteStr("@test"));
+        let result = operand("@test");
         assert!(result.is_ok());
 
         let (rest, value) = result.unwrap();
-        assert_eq!(rest, CompleteStr(""));
+        assert_eq!(rest, "");
         assert_eq!(
             value,
             Token::LabelRef {
@@ -131,17 +100,17 @@ mod tests {
             }
         );
 
-        let result = operand(CompleteStr("test"));
+        let result = operand("test");
         assert!(result.is_err());
     }
 
     #[test]
     fn test_parse_string() {
-        let result = string(CompleteStr("'hello do'"));
+        let result = string("'hello do'");
         assert!(result.is_ok());
 
         let (rest, value) = result.unwrap();
-        assert_eq!(rest, CompleteStr(""));
+        assert_eq!(rest, "");
         assert_eq!(
             value,
             Token::DoString {
@@ -149,7 +118,7 @@ mod tests {
             }
         );
 
-        let result = string(CompleteStr("'invalid"));
+        let result = string("'invalid");
         assert!(result.is_err());
     }
 }

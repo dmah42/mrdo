@@ -6,13 +6,13 @@ Halts the current program.
 ## LOAD
 Loads values into registers. There are variants for different register types:
 
-*LOAD $rI #i*
+*LOAD $iI #i*
 Loads an integer (*i*) into an integer register (*I*).
 
 *LOAD $rR #r*
 Loads a real (*r*) into a real register (*R*).
 
-*LOAD $rV $iA #l*
+*LOAD $vV $iA #l*
 Loads a vector from memory (offset in integer register *A*, length *l*) into a vector register (*V*).
 
 ## COPY

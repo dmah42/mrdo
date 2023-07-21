@@ -1,63 +1,46 @@
+use nom::{
+    branch::alt, bytes::complete::tag, character::complete::digit1, combinator::map_res,
+    sequence::preceded, IResult,
+};
+
 use crate::asm::Token;
 
-use nom::digit;
-use nom::types::CompleteStr;
+fn iregister(i: &str) -> IResult<&str, Token> {
+    map_res(
+        preceded(tag("$i"), digit1),
+        |idx: &str| -> Result<Token, nom::error::Error<&str>> {
+            Ok(Token::IntRegister {
+                idx: idx.parse::<u8>().unwrap(),
+            })
+        },
+    )(i)
+}
 
-// $i0 for integer register 0
-named!(iregister<CompleteStr, Token>,
-    ws!(
-        do_parse!(
-            tag!("$i") >>
-            reg_idx: digit >>
-            (
-                Token::IntRegister{
-                    idx: reg_idx.parse::<u8>().unwrap()
-                }
-            )
-        )
-    )
-);
+fn rregister(i: &str) -> IResult<&str, Token> {
+    map_res(
+        preceded(tag("$r"), digit1),
+        |idx: &str| -> Result<Token, nom::error::Error<&str>> {
+            Ok(Token::RealRegister {
+                idx: idx.parse::<u8>().unwrap(),
+            })
+        },
+    )(i)
+}
 
-// $r0 for real register 0
-named!(rregister<CompleteStr, Token>,
-    ws!(
-        do_parse!(
-            tag!("$r") >>
-            reg_idx: digit >>
-            (
-                Token::RealRegister{
-                    idx: reg_idx.parse::<u8>().unwrap()
-                }
-            )
-        )
-    )
-);
+fn vregister(i: &str) -> IResult<&str, Token> {
+    map_res(
+        preceded(tag("$v"), digit1),
+        |idx: &str| -> Result<Token, nom::error::Error<&str>> {
+            Ok(Token::VectorRegister {
+                idx: idx.parse::<u8>().unwrap(),
+            })
+        },
+    )(i)
+}
 
-// $v0 for vector register 0
-named!(vregister<CompleteStr, Token>,
-    ws!(
-        do_parse!(
-            tag!("$v") >>
-            reg_idx: digit >>
-            (
-                Token::VectorRegister{
-                    idx: reg_idx.parse::<u8>().unwrap()
-                }
-            )
-        )
-    )
-);
-
-named!(pub register<CompleteStr, Token>,
-    do_parse!(
-        reg: alt!(
-            iregister | rregister | vregister
-        ) >>
-        (
-            reg
-        )
-    )
-);
+pub fn register(i: &str) -> IResult<&str, Token> {
+    alt((iregister, rregister, vregister))(i)
+}
 
 #[cfg(test)]
 mod tests {
@@ -65,31 +48,31 @@ mod tests {
 
     #[test]
     fn test_parse_register() {
-        let result = register(CompleteStr("$i1"));
+        let result = register("$i1");
         assert!(result.is_ok());
 
         let (rest, value) = result.unwrap();
-        assert_eq!(rest, CompleteStr(""));
+        assert_eq!(rest, "");
         assert_eq!(value, Token::IntRegister { idx: 1 });
 
-        let result = register(CompleteStr("$r1"));
+        let result = register("$r1");
         assert!(result.is_ok());
 
         let (rest, value) = result.unwrap();
-        assert_eq!(rest, CompleteStr(""));
+        assert_eq!(rest, "");
         assert_eq!(value, Token::RealRegister { idx: 1 });
 
-        let result = register(CompleteStr("$v30"));
+        let result = register("$v30");
         assert!(result.is_ok());
 
         let (rest, value) = result.unwrap();
-        assert_eq!(rest, CompleteStr(""));
+        assert_eq!(rest, "");
         assert_eq!(value, Token::VectorRegister { idx: 30 });
 
-        let result = register(CompleteStr("0"));
+        let result = register("0");
         assert!(result.is_err());
 
-        let result = register(CompleteStr("$a"));
+        let result = register("$a");
         assert!(result.is_err());
     }
 }

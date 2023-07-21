@@ -1,35 +1,42 @@
+use nom::bytes::complete::tag;
+use nom::character::complete::{alpha1, multispace1};
+use nom::combinator::{map_res, opt};
+use nom::sequence::{pair, preceded, terminated, tuple};
+use nom::IResult;
+
 use crate::asm::instruction_parsers::Instruction;
 use crate::asm::label_parsers::label_decl;
 use crate::asm::operand_parsers::operand;
 use crate::asm::Token;
 
-use nom::alpha1;
-use nom::types::CompleteStr;
+fn directive_decl(i: &str) -> IResult<&str, Token> {
+    map_res(
+        pair(tag("."), alpha1),
+        |(_, name)| -> Result<Token, nom::error::Error<&str>> {
+            Ok(Token::Directive {
+                name: String::from(name),
+            })
+        },
+    )(i)
+}
 
-named!(directive_decl<CompleteStr, Token>,
-    do_parse!(
-        tag!(".") >>
-        name: alpha1 >>
-        (
-            Token::Directive{name: name.to_string()}
-        )
-    )
-);
-
-named!(pub directive<CompleteStr, Instruction>,
-    ws!(
-        do_parse!(
-            l: opt!(label_decl) >>
-            name: directive_decl >>
-            o0: opt!(operand) >>
-            _o1: opt!(operand) >>
-            _o2: opt!(operand) >>
-            (
-                Instruction::new_directive(name, l, o0)
-            )
-        )
-    )
-);
+pub fn directive(i: &str) -> IResult<&str, Instruction> {
+    map_res(
+        terminated(
+            tuple((
+                opt(label_decl),
+                directive_decl,
+                opt(preceded(multispace1, operand)),
+                opt(preceded(multispace1, operand)),
+                opt(preceded(multispace1, operand)),
+            )),
+            opt(tag("\n")),
+        ),
+        |(l, name, o0, _o1, _o2)| -> Result<Instruction, nom::error::Error<&str>> {
+            Ok(Instruction::new_directive(name, l, o0))
+        },
+    )(i)
+}
 
 #[cfg(test)]
 mod tests {
@@ -37,7 +44,7 @@ mod tests {
 
     #[test]
     fn test_parser_directive() {
-        let result = directive_decl(CompleteStr(".data"));
+        let result = directive_decl(".data");
         assert!(result.is_ok());
         let (_, directive) = result.unwrap();
         assert_eq!(
@@ -50,7 +57,7 @@ mod tests {
 
     #[test]
     fn test_string_directive() {
-        let result = directive(CompleteStr("test: .str 'Hello'"));
+        let result = directive("test: .str 'Hello'");
         assert!(result.is_ok());
         let (_, directive) = result.unwrap();
 

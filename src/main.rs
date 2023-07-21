@@ -1,11 +1,9 @@
-#[macro_use]
-extern crate nom;
-
 use crate::asm::Assembler;
 use crate::compiler::Compiler;
 use crate::repl::REPL;
 use crate::vm::{is_valid_bytecode, VM};
 
+use log::LevelFilter;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
@@ -24,6 +22,9 @@ struct Cli {
     #[structopt(short, long, parse(from_os_str))]
     output: Option<std::path::PathBuf>,
 
+    #[structopt(short("d"), long)]
+    debug: bool,
+
     #[structopt(short("a"), long)]
     list_asm: bool,
 
@@ -39,6 +40,14 @@ struct Cli {
 
 fn main() {
     let args = Cli::from_args();
+
+    if args.debug {
+        env_logger::builder()
+            .filter_level(LevelFilter::Debug)
+            .init();
+    } else {
+        env_logger::init();
+    }
 
     match args.program {
         Some(p) => {

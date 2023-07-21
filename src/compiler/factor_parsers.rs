@@ -1,26 +1,25 @@
+use nom::branch::alt;
+use nom::bytes::complete::tag;
+use nom::combinator::map_res;
+use nom::sequence::delimited;
+use nom::IResult;
+
 use crate::compiler::expression_parsers::*;
 use crate::compiler::operand_parsers::*;
 use crate::compiler::tokens::Token;
 
-use nom::types::CompleteStr;
-use nom::*;
-
-named!(pub factor<CompleteStr, Token>,
-    ws!(
-        do_parse!(
-            f: alt!(
-                real |
-                ws!(delimited!(tag!("("), rvalue, tag!(")"))) |
-                ident
-            ) >>
-            (
-                {
-                    Token::Factor{value: Box::new(f)}
-                }
-            )
-        )
-    )
-);
+pub fn factor(i: &str) -> IResult<&str, Token> {
+    log::debug!("[factor] parsing '{}'", i);
+    map_res(
+        alt((num, delimited(tag("("), rvalue, tag(")")), ident)),
+        |factor| -> Result<Token, nom::error::Error<&str>> {
+            log::debug!("[factor] success ({:?})", factor);
+            Ok(Token::Factor {
+                value: Box::new(factor),
+            })
+        },
+    )(i)
+}
 
 #[cfg(test)]
 mod tests {
@@ -28,16 +27,16 @@ mod tests {
 
     #[test]
     fn test_factor() {
-        let result = factor(CompleteStr("(1+2)"));
+        let result = factor("(1+2)");
         assert!(result.is_ok());
         let (_, tree) = result.unwrap();
         assert_eq!(
             tree,
             Token::Factor {
-                value: Box::new(Token::Expression {
+                value: Box::new(Token::Arith {
                     left: Box::new(Token::Term {
                         left: Box::new(Token::Factor {
-                            value: Box::new(Token::Real { value: 1.0 })
+                            value: Box::new(Token::Integer { value: 1 })
                         }),
                         right: vec![]
                     }),
@@ -45,7 +44,7 @@ mod tests {
                         Token::AdditionOp,
                         Token::Term {
                             left: Box::new(Token::Factor {
-                                value: Box::new(Token::Real { value: 2.0 })
+                                value: Box::new(Token::Integer { value: 2 })
                             }),
                             right: vec![]
                         }
@@ -54,14 +53,15 @@ mod tests {
             }
         );
 
-        let result = factor(CompleteStr("3.0 + foo"));
+        let result = factor("3.1 + foo");
         assert!(result.is_ok());
-        let (_, tree) = result.unwrap();
+        let (rest, tree) = result.unwrap();
         assert_eq!(
             tree,
             Token::Factor {
-                value: Box::new(Token::Real { value: 3.0 })
+                value: Box::new(Token::Real { value: 3.1 })
             }
         );
+        assert_eq!(rest, " + foo");
     }
 }

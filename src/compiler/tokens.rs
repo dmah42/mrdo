@@ -50,6 +50,9 @@ pub enum Token {
     Coll {
         values: Vec<Token>,
     },
+    Integer {
+        value: i32,
+    },
     Real {
         value: f64,
     },
@@ -60,7 +63,7 @@ pub enum Token {
         left: Box<Token>,
         right: Vec<(Token, Token)>,
     },
-    Expression {
+    Arith {
         left: Box<Token>,
         right: Vec<(Token, Token)>,
     },

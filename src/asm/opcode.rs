@@ -1,4 +1,3 @@
-use nom::types::CompleteStr;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 #[derive(Debug, PartialEq, Eq, TryFromPrimitive, IntoPrimitive)]
@@ -30,32 +29,32 @@ pub enum Opcode {
     IGL = 255,
 }
 
-impl<'a> From<CompleteStr<'a>> for Opcode {
-    fn from(v: CompleteStr<'a>) -> Self {
+impl<'a> From<&'a str> for Opcode {
+    fn from(v: &'a str) -> Self {
         let lowercase_opcode = v.to_lowercase();
-        match CompleteStr(&lowercase_opcode) {
-            CompleteStr("halt") => Opcode::HLT,
-            CompleteStr("load") => Opcode::LOAD,
-            CompleteStr("copy") => Opcode::COPY,
-            CompleteStr("lw") => Opcode::LW,
-            CompleteStr("sw") => Opcode::SW,
-            CompleteStr("add") => Opcode::ADD,
-            CompleteStr("sub") => Opcode::SUB,
-            CompleteStr("mul") => Opcode::MUL,
-            CompleteStr("div") => Opcode::DIV,
-            CompleteStr("jmp") => Opcode::JMP,
-            CompleteStr("eq") => Opcode::EQ,
-            CompleteStr("neq") => Opcode::NEQ,
-            CompleteStr("gt") => Opcode::GT,
-            CompleteStr("lt") => Opcode::LT,
-            CompleteStr("gte") => Opcode::GTE,
-            CompleteStr("lte") => Opcode::LTE,
-            CompleteStr("jeq") => Opcode::JEQ,
-            CompleteStr("and") => Opcode::AND,
-            CompleteStr("or") => Opcode::OR,
-            CompleteStr("not") => Opcode::NOT,
-            CompleteStr("alloc") => Opcode::ALLOC,
-            CompleteStr("syscall") => Opcode::SYSCALL,
+        match lowercase_opcode.as_str() {
+            "halt" => Opcode::HLT,
+            "load" => Opcode::LOAD,
+            "copy" => Opcode::COPY,
+            "lw" => Opcode::LW,
+            "sw" => Opcode::SW,
+            "add" => Opcode::ADD,
+            "sub" => Opcode::SUB,
+            "mul" => Opcode::MUL,
+            "div" => Opcode::DIV,
+            "jmp" => Opcode::JMP,
+            "eq" => Opcode::EQ,
+            "neq" => Opcode::NEQ,
+            "gt" => Opcode::GT,
+            "lt" => Opcode::LT,
+            "gte" => Opcode::GTE,
+            "lte" => Opcode::LTE,
+            "jeq" => Opcode::JEQ,
+            "and" => Opcode::AND,
+            "or" => Opcode::OR,
+            "not" => Opcode::NOT,
+            "alloc" => Opcode::ALLOC,
+            "syscall" => Opcode::SYSCALL,
             _ => Opcode::IGL,
         }
     }
@@ -88,8 +87,8 @@ mod tests {
 
     #[test]
     fn test_from_str() {
-        assert_eq!(Opcode::from(CompleteStr("load")), Opcode::LOAD);
-        assert_eq!(Opcode::from(CompleteStr("lOaD")), Opcode::LOAD);
-        assert_eq!(Opcode::from(CompleteStr("daol")), Opcode::IGL);
+        assert_eq!(Opcode::from("load"), Opcode::LOAD);
+        assert_eq!(Opcode::from("lOaD"), Opcode::LOAD);
+        assert_eq!(Opcode::from("daol"), Opcode::IGL);
     }
 }

@@ -1,79 +1,78 @@
 use crate::compiler::expression_parsers::*;
 use crate::compiler::tokens::Token;
 
-use nom::types::CompleteStr;
-use nom::*;
+use nom::{
+    bytes::complete::tag,
+    character::complete::{alpha1, multispace0},
+    combinator::map_res,
+    multi::separated_list0,
+    number::complete::double,
+    sequence::delimited,
+    IResult,
+};
 
-// TODO: extend real to be "operand" with multiple types.
-named!(pub real<CompleteStr, Token>,
-    ws!(
-        do_parse!(
-            sign: opt!(tag!("-")) >>
-            real: double >>
-            (
-                {
-                    let mut tmp = String::from("");
-                    if sign.is_some() {
-                        tmp.push('-');
-                    }
-                    tmp.push_str(&real.to_string());
-                    let converted = tmp.parse::<f64>().unwrap();
-                    Token::Real{ value: converted }
-                }
-            )
-        )
-    )
-);
+pub fn num(i: &str) -> IResult<&str, Token> {
+    map_res(double, |value| -> Result<Token, nom::error::Error<&str>> {
+        Ok(if value == (value as i32) as f64 {
+            Token::Integer {
+                value: value as i32,
+            }
+        } else {
+            Token::Real { value }
+        })
+    })(i)
+}
 
-named!(pub ident<CompleteStr, Token>,
-    ws!(
-        do_parse!(
-            name: alpha >>
-            (
-                Token::Identifier{ name: name.to_string() }
-            )
-        )
-    )
-);
+pub fn ident(i: &str) -> IResult<&str, Token> {
+    map_res(alpha1, |name| -> Result<Token, nom::error::Error<&str>> {
+        Ok(Token::Identifier {
+            name: String::from(name),
+        })
+    })(i)
+}
 
-named!(pub coll<CompleteStr, Token>,
-    ws!(
-        do_parse!(
-            tag!("[") >>
-            values: separated_list!(tag!(","), rvalue) >>
-            tag!("]") >>
-            (
-                Token::Coll { values }
-            )
-        )
-    )
-);
+pub fn coll(i: &str) -> IResult<&str, Token> {
+    map_res(
+        delimited(
+            tag("["),
+            separated_list0(delimited(multispace0, tag(","), multispace0), rvalue),
+            tag("]"),
+        ),
+        |values| -> Result<Token, nom::error::Error<&str>> { Ok(Token::Coll { values }) },
+    )(i)
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_real() {
-        let result = real(CompleteStr("3.42"));
+    fn test_num() {
+        let result = num("3.42");
         assert!(result.is_ok());
         let (_, token) = result.unwrap();
         assert_eq!(token, Token::Real { value: 3.42 });
 
         // negative numbers
-        let result = real(CompleteStr("-3.42"));
+        let result = num("-3.42");
         assert!(result.is_ok());
         let (_, token) = result.unwrap();
         assert_eq!(token, Token::Real { value: -3.42 });
 
+        // negative integer
+        let result = num("-42");
+        assert!(result.is_ok());
+        let (_, token) = result.unwrap();
+        assert_eq!(token, Token::Integer { value: -42 });
+
         // failure
-        let result = real(CompleteStr("foo"));
+        let result = num("foo");
         assert!(result.is_err());
     }
 
     #[test]
     fn test_ident() {
-        let result = ident(CompleteStr("foo"));
+        let result = ident("foo");
         assert!(result.is_ok());
         let (_, token) = result.unwrap();
         assert_eq!(
@@ -86,20 +85,20 @@ mod tests {
 
     #[test]
     fn test_coll() {
-        let result = coll(CompleteStr("[]"));
+        let result = coll("[]");
         assert!(result.is_ok());
         assert_eq!(result.unwrap().1, Token::Coll { values: vec![] });
 
-        let result = coll(CompleteStr("[3+4, 42, foo]"));
+        let result = coll("[3+4, 42.3, foo]");
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap().1,
             Token::Coll {
                 values: vec![
-                    Token::Expression {
+                    Token::Arith {
                         left: Box::new(Token::Term {
                             left: Box::new(Token::Factor {
-                                value: Box::new(Token::Real { value: 3.0 })
+                                value: Box::new(Token::Integer { value: 3 })
                             }),
                             right: vec![]
                         }),
@@ -107,22 +106,22 @@ mod tests {
                             Token::AdditionOp,
                             Token::Term {
                                 left: Box::new(Token::Factor {
-                                    value: Box::new(Token::Real { value: 4.0 })
+                                    value: Box::new(Token::Integer { value: 4 })
                                 }),
                                 right: vec![],
                             },
                         )],
                     },
-                    Token::Expression {
+                    Token::Arith {
                         left: Box::new(Token::Term {
                             left: Box::new(Token::Factor {
-                                value: Box::new(Token::Real { value: 42.0 })
+                                value: Box::new(Token::Real { value: 42.3 })
                             }),
                             right: vec![],
                         }),
                         right: vec![],
                     },
-                    Token::Expression {
+                    Token::Arith {
                         left: Box::new(Token::Term {
                             left: Box::new(Token::Factor {
                                 value: Box::new(Token::Identifier {

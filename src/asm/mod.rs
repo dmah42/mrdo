@@ -4,8 +4,6 @@ use crate::asm::opcode::Opcode;
 use crate::asm::program_parsers::{program, Program};
 use crate::asm::symbols::{Symbol, Table, Type};
 
-use nom::types::CompleteStr;
-
 pub mod directive_parsers;
 pub mod error;
 pub mod instruction_parsers;
@@ -64,7 +62,7 @@ impl Assembler {
     }
 
     pub fn assemble(&mut self, raw: &str) -> Result<Vec<u8>, Vec<Error>> {
-        match program(CompleteStr(raw)) {
+        match program(raw) {
             Ok((_remainder, program)) => {
                 self.process_first(&program);
 
@@ -314,7 +312,7 @@ mod tests {
     fn test_first_phase_no_segment() {
         let mut asm = Assembler::new();
         let test = "hello: .str 'fail'";
-        let result = program(CompleteStr(test));
+        let result = program(test);
         assert!(result.is_ok());
         let (_, p) = result.unwrap();
         asm.process_first(&p);
@@ -325,7 +323,7 @@ mod tests {
     fn test_first_phase_inside_segment() {
         let mut asm = Assembler::new();
         let test = ".data\ntest: .str 'Hello'";
-        let result = program(CompleteStr(test));
+        let result = program(test);
         assert!(result.is_ok());
 
         let (_, p) = result.unwrap();

@@ -1,3 +1,13 @@
+use nom::branch::alt;
+use nom::bytes::complete::tag;
+use nom::character::complete::multispace1;
+use nom::combinator::map_res;
+use nom::combinator::opt;
+use nom::sequence::preceded;
+use nom::sequence::terminated;
+use nom::sequence::tuple;
+use nom::IResult;
+
 use crate::asm::directive_parsers::*;
 use crate::asm::error::Error;
 use crate::asm::label_parsers::*;
@@ -7,7 +17,6 @@ use crate::asm::symbols::*;
 use crate::asm::Token;
 use crate::vm::register::{real_register_to_idx, vector_register_to_idx};
 
-use nom::types::CompleteStr;
 use std::fmt;
 
 #[derive(Debug, PartialEq)]
@@ -135,30 +144,25 @@ impl Instruction {
     fn extract_operand(t: &Token, symbols: &Table, results: &mut Vec<u8>) -> Result<(), Error> {
         match t {
             Token::IntRegister { idx } => {
-                // println!("IntRegister {}", *idx);
                 results.push(*idx);
             }
             Token::RealRegister { idx } => {
                 let idx = real_register_to_idx(*idx);
-                // println!("RealRegister {}", idx);
                 results.push(idx);
             }
             Token::VectorRegister { idx } => {
                 let idx = vector_register_to_idx(*idx);
-                // println!("VectorRegister {}", idx);
                 results.push(idx);
             }
             Token::Integer { value } => {
-                // println!("Integer {}", value);
                 for b in value.to_be_bytes().iter() {
-                    // println!("  pushing {}", *b);
+                    println!("  pushing {}", *b);
                     results.push(*b);
                 }
             }
             Token::Real { value } => {
-                // println!("Real {}", value);
                 for b in value.to_be_bytes().iter() {
-                    // println!("  pushing {}", *b);
+                    println!("  pushing {}", *b);
                     results.push(*b);
                 }
             }
@@ -192,29 +196,27 @@ impl fmt::Display for Instruction {
     }
 }
 
-named!(pub instruction<CompleteStr, Instruction>,
-    do_parse!(
-        instr: alt!(
-            instruction_comb | directive
-        ) >>
-        (
-            instr
-        )
-    )
-);
+pub fn instruction(i: &str) -> IResult<&str, Instruction> {
+    alt((instruction_comb, directive))(i)
+}
 
-named!(instruction_comb<CompleteStr, Instruction>,
-    do_parse!(
-        _l: opt!(label_decl) >>
-        o: opcode >>
-        o0: opt!(operand) >>
-        o1: opt!(operand) >>
-        o2: opt!(operand) >>
-        (
-            Instruction::new_opcode(o, o0, o1, o2)
-        )
-    )
-);
+fn instruction_comb(i: &str) -> IResult<&str, Instruction> {
+    map_res(
+        terminated(
+            tuple((
+                opt(label_decl),
+                opcode,
+                opt(preceded(multispace1, operand)),
+                opt(preceded(multispace1, operand)),
+                opt(preceded(multispace1, operand)),
+            )),
+            opt(tag("\n")),
+        ),
+        |(_l, op, o0, o1, o2)| -> Result<Instruction, nom::error::Error<&str>> {
+            Ok(Instruction::new_opcode(op, o0, o1, o2))
+        },
+    )(i)
+}
 
 #[cfg(test)]
 mod tests {
@@ -275,11 +277,11 @@ mod tests {
 
     #[test]
     fn test_parse_instruction_form_one() {
-        let result = instruction_comb(CompleteStr("load $i0 #100\n"));
+        let result = instruction_comb("load $i0 #100\n");
         assert_eq!(
             result,
             Ok((
-                CompleteStr(""),
+                "",
                 Instruction {
                     label: None,
                     directive: None,
@@ -294,11 +296,11 @@ mod tests {
 
     #[test]
     fn test_parse_instruction_form_one_with_label() {
-        let result = instruction_comb(CompleteStr("load $i0 @test1\n"));
+        let result = instruction_comb("load $i0 @test1\n");
         assert_eq!(
             result,
             Ok((
-                CompleteStr(""),
+                "",
                 Instruction {
                     label: None,
                     directive: None,
@@ -315,11 +317,11 @@ mod tests {
 
     #[test]
     fn test_parse_instruction_form_two() {
-        let result = instruction_comb(CompleteStr("halt"));
+        let result = instruction_comb("halt");
         assert_eq!(
             result,
             Ok((
-                CompleteStr(""),
+                "",
                 Instruction {
                     label: None,
                     directive: None,
@@ -334,11 +336,11 @@ mod tests {
 
     #[test]
     fn test_parse_instruction_form_three() {
-        let result = instruction_comb(CompleteStr("add $r0 $i1 $i2\n"));
+        let result = instruction_comb("add $r0 $i1 $i2\n");
         assert_eq!(
             result,
             Ok((
-                CompleteStr(""),
+                "",
                 Instruction {
                     label: None,
                     directive: None,

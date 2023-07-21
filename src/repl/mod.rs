@@ -4,7 +4,6 @@ use crate::compiler::Compiler;
 use crate::repl::command_parser::CommandParser;
 use crate::vm::VM;
 
-use nom::types::CompleteStr;
 use std::fs;
 use std::io;
 use std::io::Write;
@@ -45,6 +44,7 @@ impl REPL {
 
     pub fn run(&mut self) {
         println!("{} What will you DO today?", INFO_TAG);
+        println!("{} (':h' for help)", INFO_TAG);
 
         loop {
             let mut buffer = String::new();
@@ -55,16 +55,16 @@ impl REPL {
             io::stdin()
                 .read_line(&mut buffer)
                 .expect("Unable to read line from user");
-            let buffer = buffer.trim();
+            //let buffer = buffer.trim();
 
-            self.command_buffer.push(buffer.to_string());
+            self.command_buffer.push(buffer.clone());
 
             if buffer.starts_with(':') {
-                self.execute_command(&buffer);
+                self.execute_command(buffer.as_str());
             } else {
                 let assembly = match self.mode {
-                    Mode::Assembly => vec![buffer.into()],
-                    Mode::Highlevel => match self.compiler.compile_expr(buffer) {
+                    Mode::Assembly => vec![buffer],
+                    Mode::Highlevel => match self.compiler.compile_expr(buffer.as_str()) {
                         Ok(compiled) => compiled.to_vec(),
                         Err(e) => {
                             println!("{} Unable to compile input: {}", ERROR_TAG, e);
@@ -74,7 +74,8 @@ impl REPL {
                 };
                 self.assembly_buffer.append(&mut assembly.clone());
                 let assembled = assembly.join("\n");
-                let bytecode = match program(CompleteStr(&assembled)) {
+                println!("assembled: '{}'", assembled);
+                let bytecode = match program(&assembled) {
                     Ok((_, prog)) => self.asm.process_second(&prog),
                     Err(e) => {
                         println!("{} Unable to parse input: {}", WARN_TAG, e);
@@ -86,6 +87,7 @@ impl REPL {
                     continue;
                 }
                 self.vm.program.append(&mut bytecode.unwrap());
+                println!("vm program: {:#?}", self.vm.program);
                 for _i in 1..=assembly.len() {
                     if let Err(e) = self.vm.step() {
                         println!("{} {}", ERROR_TAG, e);

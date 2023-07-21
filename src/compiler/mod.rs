@@ -6,7 +6,6 @@ use crate::compiler::tokens::Token;
 use crate::compiler::visitor::Visitor;
 use crate::vm::register::Register as VmRegister;
 
-use nom::types::CompleteStr;
 use std::collections::HashMap;
 use std::mem::size_of;
 
@@ -82,7 +81,7 @@ impl Compiler {
 
     pub fn compile(&mut self, source: &str) -> Result<String, Error> {
         self.assembly.clear();
-        let (_, tree) = program(CompleteStr(source)).unwrap();
+        let (_, tree) = program(source).unwrap();
         self.visit_token(&tree)?;
         Ok([self.rodata.join("\n"), self.assembly.join("\n")].join("\n"))
     }
@@ -90,7 +89,7 @@ impl Compiler {
     // NOTE: public for the repl
     pub fn compile_expr(&mut self, source: &str) -> Result<&Vec<String>, Error> {
         self.assembly.clear();
-        let (_, tree) = expression(CompleteStr(source)).map_err(|e| Error::new(e.to_string()))?;
+        let (_, tree) = expression(source).map_err(|e| Error::new(e.to_string()))?;
         self.visit_token(&tree)?;
         Ok(&self.assembly)
     }
@@ -361,6 +360,14 @@ impl Visitor for Compiler {
                     .push(format!("load $r{} #{:.2}", next_reg.idx, value));
                 self.used_reg.push(next_reg);
             }
+
+            Token::Integer { value } => {
+                let next_reg = self.free_int_reg.pop().unwrap();
+                self.assembly
+                    .push(format!("load $i{} #{}", next_reg.idx, value));
+                self.used_reg.push(next_reg);
+            }
+
             Token::Coll { values } => {
                 // Allocate memory for the heap and put the base address into a register.
                 let alloc_reg = self.free_int_reg.pop().unwrap();
@@ -378,6 +385,7 @@ impl Visitor for Compiler {
                     let used_reg = self.used_reg.pop().unwrap();
                     match used_reg.reg {
                         VmRegister::R(_) => {}
+                        // TODO: promote an integer to a real or allow a mixture in collections
                         _ => {
                             return Err(Error::new(
                                 "Unable to put non-real into a vector".to_string(),
@@ -422,7 +430,7 @@ impl Visitor for Compiler {
                     self.visit_token(&factor.0)?;
                 }
             }
-            Token::Expression {
+            Token::Arith {
                 ref left,
                 ref right,
             } => {
@@ -483,14 +491,19 @@ mod tests {
     }
 
     fn generate_test_program(listing: &str) -> Token {
-        let (_, tree) = program(CompleteStr(listing)).unwrap();
-        tree
+        match program(listing) {
+            Ok((rest, tree)) => {
+                assert!(rest.is_empty());
+                tree
+            }
+            Err(e) => panic!("ERROR generating test program: {:?}", e),
+        }
     }
 
     #[test]
     fn test_addition() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("1.2 + 3.4");
+        let test_program = generate_test_program("1.2 + 3.4\n");
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -519,7 +532,7 @@ mod tests {
     #[test]
     fn test_subtraction() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("1.2 - 3.4");
+        let test_program = generate_test_program("1.2 - 3.4\n");
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -546,7 +559,7 @@ mod tests {
     #[test]
     fn test_multiplication() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("1.2 * 3.4");
+        let test_program = generate_test_program("1.2 * 3.4\n");
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -573,7 +586,7 @@ mod tests {
     #[test]
     fn test_division() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("1.2 / 3.4");
+        let test_program = generate_test_program("1.2 / 3.4\n");
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -600,7 +613,7 @@ mod tests {
     #[test]
     fn test_equals() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("1.2 + 4.1 eq 3.4");
+        let test_program = generate_test_program("1.2 + 4.1 eq 3.4\n");
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -629,7 +642,7 @@ mod tests {
     #[test]
     fn test_not_equals() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("1.2 neq 3.4");
+        let test_program = generate_test_program("1.2 neq 3.4\n");
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -656,7 +669,7 @@ mod tests {
     #[test]
     fn test_greater_than() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("1.2 gt 3.4");
+        let test_program = generate_test_program("1.2 gt 3.4\n");
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -683,7 +696,7 @@ mod tests {
     #[test]
     fn test_greater_than_equals() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("1.2 gte 3.4");
+        let test_program = generate_test_program("1.2 gte 3.4\n");
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -710,7 +723,7 @@ mod tests {
     #[test]
     fn test_less_than() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("1.2 lt 3.4");
+        let test_program = generate_test_program("1.2 lt 3.4\n");
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -737,7 +750,7 @@ mod tests {
     #[test]
     fn test_less_than_equals() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("1.2 lte 3.4");
+        let test_program = generate_test_program("1.2 lte 3.4\n");
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -764,17 +777,17 @@ mod tests {
     #[test]
     fn test_assign() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("foo = 42.0");
+        let test_program = generate_test_program("foo = 42.0\n");
         assert!(compiler.visit_token(&test_program).is_ok());
-        assert_eq!(compiler.assembly, vec![".code", "load $r31 #42.00", "halt"]);
-        assert_eq!(compiler.free_int_reg.len(), 32);
-        assert_eq!(compiler.free_real_reg.len(), 31);
+        assert_eq!(compiler.assembly, vec![".code", "load $i31 #42", "halt"]);
+        assert_eq!(compiler.free_int_reg.len(), 31);
+        assert_eq!(compiler.free_real_reg.len(), 32);
         assert_eq!(compiler.free_vec_reg.len(), 32);
         assert_eq!(
             compiler.used_reg,
             vec![Register {
                 idx: 31,
-                reg: VmRegister::R(0.0)
+                reg: VmRegister::I(0)
             }]
         );
         assert_eq!(
@@ -782,19 +795,20 @@ mod tests {
             [("foo".to_string(), 0)].iter().cloned().collect()
         );
 
+        // test error to reassign type of ident.
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("foo = 42.0\nfoo=[1,2]");
+        let test_program = generate_test_program("foo = 42.0\nfoo=[1,2]\n");
         assert!(compiler.visit_token(&test_program).is_err());
     }
 
     #[test]
     fn test_identifier() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("foo = 42.0\nbar = foo");
+        let test_program = generate_test_program("foo = 42.3\nbar = foo\n");
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
-            vec![".code", "load $r31 #42.00", "copy $r30 $r31", "halt"]
+            vec![".code", "load $r31 #42.30", "copy $r30 $r31", "halt"]
         );
         assert_eq!(compiler.free_int_reg.len(), 32);
         assert_eq!(compiler.free_real_reg.len(), 30);
@@ -824,7 +838,7 @@ mod tests {
     #[test]
     fn test_collection() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("[0, 1.2]");
+        let test_program = generate_test_program("[0.1, 1.2]\n");
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -832,7 +846,7 @@ mod tests {
                 ".code",
                 "alloc $i31 #16",
                 "copy $i30 $i31",
-                "load $r31 #0.00",
+                "load $r31 #0.10",
                 "sw $i30 $r31",
                 "load $i29 #8",
                 "add $i30 $i30 $i29",
@@ -859,15 +873,15 @@ mod tests {
     #[test]
     fn test_builtin() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("do(write, 42.0)");
+        let test_program = generate_test_program("do(write, 42.0)\n");
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
             vec![
                 ".code",
-                "load $r31 #42.00",
-                "load $i31 #0",
-                "syscall $i31 $r31",
+                "load $i31 #42",
+                "load $i30 #0",
+                "syscall $i30 $i31",
                 "halt"
             ]
         );
@@ -877,7 +891,7 @@ mod tests {
         assert_eq!(compiler.used_reg, vec![]);
 
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("do(foo)");
+        let test_program = generate_test_program("do(foo)\n");
         assert!(compiler.visit_token(&test_program).is_err());
     }
 }

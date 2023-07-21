@@ -1,68 +1,89 @@
 use crate::compiler::expression_parsers::*;
 use crate::compiler::tokens::Token;
 
-use nom::types::CompleteStr;
-use nom::*;
+use nom::bytes::complete::tag;
+use nom::character::complete::{alpha1, multispace0};
+use nom::combinator::{map_res, opt};
+use nom::multi::separated_list1;
+use nom::sequence::{delimited, pair, preceded};
+use nom::IResult;
 
-named!(pub builtin<CompleteStr, Token>,
-    ws!(
-        do_parse!(
-            tag!("do") >>
-            args: ws!(
-                delimited!(
-                    tag!("("),
-                    tuple!(
-                        alpha,
-                        opt!(pair!(tag!(","), separated_list!(tag!(","), rvalue)))
-                    ),
-                    tag!(")")
-                )) >>
-            (
-                {
-                    match args.1 {
-                        Some(rvs) => {
-                            Token::Builtin{ builtin: args.0.to_string(), args: rvs.1 }
-                        },
-                        None => {
-                            Token::Builtin{ builtin: args.0.to_string(), args: vec![] }
-                        }
-                    }
-                }
-            )
-        )
-    )
-);
+pub fn builtin(i: &str) -> IResult<&str, Token> {
+    log::debug!("[builtin] parsing '{}'", i);
+    map_res(
+        pair(
+            tag("do"),
+            delimited(
+                delimited(multispace0, tag("("), multispace0),
+                pair(
+                    alpha1,
+                    opt(preceded(
+                        delimited(multispace0, tag(","), multispace0),
+                        separated_list1(delimited(multispace0, tag(","), multispace0), rvalue),
+                    )),
+                ),
+                preceded(multispace0, tag(")")),
+            ),
+        ),
+        |(_, (arg0, arg1))| -> Result<Token, nom::error::Error<&str>> {
+            log::debug!("[builtin] success ({:?}, {:?})", arg0, arg1);
+            Ok(match arg1 {
+                Some(rvs) => Token::Builtin {
+                    builtin: String::from(arg0),
+                    args: rvs,
+                },
+                None => Token::Builtin {
+                    builtin: String::from(arg0),
+                    args: vec![],
+                },
+            })
+        },
+    )(i)
+}
 
 #[cfg(test)]
 mod tests {
+    use log::LevelFilter;
+
     use super::*;
+
+    fn init() {
+        let _ = env_logger::builder()
+            .is_test(true)
+            .filter_level(LevelFilter::Debug)
+            .try_init();
+    }
 
     #[test]
     fn test_builtin_noargs() {
-        let result = builtin(CompleteStr("do(foo)"));
+        init();
+
+        let result = builtin("do(foo)");
         assert!(result.is_ok());
         let (_, token) = result.unwrap();
         assert_eq!(
             token,
             Token::Builtin {
-                builtin: "foo".to_string(),
+                builtin: String::from("foo"),
                 args: vec![],
             }
         );
     }
     #[test]
     fn test_builtin_onearg() {
-        let result = builtin(CompleteStr("do(write, 42.0)"));
-        assert!(result.is_ok());
+        init();
+
+        let result = builtin("do(write, 42.3)");
+        //assert!(result.is_ok());
         let (_, token) = result.unwrap();
         assert_eq!(
             token,
             Token::Builtin {
-                builtin: "write".to_string(),
-                args: vec![Token::Expression {
+                builtin: String::from("write"),
+                args: vec![Token::Arith {
                     left: Box::new(Token::Term {
                         left: Box::new(Token::Factor {
-                            value: Box::new(Token::Real { value: 42.0 })
+                            value: Box::new(Token::Real { value: 42.3 })
                         }),
                         right: vec![],
                     }),
@@ -74,15 +95,17 @@ mod tests {
 
     #[test]
     fn test_builtin_multiple_args() {
-        let result = builtin(CompleteStr("do (read, foo, 1.0)"));
-        assert!(result.is_ok());
+        init();
+
+        let result = builtin("do (read, foo, 1.0)");
+        //assert!(result.is_ok());
         let (_, token) = result.unwrap();
         assert_eq!(
             token,
             Token::Builtin {
-                builtin: "read".to_string(),
+                builtin: String::from("read"),
                 args: vec![
-                    Token::Expression {
+                    Token::Arith {
                         left: Box::new(Token::Term {
                             left: Box::new(Token::Factor {
                                 value: Box::new(Token::Identifier {
@@ -93,10 +116,10 @@ mod tests {
                         }),
                         right: vec![],
                     },
-                    Token::Expression {
+                    Token::Arith {
                         left: Box::new(Token::Term {
                             left: Box::new(Token::Factor {
-                                value: Box::new(Token::Real { value: 1.0 })
+                                value: Box::new(Token::Integer { value: 1 })
                             }),
                             right: vec![],
                         }),

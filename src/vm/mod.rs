@@ -85,7 +85,6 @@ impl VM {
                 return Ok(true);
             }
             Opcode::LOAD => {
-                // NOTE: `LOAD %1 10` will fail, as will `LOAD $1 3.14`, but in odd ways.
                 let register = self.next_u8();
                 match self.get_register(register)? {
                     Register::I(_) => self.iregisters[register as usize] = self.next_i32(),
@@ -317,8 +316,9 @@ impl VM {
 
     fn decode_opcode(&mut self) -> Opcode {
         let raw_opcode = self.program[self.pc];
+        println!("raw_opcode {}", raw_opcode);
         let opcode = Opcode::try_from(raw_opcode).unwrap();
-        // println!("opcode {}: {:?}", raw_opcode, opcode);
+        println!("opcode {:?}", opcode);
         self.pc += 1;
         opcode
     }

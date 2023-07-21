@@ -1,102 +1,115 @@
+use nom::branch::alt;
+use nom::bytes::complete::{tag, take_until};
+use nom::character::complete::{alpha1, multispace0, newline};
+use nom::combinator::map_res;
+use nom::multi::many0;
+use nom::sequence::{delimited, pair, preceded, terminated, tuple};
+use nom::IResult;
+
 use crate::compiler::builtin_parsers::builtin;
 use crate::compiler::operand_parsers::coll;
 use crate::compiler::operator_parsers::*;
 use crate::compiler::term_parsers::term;
 use crate::compiler::tokens::Token;
 
-use nom::types::CompleteStr;
-use nom::*;
+fn arith(i: &str) -> IResult<&str, Token> {
+    log::debug!("[arith] parsing '{}'", i);
+    map_res(
+        pair(
+            term,
+            many0(pair(
+                delimited(multispace0, alt((addition_op, subtraction_op)), multispace0),
+                term,
+            )),
+        ),
+        |(left, right)| -> Result<Token, nom::error::Error<&str>> {
+            log::debug!("[arith] success ({:?}, {:?})", left, right);
+            Ok(Token::Arith {
+                left: Box::new(left),
+                right,
+            })
+        },
+    )(i)
+}
 
-named!(arith<CompleteStr, Token>,
-    ws!(
-        do_parse!(
-            left: term >>
-            right: many0!(
-                tuple!(
-                    alt!(
-                        addition_op |
-                        subtraction_op
-                    ),
-                    term
-                )
-            ) >>
-            (
-                {
-                    Token::Expression{ left: Box::new(left), right }
-                }
-            )
-        )
-    )
-);
+fn bin_op(i: &str) -> IResult<&str, Token> {
+    log::debug!("[binop] parsing '{}'", i);
+    map_res(
+        tuple((
+            rvalue,
+            delimited(
+                multispace0,
+                alt((eq_op, neq_op, gte_op, gt_op, lte_op, lt_op, and_op, or_op)),
+                multispace0,
+            ),
+            rvalue,
+        )),
+        |(left, op, right)| -> Result<Token, nom::error::Error<&str>> {
+            log::debug!("[binop] success ({:?}, {:?}, {:?})", left, op, right);
+            Ok(Token::BinOp {
+                left: Box::new(left),
+                op: Box::new(op),
+                right: Box::new(right),
+            })
+        },
+    )(i)
+}
 
-named!(bin_op<CompleteStr, Token>,
-    ws!(
-        do_parse!(
-            left: rvalue >>
-            op: alt!(
-                eq_op | neq_op | gte_op | gt_op | lte_op | lt_op |
-                and_op | or_op
-            ) >>
-            right: rvalue >>
-            (
-                Token::BinOp{ left: Box::new(left), op: Box::new(op), right: Box::new(right) }
-            )
-        )
-    )
-);
-
-named!(unary_op<CompleteStr, Token>,
-    ws!(
-        do_parse!(
-            op: not_op >>
-            right: rvalue >>
-            (
-                Token::UnaryOp {op: Box::new(op), right: Box::new(right)}
-            )
-        )
-    )
-);
+fn unary_op(i: &str) -> IResult<&str, Token> {
+    log::debug!("[unaryop] parsing '{}'", i);
+    map_res(
+        pair(not_op, preceded(multispace0, rvalue)),
+        |(op, right)| -> Result<Token, nom::error::Error<&str>> {
+            log::debug!("[unaryop] success ({:?}, {:?})", op, right);
+            Ok(Token::UnaryOp {
+                op: Box::new(op),
+                right: Box::new(right),
+            })
+        },
+    )(i)
+}
 
 // FIXME: unable to assign to expressions.  figure out the ebnf
-named!(assign<CompleteStr, Token>,
-    ws!(
-        do_parse!(
-            ident: alpha >>
-            tag!("=") >>
-            expr: rvalue >>
-            (
-                Token::Assign{ ident: ident.to_string(), expr: Box::new(expr) }
-            )
-        )
-    )
-);
+fn assign(i: &str) -> IResult<&str, Token> {
+    log::debug!("[assign] parsing '{}'", i);
+    map_res(
+        tuple((
+            alpha1,
+            delimited(multispace0, tag("="), multispace0),
+            rvalue,
+        )),
+        |(ident, _, expr)| -> Result<Token, nom::error::Error<&str>> {
+            log::debug!("[assign] success ({:?}, {:?})", ident, expr);
+            Ok(Token::Assign {
+                ident: String::from(ident),
+                expr: Box::new(expr),
+            })
+        },
+    )(i)
+}
 
-named!(comment<CompleteStr, Token>,
-    ws!(
-        do_parse!(
-            tag!(";") >>
-            comment: alt!(
-                take_until!("\n") |
-                take_while1!(|ch: char| ch.is_ascii())
-            ) >>
-            (
-                Token::Comment{comment: comment.to_string()}
-            )
-        )
-    )
-);
+fn comment(i: &str) -> IResult<&str, Token> {
+    log::debug!("[comment] parsing '{}'", i);
+    map_res(
+        pair(tag(";"), take_until("\n")),
+        |(_, comment)| -> Result<Token, nom::error::Error<&str>> {
+            log::debug!("[comment] success ({:?})", comment);
+            Ok(Token::Comment {
+                comment: String::from(comment),
+            })
+        },
+    )(i)
+}
 
-named!(pub rvalue<CompleteStr, Token>,
-    alt!(
-        builtin | arith | coll
-    )
-);
+pub fn rvalue(i: &str) -> IResult<&str, Token> {
+    log::debug!("[rvalue] parsing '{}'", i);
+    alt((builtin, arith, coll))(i)
+}
 
-named!(pub expression<CompleteStr, Token>,
-    alt!(
-        comment | assign | bin_op | unary_op | rvalue
-    )
-);
+pub fn expression(i: &str) -> IResult<&str, Token> {
+    log::debug!("[expression] parsing '{}'", i);
+    terminated(alt((comment, assign, bin_op, unary_op, rvalue)), newline)(i)
+}
 
 #[cfg(test)]
 mod tests {
@@ -104,12 +117,12 @@ mod tests {
 
     #[test]
     fn test_arith() {
-        let result = arith(CompleteStr("3.2 * 1.4"));
+        let result = arith("3.2 * 1.4");
         assert!(result.is_ok());
         let (_, token) = result.unwrap();
         assert_eq!(
             token,
-            Token::Expression {
+            Token::Arith {
                 left: Box::new(Token::Term {
                     left: Box::new(Token::Factor {
                         value: Box::new(Token::Real { value: 3.2 })
@@ -128,14 +141,14 @@ mod tests {
 
     #[test]
     fn test_assign() {
-        let result = assign(CompleteStr("foo = 1.3 + 4.1"));
+        let result = assign("foo = 1.3 + 4.1");
         assert!(result.is_ok());
         let (_, token) = result.unwrap();
         assert_eq!(
             token,
             Token::Assign {
                 ident: "foo".to_string(),
-                expr: Box::new(Token::Expression {
+                expr: Box::new(Token::Arith {
                     left: Box::new(Token::Term {
                         left: Box::new(Token::Factor {
                             value: Box::new(Token::Real { value: 1.3 })
@@ -158,13 +171,13 @@ mod tests {
 
     #[test]
     fn test_binop() {
-        let result = bin_op(CompleteStr("1.3 + 4.1 neq 2.1"));
+        let result = bin_op("1.3 + 4.1 neq 2.1");
         assert!(result.is_ok());
         let (_, token) = result.unwrap();
         assert_eq!(
             token,
             Token::BinOp {
-                left: Box::new(Token::Expression {
+                left: Box::new(Token::Arith {
                     left: Box::new(Token::Term {
                         left: Box::new(Token::Factor {
                             value: Box::new(Token::Real { value: 1.3 }),
@@ -182,7 +195,7 @@ mod tests {
                     )]
                 }),
                 op: Box::new(Token::NotEqualsOp),
-                right: Box::new(Token::Expression {
+                right: Box::new(Token::Arith {
                     left: Box::new(Token::Term {
                         left: Box::new(Token::Factor {
                             value: Box::new(Token::Real { value: 2.1 }),
@@ -197,17 +210,17 @@ mod tests {
 
     #[test]
     fn test_unary_op() {
-        let result = unary_op(CompleteStr("not 42.0"));
+        let result = unary_op("not 42.0");
         assert!(result.is_ok());
         let (_, token) = result.unwrap();
         assert_eq!(
             token,
             Token::UnaryOp {
                 op: Box::new(Token::NotOp),
-                right: Box::new(Token::Expression {
+                right: Box::new(Token::Arith {
                     left: Box::new(Token::Term {
                         left: Box::new(Token::Factor {
-                            value: Box::new(Token::Real { value: 42.0 }),
+                            value: Box::new(Token::Integer { value: 42 }),
                         }),
                         right: vec![],
                     }),
@@ -219,25 +232,26 @@ mod tests {
 
     #[test]
     fn test_comment() {
-        let result = comment(CompleteStr("; this! is a comment"));
+        let result = comment("; this! is a comment\n");
         assert!(result.is_ok());
         let (rest, token) = result.unwrap();
         assert_eq!(
             token,
             Token::Comment {
-                comment: "this! is a comment".to_string()
+                comment: " this! is a comment".to_string()
             }
         );
-        assert_eq!(rest, CompleteStr(""));
+        assert_eq!(rest, "\n");
 
-        let result = comment(CompleteStr("; this! is a comment\n42.0 + 3.0"));
+        let result = comment("; this! is a comment\n42.0 + 3.0");
         assert!(result.is_ok());
-        let (_, token) = result.unwrap();
+        let (rest, token) = result.unwrap();
         assert_eq!(
             token,
             Token::Comment {
-                comment: "this! is a comment".to_string()
+                comment: " this! is a comment".to_string()
             }
         );
+        assert_eq!(rest, "\n42.0 + 3.0")
     }
 }
