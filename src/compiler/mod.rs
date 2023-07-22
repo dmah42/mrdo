@@ -529,10 +529,11 @@ mod tests {
             compiler.assembly,
             vec![
                 ".code",
+                "; 1.2 + 3.4",
                 "load $r31 #1.20",
                 "load $r30 #3.40",
                 "add $r29 $r31 $r30",
-                "halt"
+                "halt\n"
             ]
         );
         assert_eq!(compiler.free_int_reg.len(), 32);
@@ -558,10 +559,11 @@ mod tests {
             compiler.assembly,
             vec![
                 ".code",
+                "; 1.2 - 3.4",
                 "load $r31 #1.20",
                 "load $r30 #3.40",
                 "sub $r29 $r31 $r30",
-                "halt"
+                "halt\n"
             ]
         );
         assert_eq!(compiler.free_int_reg.len(), 32);
@@ -585,10 +587,11 @@ mod tests {
             compiler.assembly,
             vec![
                 ".code",
+                "; 1.2 * 3.4",
                 "load $r31 #1.20",
                 "load $r30 #3.40",
                 "mul $r29 $r31 $r30",
-                "halt"
+                "halt\n"
             ]
         );
         assert_eq!(compiler.free_int_reg.len(), 32);
@@ -612,10 +615,11 @@ mod tests {
             compiler.assembly,
             vec![
                 ".code",
+                "; 1.2 / 3.4",
                 "load $r31 #1.20",
                 "load $r30 #3.40",
                 "div $r29 $r31 $r30",
-                "halt"
+                "halt\n"
             ]
         );
         assert_eq!(compiler.free_int_reg.len(), 32);
@@ -639,12 +643,13 @@ mod tests {
             compiler.assembly,
             vec![
                 ".code",
+                "; 1.2 + 4.1 eq 3.4",
                 "load $r31 #1.20",
                 "load $r30 #4.10",
                 "add $r29 $r31 $r30",
                 "load $r30 #3.40",
                 "eq $i31 $r29 $r30",
-                "halt"
+                "halt\n"
             ]
         );
         assert_eq!(compiler.free_int_reg.len(), 31);
@@ -668,10 +673,11 @@ mod tests {
             compiler.assembly,
             vec![
                 ".code",
+                "; 1.2 neq 3.4",
                 "load $r31 #1.20",
                 "load $r30 #3.40",
                 "neq $i31 $r31 $r30",
-                "halt"
+                "halt\n"
             ]
         );
         assert_eq!(compiler.free_int_reg.len(), 31);
@@ -695,10 +701,11 @@ mod tests {
             compiler.assembly,
             vec![
                 ".code",
+                "; 1.2 gt 3.4",
                 "load $r31 #1.20",
                 "load $r30 #3.40",
                 "gt $i31 $r31 $r30",
-                "halt"
+                "halt\n"
             ]
         );
         assert_eq!(compiler.free_int_reg.len(), 31);
@@ -722,10 +729,11 @@ mod tests {
             compiler.assembly,
             vec![
                 ".code",
+                "; 1.2 gte 3.4",
                 "load $r31 #1.20",
                 "load $r30 #3.40",
                 "gte $i31 $r31 $r30",
-                "halt"
+                "halt\n"
             ]
         );
         assert_eq!(compiler.free_int_reg.len(), 31);
@@ -749,10 +757,11 @@ mod tests {
             compiler.assembly,
             vec![
                 ".code",
+                "; 1.2 lt 3.4",
                 "load $r31 #1.20",
                 "load $r30 #3.40",
                 "lt $i31 $r31 $r30",
-                "halt"
+                "halt\n"
             ]
         );
         assert_eq!(compiler.free_int_reg.len(), 31);
@@ -776,10 +785,11 @@ mod tests {
             compiler.assembly,
             vec![
                 ".code",
+                "; 1.2 lte 3.4",
                 "load $r31 #1.20",
                 "load $r30 #3.40",
                 "lte $i31 $r31 $r30",
-                "halt"
+                "halt\n"
             ]
         );
         assert_eq!(compiler.free_int_reg.len(), 31);
@@ -799,7 +809,10 @@ mod tests {
         let mut compiler = Compiler::new();
         let test_program = generate_test_program("foo = 42.0\n");
         assert!(compiler.visit_token(&test_program).is_ok());
-        assert_eq!(compiler.assembly, vec![".code", "load $i31 #42", "halt"]);
+        assert_eq!(
+            compiler.assembly,
+            vec![".code", "; foo = 42.0", "load $i31 #42", "halt\n"]
+        );
         assert_eq!(compiler.free_int_reg.len(), 31);
         assert_eq!(compiler.free_real_reg.len(), 32);
         assert_eq!(compiler.free_vec_reg.len(), 32);
@@ -828,7 +841,14 @@ mod tests {
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
-            vec![".code", "load $r31 #42.30", "copy $r30 $r31", "halt"]
+            vec![
+                ".code",
+                "; foo = 42.3",
+                "load $r31 #42.30",
+                "; bar = foo",
+                "copy $r30 $r31",
+                "halt\n"
+            ]
         );
         assert_eq!(compiler.free_int_reg.len(), 32);
         assert_eq!(compiler.free_real_reg.len(), 30);
@@ -864,6 +884,7 @@ mod tests {
             compiler.assembly,
             vec![
                 ".code",
+                "; [0.1, 1.2]",
                 "alloc $i31 #16",
                 "copy $i30 $i31",
                 "load $r31 #0.10",
@@ -875,7 +896,7 @@ mod tests {
                 "load $i29 #8",
                 "add $i30 $i30 $i29",
                 "load $v31 $i31 #16",
-                "halt"
+                "halt\n"
             ],
         );
         assert_eq!(compiler.free_int_reg.len(), 32);
@@ -899,10 +920,11 @@ mod tests {
             compiler.assembly,
             vec![
                 ".code",
+                "; do(write, 42.0)",
                 "load $i31 #42",
                 "load $i30 #0",
                 "syscall $i30 $i31",
-                "halt"
+                "halt\n"
             ]
         );
         assert_eq!(compiler.free_int_reg.len(), 32);

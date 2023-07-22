@@ -318,7 +318,7 @@ mod tests {
     #[test]
     fn test_first_phase_no_segment() {
         let mut asm = Assembler::new();
-        let test = "hello: .str 'fail'";
+        let test = "hello: .str 'fail'\n";
         let result = program(test);
         assert!(result.is_ok());
         let (_, p) = result.unwrap();
@@ -329,7 +329,7 @@ mod tests {
     #[test]
     fn test_first_phase_inside_segment() {
         let mut asm = Assembler::new();
-        let test = ".data\ntest: .str 'Hello'";
+        let test = ".data\ntest: .str 'Hello'\n";
         let result = program(test);
         assert!(result.is_ok());
 
@@ -341,7 +341,7 @@ mod tests {
     #[test]
     fn test_start_offset_written() {
         let mut asm = Assembler::new();
-        let test = ".data\ntest: .str 'Hello'\n.code\nload $0 #100\nhlt";
+        let test = ".data\ntest: .str 'Hello'\n.code\nload $0 #100\nhlt\n";
         let program = asm.assemble(test);
         assert!(program.is_ok());
         assert_eq!(program.unwrap()[4..8], [0, 0, 0, 6]);
