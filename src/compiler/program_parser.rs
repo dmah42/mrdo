@@ -5,19 +5,6 @@ use nom::IResult;
 use crate::compiler::expression_parsers::expression;
 use crate::compiler::tokens::Token;
 
-//named!(pub program<CompleteStr, Token>,
-//    ws!(
-//        do_parse!(
-//            expressions: many1!(expression) >>
-//            (
-//                Token::Program {
-//                    expressions
-//                }
-//            )
-//        )
-//    )
-//);
-
 pub fn program(i: &str) -> IResult<&str, Token> {
     map_res(
         many1(expression),
@@ -41,37 +28,43 @@ mod tests {
             token,
             Token::Program {
                 expressions: vec![
-                    Token::Arith {
-                        left: Box::new(Token::Term {
-                            left: Box::new(Token::Factor {
-                                value: Box::new(Token::Real { value: 1.2 }),
-                            }),
-                            right: vec![]
-                        }),
-                        right: vec![(
-                            Token::AdditionOp,
-                            Token::Term {
+                    Some(Token::Expression {
+                        source: String::from("1.2 + 0.3"),
+                        token: Box::new(Token::Arith {
+                            left: Box::new(Token::Term {
                                 left: Box::new(Token::Factor {
-                                    value: Box::new(Token::Real { value: 0.3 })
+                                    value: Box::new(Token::Real { value: 1.2 }),
                                 }),
                                 right: vec![]
-                            }
-                        )]
-                    },
-                    Token::Arith {
-                        left: Box::new(Token::Term {
-                            left: Box::new(Token::Factor {
-                                value: Box::new(Token::Real { value: 2.4 }),
                             }),
                             right: vec![(
-                                Token::MultiplicationOp,
-                                Token::Factor {
-                                    value: Box::new(Token::Integer { value: 4 })
-                                },
+                                Token::AdditionOp,
+                                Token::Term {
+                                    left: Box::new(Token::Factor {
+                                        value: Box::new(Token::Real { value: 0.3 })
+                                    }),
+                                    right: vec![]
+                                }
                             )]
-                        }),
-                        right: vec![]
-                    },
+                        },)
+                    }),
+                    Some(Token::Expression {
+                        source: String::from("2.4 * 4.0"),
+                        token: Box::new(Token::Arith {
+                            left: Box::new(Token::Term {
+                                left: Box::new(Token::Factor {
+                                    value: Box::new(Token::Real { value: 2.4 }),
+                                }),
+                                right: vec![(
+                                    Token::MultiplicationOp,
+                                    Token::Factor {
+                                        value: Box::new(Token::Integer { value: 4 })
+                                    },
+                                )]
+                            }),
+                            right: vec![]
+                        },)
+                    })
                 ]
             }
         );

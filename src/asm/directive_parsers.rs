@@ -1,7 +1,7 @@
 use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, multispace1};
 use nom::combinator::{map_res, opt};
-use nom::sequence::{pair, preceded, terminated, tuple};
+use nom::sequence::{pair, preceded, tuple};
 use nom::IResult;
 
 use crate::asm::instruction_parsers::Instruction;
@@ -21,18 +21,17 @@ fn directive_decl(i: &str) -> IResult<&str, Token> {
 }
 
 pub fn directive(i: &str) -> IResult<&str, Instruction> {
+    log::debug!("[asm::directive] parsing '{}'", i);
     map_res(
-        terminated(
-            tuple((
-                opt(label_decl),
-                directive_decl,
-                opt(preceded(multispace1, operand)),
-                opt(preceded(multispace1, operand)),
-                opt(preceded(multispace1, operand)),
-            )),
-            opt(tag("\n")),
-        ),
+        tuple((
+            opt(label_decl),
+            directive_decl,
+            opt(preceded(multispace1, operand)),
+            opt(preceded(multispace1, operand)),
+            opt(preceded(multispace1, operand)),
+        )),
         |(l, name, o0, _o1, _o2)| -> Result<Instruction, nom::error::Error<&str>> {
+            log::debug!("[asm::directive] success ({:?}, {:?})", l, name);
             Ok(Instruction::new_directive(name, l, o0))
         },
     )(i)

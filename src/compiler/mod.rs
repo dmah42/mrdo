@@ -384,13 +384,21 @@ impl Visitor for Compiler {
                     // Note: this assumes visiting a token ends up with a used reg
                     // equivalent to a real.
                     self.visit_token(v)?;
-                    let used_reg = self.used_reg.pop().unwrap();
+                    let mut used_reg = self.used_reg.pop().unwrap();
                     match used_reg.reg {
                         VmRegister::R(_) => {}
-                        // TODO: promote an integer to a real or allow a mixture in collections
-                        _ => {
+                        VmRegister::I(_) => {
+                            // promote an integer to a real for storage in the collection
+                            let real_reg = self.free_real_reg.pop().unwrap();
+                            self.assembly
+                                .push(format!("copy $r{} $i{}", real_reg.idx, used_reg.idx));
+                            self.free_int_reg.push(used_reg);
+                            used_reg = real_reg;
+                        }
+                        // TODO: nested collections
+                        VmRegister::V(_) => {
                             return Err(Error::new(
-                                "Unable to put non-real into a vector".to_string(),
+                                "Unable to put collection into a collection".to_string(),
                             ));
                         }
                     };
@@ -442,15 +450,23 @@ impl Visitor for Compiler {
                     self.visit_token(&term.0)?;
                 }
             }
+            Token::Expression {
+                ref source,
+                ref token,
+            } => {
+                self.assembly.push(format!("; {}", source));
+                log::debug!("writing assembly for '{}'", source);
+                self.visit_token(token)?;
+            }
             Token::Program { ref expressions } => {
                 self.rodata.push(".data".into());
                 self.assembly.push(".code".into());
-                for expr in expressions {
-                    if let Some(valid_expr) = expr {
-                        self.visit_token(valid_expr)?;
-                    }
-                }
-                self.assembly.push("halt".into());
+                expressions
+                    .iter()
+                    .flatten()
+                    .try_for_each(|expr| self.visit_token(expr))?;
+
+                self.assembly.push("halt\n".into());
             }
         };
         //println!("  [after] {:?}\t    {:?}", self.variables, self.used_reg);

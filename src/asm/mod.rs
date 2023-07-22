@@ -97,6 +97,10 @@ impl Assembler {
 
     fn process_first(&mut self, p: &Program) {
         for i in &p.instructions {
+            if i.is_comment() {
+                continue;
+            }
+
             if i.is_label() {
                 if self.current_section.is_some() {
                     self.process_label_decl(i);
@@ -135,6 +139,9 @@ impl Assembler {
     pub fn process_second(&mut self, p: &Program) -> Result<Vec<u8>, Error> {
         let mut program = vec![];
         for i in &p.instructions {
+            if i.is_comment() {
+                continue;
+            }
             if i.is_opcode() {
                 program.append(&mut i.to_bytes(&self.symbols)?);
             }

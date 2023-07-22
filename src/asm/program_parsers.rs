@@ -1,6 +1,11 @@
 use nom::branch::alt;
+use nom::bytes::complete::tag;
+use nom::bytes::complete::take_until;
+use nom::character::complete::newline;
 use nom::combinator::map_res;
 use nom::multi::many1;
+use nom::sequence::pair;
+use nom::sequence::terminated;
 use nom::IResult;
 
 use crate::asm::directive_parsers::*;
@@ -11,14 +16,25 @@ pub struct Program {
     pub instructions: Vec<Instruction>,
 }
 
-pub fn program(i: &str) -> IResult<&str, Program> {
-    log::debug!("[asm::program] parsing '{}'", i);
+fn comment(i: &str) -> IResult<&str, Instruction> {
+    log::debug!("[asm::comment] parsing '{}'", i);
     map_res(
-        many1(alt((instruction, directive))),
-        |instructions| -> Result<Program, nom::error::Error<&str>> {
-            log::debug!("[asm::program] success ({:?})", instructions);
-            Ok(Program { instructions })
+        pair(tag(";"), take_until("\n")),
+        |(_, comment)| -> Result<Instruction, nom::error::Error<&str>> {
+            log::debug!("[asm::comment] success ({:?})", comment);
+            Ok(Instruction::new_comment())
         },
+    )(i)
+}
+
+fn line(i: &str) -> IResult<&str, Instruction> {
+    terminated(alt((comment, instruction, directive)), newline)(i)
+}
+
+pub fn program(i: &str) -> IResult<&str, Program> {
+    map_res(
+        many1(line),
+        |instructions| -> Result<Program, nom::error::Error<&str>> { Ok(Program { instructions }) },
     )(i)
 }
 

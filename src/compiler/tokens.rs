@@ -67,6 +67,10 @@ pub enum Token {
         left: Box<Token>,
         right: Vec<(Token, Token)>,
     },
+    Expression {
+        source: String,
+        token: Box<Token>,
+    },
     Program {
         expressions: Vec<Option<Token>>,
     },

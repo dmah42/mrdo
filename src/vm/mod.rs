@@ -50,7 +50,9 @@ impl VM {
 
     pub fn set_bytecode(&mut self, bytecode: &[u8]) -> Result<(), Error> {
         if !is_valid_bytecode(bytecode) {
-            return Err(Error::new("Invalid bytecode"));
+            return Err(Error::new(
+                format!("Invalid bytecode '{:#?}'", bytecode).as_str(),
+            ));
         }
 
         self.program.clear();
@@ -80,6 +82,7 @@ impl VM {
             return Err(Error::new("Ran out of program to run"));
         }
         let opcode = self.decode_opcode();
+        log::debug!("[vm] opcode {:?}", opcode);
         match opcode {
             Opcode::HLT => {
                 return Ok(true);
@@ -146,7 +149,12 @@ impl VM {
                     }
                     Register::R(sr) => {
                         match self.get_register(dest_reg)? {
-                            Register::I(_) => self.iregisters[dest_reg as usize] = sr as i32,
+                            Register::I(_) => {
+                                if ((sr as i32) as f64) != sr {
+                                    log::warn!("loss of precision copying {} from real register to integer register", sr)
+                                }
+                                self.iregisters[dest_reg as usize] = sr as i32;
+                            }
                             Register::R(_) => {
                                 self.rregisters[idx_from_real_register(dest_reg) as usize] = sr
                             }

@@ -1,11 +1,7 @@
 use nom::branch::alt;
-use nom::bytes::complete::tag;
 use nom::character::complete::multispace1;
-use nom::combinator::map_res;
-use nom::combinator::opt;
-use nom::sequence::preceded;
-use nom::sequence::terminated;
-use nom::sequence::tuple;
+use nom::combinator::{map_res, opt};
+use nom::sequence::{preceded, tuple};
 use nom::IResult;
 
 use crate::asm::directive_parsers::*;
@@ -70,6 +66,21 @@ impl Instruction {
             operand1,
             operand2,
         }
+    }
+
+    pub fn new_comment() -> Instruction {
+        Instruction {
+            label: None,
+            directive: None,
+            opcode: None,
+            operand0: None,
+            operand1: None,
+            operand2: None,
+        }
+    }
+
+    pub fn is_comment(&self) -> bool {
+        self.label.is_none() && self.directive.is_none() && self.opcode.is_none()
     }
 
     pub fn is_label(&self) -> bool {
@@ -199,18 +210,17 @@ pub fn instruction(i: &str) -> IResult<&str, Instruction> {
 }
 
 fn instruction_comb(i: &str) -> IResult<&str, Instruction> {
+    log::debug!("[asm::instruction] parsing '{}'", i);
     map_res(
-        terminated(
-            tuple((
-                opt(label_decl),
-                opcode,
-                opt(preceded(multispace1, operand)),
-                opt(preceded(multispace1, operand)),
-                opt(preceded(multispace1, operand)),
-            )),
-            opt(tag("\n")),
-        ),
+        tuple((
+            opt(label_decl),
+            opcode,
+            opt(preceded(multispace1, operand)),
+            opt(preceded(multispace1, operand)),
+            opt(preceded(multispace1, operand)),
+        )),
         |(_l, op, o0, o1, o2)| -> Result<Instruction, nom::error::Error<&str>> {
+            log::debug!("[asm::instruction] success ({:?})'", op);
             Ok(Instruction::new_opcode(op, o0, o1, o2))
         },
     )(i)

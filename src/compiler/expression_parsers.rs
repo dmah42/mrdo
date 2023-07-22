@@ -1,7 +1,7 @@
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take_until};
 use nom::character::complete::{alpha1, multispace0, newline};
-use nom::combinator::{map_res, opt};
+use nom::combinator::{consumed, map_res, opt};
 use nom::multi::many0;
 use nom::sequence::{delimited, pair, preceded, terminated, tuple};
 use nom::IResult;
@@ -108,9 +108,17 @@ pub fn rvalue(i: &str) -> IResult<&str, Token> {
 
 pub fn expression(i: &str) -> IResult<&str, Option<Token>> {
     log::debug!("[expression] parsing '{}'", i);
-    terminated(
-        opt(alt((comment, assign, bin_op, unary_op, rvalue))),
-        newline,
+    map_res(
+        terminated(
+            consumed(opt(alt((comment, assign, bin_op, unary_op, rvalue)))),
+            newline,
+        ),
+        |(parsed_source, opt_expr)| -> Result<Option<Token>, nom::error::Error<&str>> {
+            Ok(opt_expr.map(|expr| Token::Expression {
+                source: String::from(parsed_source),
+                token: Box::new(expr),
+            }))
+        },
     )(i)
 }
 

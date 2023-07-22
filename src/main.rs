@@ -132,7 +132,7 @@ fn compile(
     let source = read_assembly(assembly);
     let assembly = compiler.compile(&source);
     if let Err(e) = assembly {
-        println!("compiler error: {}", e);
+        log::error!("compiler error: {}", e);
         std::process::exit(1);
     }
 
@@ -152,7 +152,7 @@ fn compile(
             bc
         }
         Err(e) => {
-            println!("assembler error: {:?}", e);
+            log::error!("assembler error: {:?}", e);
             std::process::exit(1);
         }
     }
