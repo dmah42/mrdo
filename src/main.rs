@@ -42,11 +42,13 @@ fn main() {
     let args = Cli::from_args();
 
     if args.debug {
-        env_logger::builder()
+        pretty_env_logger::formatted_timed_builder()
             .filter_level(LevelFilter::Debug)
             .init();
     } else {
-        env_logger::init();
+        pretty_env_logger::formatted_timed_builder()
+            .parse_default_env()
+            .init();
     }
 
     match args.program {
@@ -56,6 +58,7 @@ fn main() {
                 Some(bc) => bc,
                 None => compile(&p, args.output, args.list_asm),
             };
+            log::info!("Running...");
             run_bytecode(&bc, args.list_bc, args.list_reg);
         }
         None => run_repl(),
@@ -127,6 +130,7 @@ fn compile(
     output: Option<std::path::PathBuf>,
     list_asm: bool,
 ) -> Vec<u8> {
+    log::info!("Compiling...");
     let mut compiler = Compiler::new();
 
     let source = read_assembly(assembly);
@@ -141,6 +145,7 @@ fn compile(
     if list_asm {
         println!("assembly\n{}\nEOF", assembly);
     }
+    log::info!("Assembling...");
     let mut asm = Assembler::new();
     let bytecode = asm.assemble(&assembly);
     match bytecode {
