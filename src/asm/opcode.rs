@@ -2,11 +2,11 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 #[derive(Debug, PartialEq, Eq, TryFromPrimitive, IntoPrimitive)]
 #[repr(u8)]
-// TODO: LW/SW already don't operate only on words so should be renamed. maybe find a vec version too?
 pub enum Opcode {
     HLT,
     LOAD,
     COPY,
+    // TODO: LW/SW already don't operate only on words so should be renamed. maybe find a vec version too?
     LW,
     SW,
     ADD,

@@ -69,7 +69,6 @@ fn unary_op(i: &str) -> IResult<&str, Token> {
     )(i)
 }
 
-// FIXME: unable to assign to expressions.  figure out the ebnf
 fn assign(i: &str) -> IResult<&str, Token> {
     log::debug!("[assign] parsing '{}'", i);
     map_res(
