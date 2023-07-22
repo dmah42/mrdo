@@ -316,9 +316,7 @@ impl VM {
 
     fn decode_opcode(&mut self) -> Opcode {
         let raw_opcode = self.program[self.pc];
-        println!("raw_opcode {}", raw_opcode);
         let opcode = Opcode::try_from(raw_opcode).unwrap();
-        println!("opcode {:?}", opcode);
         self.pc += 1;
         opcode
     }

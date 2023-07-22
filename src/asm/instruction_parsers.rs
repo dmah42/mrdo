@@ -156,13 +156,11 @@ impl Instruction {
             }
             Token::Integer { value } => {
                 for b in value.to_be_bytes().iter() {
-                    println!("  pushing {}", *b);
                     results.push(*b);
                 }
             }
             Token::Real { value } => {
                 for b in value.to_be_bytes().iter() {
-                    println!("  pushing {}", *b);
                     results.push(*b);
                 }
             }

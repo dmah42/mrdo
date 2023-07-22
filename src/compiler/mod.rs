@@ -90,7 +90,9 @@ impl Compiler {
     pub fn compile_expr(&mut self, source: &str) -> Result<&Vec<String>, Error> {
         self.assembly.clear();
         let (_, tree) = expression(source).map_err(|e| Error::new(e.to_string()))?;
-        self.visit_token(&tree)?;
+        if let Some(valid_tree) = tree {
+            self.visit_token(&valid_tree)?;
+        }
         Ok(&self.assembly)
     }
 
@@ -444,7 +446,9 @@ impl Visitor for Compiler {
                 self.rodata.push(".data".into());
                 self.assembly.push(".code".into());
                 for expr in expressions {
-                    self.visit_token(expr)?;
+                    if let Some(valid_expr) = expr {
+                        self.visit_token(valid_expr)?;
+                    }
                 }
                 self.assembly.push("halt".into());
             }

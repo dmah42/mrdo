@@ -68,6 +68,6 @@ pub enum Token {
         right: Vec<(Token, Token)>,
     },
     Program {
-        expressions: Vec<Token>,
+        expressions: Vec<Option<Token>>,
     },
 }
