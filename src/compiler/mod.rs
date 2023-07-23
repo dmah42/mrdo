@@ -52,8 +52,6 @@ pub struct Compiler {
 impl Compiler {
     pub fn new() -> Compiler {
         Compiler {
-            // TODO: these should go from [1, 32) so the 0 register can be kept
-            // free to be always 'zero'.
             free_int_reg: (0..32)
                 .map(|i| Register {
                     idx: i,
@@ -290,8 +288,6 @@ impl Visitor for Compiler {
                                 "'write' expects a single argument".to_string(),
                             ));
                         }
-                        // FIXME: this should take a copy of the used register
-                        // with a load/add.
                         self.visit_token(&args[0])?;
                         let reg = self.used_reg.pop().unwrap();
                         let call_reg = self.free_int_reg.pop().unwrap();
@@ -380,9 +376,9 @@ impl Visitor for Compiler {
                 let vec_base_reg = self.free_int_reg.pop().unwrap();
                 self.assembly
                     .push(format!("copy $i{} $i{}", vec_base_reg.idx, alloc_reg.idx));
-                for v in values {
-                    // Note: this assumes visiting a token ends up with a used reg
-                    // equivalent to a real.
+
+                let mut value_it = values.iter().peekable();
+                while let Some(v) = value_it.next() {
                     self.visit_token(v)?;
                     let mut used_reg = self.used_reg.pop().unwrap();
                     match used_reg.reg {
@@ -405,15 +401,18 @@ impl Visitor for Compiler {
                     self.assembly
                         .push(format!("sw $i{} $r{}", vec_base_reg.idx, used_reg.idx));
                     self.free_real_reg.push(used_reg);
-                    // TODO: skip this last add on the last iteration.
-                    let inc_reg = self.free_int_reg.pop().unwrap();
-                    self.assembly
-                        .push(format!("load $i{} #{}", inc_reg.idx, size_of::<f64>()));
-                    self.assembly.push(format!(
-                        "add $i{} $i{} $i{}",
-                        vec_base_reg.idx, vec_base_reg.idx, inc_reg.idx
-                    ));
-                    self.free_int_reg.push(inc_reg);
+
+                    // If we will be going round the loop again, increment the base index.
+                    if value_it.peek().is_some() {
+                        let inc_reg = self.free_int_reg.pop().unwrap();
+                        self.assembly
+                            .push(format!("load $i{} #{}", inc_reg.idx, size_of::<f64>()));
+                        self.assembly.push(format!(
+                            "add $i{} $i{} $i{}",
+                            vec_base_reg.idx, vec_base_reg.idx, inc_reg.idx
+                        ));
+                        self.free_int_reg.push(inc_reg);
+                    }
                 }
                 self.free_int_reg.push(vec_base_reg);
 
@@ -893,8 +892,6 @@ mod tests {
                 "add $i30 $i30 $i29",
                 "load $r31 #1.20",
                 "sw $i30 $r31",
-                "load $i29 #8",
-                "add $i30 $i30 $i29",
                 "load $v31 $i31 #16",
                 "halt\n"
             ],
