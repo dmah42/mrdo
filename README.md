@@ -2,6 +2,7 @@
 # mrdo
 mrdo is a language in which variables may be either a:
 * real (mutable 64-bit floating point)
+* integer (mutable 32-bit integer)
 * coll (an immutable collection of reals)
 * TODO: dict (key-value immutable collection of reals)
 
