@@ -16,6 +16,8 @@ will compile the program provided and run it, optionally outputting the
 bytecode. If the provided program is already bytecode, it will be run
 directly.
 
+for other flags, see ```bash $ ./mrdo --help```
+
 ## submodules
 **compiler** compiles from high-level to assembly
 
@@ -43,7 +45,7 @@ Also note that while the variable type is inferred, it is also immutable.
 Once a variable is a type, it can't be reassigned to a new type.
 
 ### functions
-TODO
+TODO (not implemented in the new rust world yet)
 
 Functions operate on collections in parallel and are either a:
 * `map` (convert each element in the input collection to one element in the
@@ -64,13 +66,14 @@ The usual operations are available:
 Logical operations treat 0.0 as false and all other values as true.
 
 #### arithmetical operations
-if left and right are `real`, arithmetical operations work as expected.
+if left and right are `real` or `integer`, arithmetical operations work as 
+expected.
 
 if both are `coll`, they must be the same size and the operations are applied
 pairwise.
 
-if one is `real` and one is `coll`, the real is applied to every element in
-the coll.
+if one is `real` or `integer` and one is `coll`, the `real` or `integer` is 
+applied to every element in the `coll`.
 
 #### comparitive operations
 for `coll` types, comparisons follow the rustlang model. specifically, if any
