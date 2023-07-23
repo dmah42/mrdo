@@ -48,7 +48,6 @@ impl TryInto<Vec<f64>> for Register {
     }
 }
 
-// TODO: test these
 pub fn is_int_register(reg: u8) -> bool {
     !is_real_register(reg) && !is_vector_register(reg)
 }
@@ -112,5 +111,32 @@ mod tests {
 
         let r: Result<f64, Error> = Register::V(vec![1.0f64, 2.0]).try_into();
         assert!(r.is_err());
+    }
+
+    #[test]
+    fn test_is_int_register() {
+        let reg = int_register_to_idx(24);
+        assert!(is_int_register(reg));
+        assert!(!is_real_register(reg));
+        assert!(!is_vector_register(reg));
+        assert_eq!(idx_from_int_register(reg), 24);
+    }
+
+    #[test]
+    fn test_is_real_register() {
+        let reg = real_register_to_idx(24);
+        assert!(!is_int_register(reg));
+        assert!(is_real_register(reg));
+        assert!(!is_vector_register(reg));
+        assert_eq!(idx_from_real_register(reg), 24);
+    }
+
+    #[test]
+    fn test_is_vector_register() {
+        let reg = vector_register_to_idx(24);
+        assert!(!is_int_register(reg));
+        assert!(!is_real_register(reg));
+        assert!(is_vector_register(reg));
+        assert_eq!(idx_from_vector_register(reg), 24);
     }
 }
