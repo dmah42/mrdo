@@ -7,7 +7,6 @@ use nom::sequence::{delimited, pair, preceded, terminated, tuple};
 use nom::IResult;
 
 use crate::compiler::builtin_parsers::builtin;
-use crate::compiler::operand_parsers::coll;
 use crate::compiler::operator_parsers::*;
 use crate::compiler::term_parsers::term;
 use crate::compiler::tokens::Token;
@@ -102,7 +101,7 @@ fn comment(i: &str) -> IResult<&str, Token> {
 
 pub fn rvalue(i: &str) -> IResult<&str, Token> {
     log::debug!("[rvalue] parsing '{}'", i);
-    alt((builtin, arith, coll))(i)
+    alt((builtin, arith))(i)
 }
 
 pub fn expression(i: &str) -> IResult<&str, Option<Token>> {

@@ -520,7 +520,7 @@ mod tests {
     }
 
     #[test]
-    fn test_addition() {
+    fn test_addition_real() {
         let mut compiler = Compiler::new();
         let test_program = generate_test_program("1.2 + 3.4\n");
         assert!(compiler.visit_token(&test_program).is_ok());
@@ -545,8 +545,78 @@ mod tests {
                 reg: VmRegister::R(0.0)
             }]
         );
+    }
 
-        // TODO: test integer and collection addition.
+    #[test]
+    fn test_addition_integer() {
+        let mut compiler = Compiler::new();
+        let test_program = generate_test_program("1 + 3\n");
+        assert!(compiler.visit_token(&test_program).is_ok());
+        assert_eq!(
+            compiler.assembly,
+            vec![
+                ".code",
+                "; 1 + 3",
+                "load $i31 #1",
+                "load $i30 #3",
+                "add $i29 $i31 $i30",
+                "halt\n"
+            ]
+        );
+        assert_eq!(compiler.free_int_reg.len(), 31);
+        assert_eq!(compiler.free_real_reg.len(), 32);
+        assert_eq!(compiler.free_vec_reg.len(), 32);
+        assert_eq!(
+            compiler.used_reg,
+            vec![Register {
+                idx: 29,
+                reg: VmRegister::I(0)
+            }]
+        );
+    }
+
+    #[test]
+    fn test_addition_vector() {
+        let mut compiler = Compiler::new();
+        let test_program = generate_test_program("[1.2, 3.4] + [3.4, 1.2]\n");
+        assert!(compiler.visit_token(&test_program).is_ok());
+        assert_eq!(
+            compiler.assembly,
+            vec![
+                ".code",
+                "; [1.2, 3.4] + [3.4, 1.2]",
+                "alloc $i31 #16",
+                "copy $i30 $i31",
+                "load $r31 #1.20",
+                "sw $i30 $r31",
+                "load $i29 #8",
+                "add $i30 $i30 $i29",
+                "load $r31 #3.40",
+                "sw $i30 $r31",
+                "load $v31 $i31 #16",
+                "alloc $i31 #16",
+                "copy $i30 $i31",
+                "load $r31 #3.40",
+                "sw $i30 $r31",
+                "load $i29 #8",
+                "add $i30 $i30 $i29",
+                "load $r31 #1.20",
+                "sw $i30 $r31",
+                "load $v30 $i31 #16",
+                "add $v29 $v31 $v30",
+                "halt\n"
+            ]
+        );
+        assert_eq!(compiler.free_int_reg.len(), 32);
+        assert_eq!(compiler.free_real_reg.len(), 32);
+        assert_eq!(compiler.free_vec_reg.len(), 31);
+        assert_eq!(
+            compiler.used_reg,
+            vec![Register {
+                idx: 29,
+                reg: VmRegister::V(vec![])
+            }]
+        );
     }
 
     #[test]

@@ -11,7 +11,7 @@ use crate::compiler::tokens::Token;
 pub fn factor(i: &str) -> IResult<&str, Token> {
     log::debug!("[factor] parsing '{}'", i);
     map_res(
-        alt((num, delimited(tag("("), rvalue, tag(")")), ident)),
+        alt((num, coll, delimited(tag("("), rvalue, tag(")")), ident)),
         |factor| -> Result<Token, nom::error::Error<&str>> {
             log::debug!("[factor] success ({:?})", factor);
             Ok(Token::Factor {
