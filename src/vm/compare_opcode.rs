@@ -17,42 +17,12 @@ impl VM {
         let a_idx = self.next_u8();
         let b_idx = self.next_u8();
 
-        let a_reg = self.get_register(a_idx)?;
-        let b_reg = self.get_register(b_idx)?;
-
-        match self.get_register(a_idx)? {
-            Register::I(_) => {
-                let a: i32 = a_reg.try_into()?;
-                let b: i32 = b_reg.try_into()?;
-
-                if a == b {
-                    self.iregisters[out_idx as usize] = 1;
-                } else {
-                    self.iregisters[out_idx as usize] = 0;
-                }
-            }
-            Register::R(_) => {
-                let a: f64 = a_reg.try_into()?;
-                let b: f64 = b_reg.try_into()?;
-
-                if (a - b).abs() < f64::EPSILON {
-                    self.iregisters[out_idx as usize] = 1;
-                } else {
-                    self.iregisters[out_idx as usize] = 0;
-                }
-            }
-            Register::V(va) => {
-                if let Register::V(vb) = b_reg {
-                    if va == vb {
-                        self.iregisters[out_idx as usize] = 1;
-                    } else {
-                        self.iregisters[out_idx as usize] = 0;
-                    }
-                } else {
-                    return Err(Error::new("Cannot compare vectors with integers or reals"));
-                }
-            }
+        if self.are_register_contents_equal(a_idx, b_idx)? {
+            self.iregisters[out_idx as usize] = 1;
+        } else {
+            self.iregisters[out_idx as usize] = 0;
         }
+
         Ok(())
     }
 
@@ -309,6 +279,33 @@ impl VM {
             }
         }
         Ok(())
+    }
+
+    pub(super) fn are_register_contents_equal(&self, a_idx: u8, b_idx: u8) -> Result<bool, Error> {
+        let a_reg = self.get_register(a_idx)?;
+        let b_reg = self.get_register(b_idx)?;
+
+        match self.get_register(a_idx)? {
+            Register::I(_) => {
+                let a: i32 = a_reg.try_into()?;
+                let b: i32 = b_reg.try_into()?;
+
+                Ok(a == b)
+            }
+            Register::R(_) => {
+                let a: f64 = a_reg.try_into()?;
+                let b: f64 = b_reg.try_into()?;
+
+                Ok((a - b).abs() < f64::EPSILON)
+            }
+            Register::V(va) => {
+                if let Register::V(vb) = b_reg {
+                    Ok(va == vb)
+                } else {
+                    Err(Error::new("Cannot compare vectors with integers or reals"))
+                }
+            }
+        }
     }
 }
 

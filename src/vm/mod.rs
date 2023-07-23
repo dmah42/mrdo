@@ -437,7 +437,6 @@ impl VM {
         Ok(())
     }
 
-    // TODO: register support.
     fn jeq(&mut self) -> Result<(), Error> {
         let register = self.next_u8();
         if !is_int_register(register) {
@@ -445,36 +444,10 @@ impl VM {
         }
         let target = self.iregisters[register as usize];
 
-        let a_reg = self.next_u8();
-        let b_reg = self.next_u8();
+        let a_idx = self.next_u8();
+        let b_idx = self.next_u8();
 
-        let mut ia: Option<i32> = None;
-        let mut ra: Option<f64> = None;
-        if is_int_register(a_reg) {
-            ia = Some(self.iregisters[a_reg as usize]);
-        } else {
-            ra = Some(self.rregisters[idx_from_real_register(a_reg) as usize]);
-        }
-
-        let mut ib: Option<i32> = None;
-        let mut rb: Option<f64> = None;
-        if is_int_register(b_reg) {
-            ib = Some(self.iregisters[b_reg as usize]);
-        } else {
-            rb = Some(self.rregisters[idx_from_real_register(b_reg) as usize]);
-        }
-
-        let a: f64 = match ra {
-            Some(f) => f,
-            None => ia.unwrap() as f64,
-        };
-
-        let b: f64 = match rb {
-            Some(f) => f,
-            None => ib.unwrap() as f64,
-        };
-
-        if (a - b).abs() < f64::EPSILON {
+        if self.are_register_contents_equal(a_idx, b_idx)? {
             self.pc = target as usize;
         }
         Ok(())
@@ -732,8 +705,9 @@ mod tests {
         assert!(!exit.unwrap());
         assert_eq!(vm.pc, 100);
     }
+
     #[test]
-    fn test_opcode_jeq() {
+    fn test_opcode_jeq_int_registers() {
         let mut vm = VM::new();
         vm.iregisters[0] = 100;
         vm.iregisters[1] = 3;
@@ -743,6 +717,82 @@ mod tests {
         assert!(exit.is_ok());
         assert!(!exit.unwrap());
         assert_eq!(vm.pc, 100);
+
+        vm = VM::new();
+        vm.iregisters[0] = 200;
+        vm.iregisters[1] = 3;
+        vm.iregisters[2] = 5;
+        vm.program = vec![Opcode::JEQ as u8, 0, 1, 2];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert!(!exit.unwrap());
+        assert_eq!(vm.pc, 4);
+    }
+
+    #[test]
+    fn test_opcode_jeq_real_registers() {
+        let mut vm = VM::new();
+        vm.iregisters[0] = 100;
+        vm.rregisters[1] = 3.4;
+        vm.rregisters[2] = 3.4;
+        vm.program = vec![
+            Opcode::JEQ as u8,
+            0,
+            real_register_to_idx(1),
+            real_register_to_idx(2),
+        ];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert!(!exit.unwrap());
+        assert_eq!(vm.pc, 100);
+
+        vm = VM::new();
+        vm.iregisters[0] = 200;
+        vm.rregisters[1] = 3.4;
+        vm.rregisters[2] = 3.2;
+        vm.program = vec![
+            Opcode::JEQ as u8,
+            0,
+            real_register_to_idx(1),
+            real_register_to_idx(2),
+        ];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert!(!exit.unwrap());
+        assert_eq!(vm.pc, 4);
+    }
+
+    #[test]
+    fn test_opcode_jeq_vector_registers() {
+        let mut vm = VM::new();
+        vm.iregisters[0] = 100;
+        vm.vregisters[1] = vec![3.4, 5.2];
+        vm.vregisters[2] = vec![3.4, 5.2];
+        vm.program = vec![
+            Opcode::JEQ as u8,
+            0,
+            vector_register_to_idx(1),
+            vector_register_to_idx(2),
+        ];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert!(!exit.unwrap());
+        assert_eq!(vm.pc, 100);
+
+        vm = VM::new();
+        vm.iregisters[0] = 200;
+        vm.vregisters[1] = vec![3.4, 5.2];
+        vm.vregisters[2] = vec![3.4, 5.1];
+        vm.program = vec![
+            Opcode::JEQ as u8,
+            0,
+            vector_register_to_idx(1),
+            vector_register_to_idx(2),
+        ];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert!(!exit.unwrap());
+        assert_eq!(vm.pc, 4);
     }
 
     #[test]
