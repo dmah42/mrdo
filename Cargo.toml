@@ -1,10 +1,15 @@
 [package]
 name = "mrdo"
-version = "0.1.5"
+description = "A programming language (compiler, assembler, VM, and REPL) for working with collections of data"
+version = "0.1.6"
 authors = ["Dominic Hamon <dma+github@stripysock.com>"]
-edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "Apache 2.0"
+edition = "2021"
+readme = "README.md"
+homepage = "https://github.com/dmah42/mrdo"
+repository = "https://github.com/dmah42/mrdo"
+keywords = ["cli", "compiler", "assembler", "VM", "mrdo", "programming-language"]
+categories = ["compilers", "programming-languages", "VMs"]
 
 [dependencies]
 pretty_env_logger = "^0.5"
