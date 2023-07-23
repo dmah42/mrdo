@@ -8,7 +8,7 @@ edition = "2021"
 readme = "README.md"
 homepage = "https://github.com/dmah42/mrdo"
 repository = "https://github.com/dmah42/mrdo"
-keywords = ["cli", "compiler", "assembler", "VM", "mrdo", "programming-language"]
+keywords = ["cli", "compiler", "assembler", "VM", "programming-language"]
 categories = ["compilers", "programming-languages", "VMs"]
 
 [dependencies]
