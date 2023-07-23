@@ -48,7 +48,7 @@ mod tests {
     use super::*;
 
     fn init() {
-        let _ = env_logger::builder()
+        let _ = pretty_env_logger::formatted_builder()
             .is_test(true)
             .filter_level(LevelFilter::Debug)
             .try_init();

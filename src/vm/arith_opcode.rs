@@ -214,8 +214,7 @@ mod tests {
     use assert_approx_eq::assert_approx_eq;
 
     #[test]
-    fn test_opcode_add() {
-        // integer
+    fn test_opcode_add_integer() {
         let mut vm = VM::new();
         vm.iregisters[0] = 3;
         vm.iregisters[1] = 2;
@@ -224,8 +223,10 @@ mod tests {
         assert!(exit.is_ok());
         assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 5);
+    }
 
-        // real to integer
+    #[test]
+    fn test_opcode_add_real_to_integer() {
         let mut vm = VM::new();
         vm.rregisters[0] = 3.2;
         vm.iregisters[1] = 2;
@@ -234,8 +235,10 @@ mod tests {
         assert!(exit.is_ok());
         assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 5);
+    }
 
-        // integer to real
+    #[test]
+    fn test_opcode_add_integer_to_real() {
         let mut vm = VM::new();
         vm.rregisters[0] = 3.2;
         vm.iregisters[1] = 2;
@@ -249,8 +252,10 @@ mod tests {
         assert!(exit.is_ok());
         assert!(!exit.unwrap());
         assert_eq!(vm.rregisters[0], 5.2);
+    }
 
-        // vector to vector
+    #[test]
+    fn test_opcode_add_vector_to_vector() {
         let mut vm = VM::new();
         vm.vregisters[0] = vec![1.0, 2.0, 3.1];
         vm.vregisters[1] = vec![2.0, 3.0, 4.0];
@@ -264,52 +269,59 @@ mod tests {
         assert!(exit.is_ok());
         assert!(!exit.unwrap());
         assert_eq!(vm.vregisters[0], vec![3.0, 5.0, 7.1]);
-
-        // real to vector
-        let mut vm = VM::new();
-        vm.vregisters[0] = vec![1.0, 2.0, 3.1];
-        vm.rregisters[0] = 1.2;
-        vm.program = vec![
-            Opcode::ADD as u8,
-            vector_register_to_idx(0),
-            vector_register_to_idx(0),
-            real_register_to_idx(0),
-        ];
-        let exit = vm.step();
-        assert!(exit.is_ok());
-        assert!(!exit.unwrap());
-        assert_eq!(vm.vregisters[0], vec![2.2, 3.2, 4.3]);
-
-        // vector to real
-        let mut vm = VM::new();
-        vm.vregisters[0] = vec![1.0, 2.0, 3.1];
-        vm.rregisters[0] = 1.2;
-        vm.program = vec![
-            Opcode::ADD as u8,
-            vector_register_to_idx(0),
-            real_register_to_idx(0),
-            vector_register_to_idx(0),
-        ];
-        let exit = vm.step();
-        assert!(exit.is_ok());
-        assert!(!exit.unwrap());
-        assert_eq!(vm.vregisters[0], vec![2.2, 3.2, 4.3]);
-
-        // TODO: test error cases
     }
 
     #[test]
-    fn test_opcode_sub() {
+    fn test_opcode_add_real_to_vector() {
         let mut vm = VM::new();
-        vm.rregisters[0] = 3.0;
-        vm.iregisters[1] = 2;
-        vm.program = vec![Opcode::SUB as u8, 128, 128, 1];
+        vm.vregisters[0] = vec![1.0, 2.0, 3.1];
+        vm.rregisters[0] = 1.2;
+        vm.program = vec![
+            Opcode::ADD as u8,
+            vector_register_to_idx(0),
+            vector_register_to_idx(0),
+            real_register_to_idx(0),
+        ];
         let exit = vm.step();
         assert!(exit.is_ok());
         assert!(!exit.unwrap());
-        assert_eq!(vm.rregisters[0], 1.0);
+        assert_eq!(vm.vregisters[0], vec![2.2, 3.2, 4.3]);
+    }
 
-        // real to integer
+    #[test]
+    fn test_opcode_add_vector_to_real() {
+        let mut vm = VM::new();
+        vm.vregisters[0] = vec![1.0, 2.0, 3.1];
+        vm.rregisters[0] = 1.2;
+        vm.program = vec![
+            Opcode::ADD as u8,
+            vector_register_to_idx(0),
+            real_register_to_idx(0),
+            vector_register_to_idx(0),
+        ];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert!(!exit.unwrap());
+        assert_eq!(vm.vregisters[0], vec![2.2, 3.2, 4.3]);
+    }
+
+    #[test]
+    fn test_opcode_add_vector_to_real_to_real_is_error() {
+        let mut vm = VM::new();
+        vm.vregisters[0] = vec![1.0, 2.0, 3.1];
+        vm.rregisters[0] = 1.2;
+        vm.program = vec![
+            Opcode::ADD as u8,
+            vector_register_to_idx(0),
+            real_register_to_idx(0),
+            real_register_to_idx(1),
+        ];
+        let exit = vm.step();
+        assert!(exit.is_err());
+    }
+
+    #[test]
+    fn test_opcode_sub_integer_from_real_to_integer() {
         let mut vm = VM::new();
         vm.rregisters[0] = 3.2;
         vm.iregisters[1] = 2;
@@ -318,8 +330,10 @@ mod tests {
         assert!(exit.is_ok());
         assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 1);
+    }
 
-        // integer to real
+    #[test]
+    fn test_opcode_sub_integer_from_real_to_real() {
         let mut vm = VM::new();
         vm.rregisters[0] = 3.2;
         vm.iregisters[1] = 2;
@@ -333,8 +347,10 @@ mod tests {
         assert!(exit.is_ok());
         assert!(!exit.unwrap());
         assert_approx_eq!(vm.rregisters[0], 1.2);
+    }
 
-        // vector to vector
+    #[test]
+    fn test_opcode_sub_vector_from_vector() {
         let mut vm = VM::new();
         vm.vregisters[0] = vec![1.0, 2.0, 3.1];
         vm.vregisters[1] = vec![2.0, 3.0, 4.0];
@@ -350,8 +366,10 @@ mod tests {
         for (i, vreg) in vec![-1.0, -1.0, -0.9].iter().enumerate() {
             assert_approx_eq!(vm.vregisters[0][i], vreg);
         }
+    }
 
-        // real to vector
+    #[test]
+    fn test_opcode_sub_real_from_vector_to_vector() {
         let mut vm = VM::new();
         vm.vregisters[0] = vec![1.0, 2.0, 3.1];
         vm.rregisters[0] = 1.2;
@@ -367,8 +385,10 @@ mod tests {
         for (i, vreg) in vec![-0.2, 0.8, 1.9].iter().enumerate() {
             assert_approx_eq!(vm.vregisters[0][i], vreg);
         }
+    }
 
-        // vector to real
+    #[test]
+    fn test_opcode_sub_real_from_vector_to_real_is_error() {
         let mut vm = VM::new();
         vm.vregisters[0] = vec![1.0, 2.0, 3.1];
         vm.rregisters[0] = 1.2;
@@ -383,7 +403,7 @@ mod tests {
     }
 
     #[test]
-    fn test_opcode_mul() {
+    fn test_opcode_mul_integer_by_real_to_integer() {
         let mut vm = VM::new();
         vm.iregisters[0] = 3;
         vm.rregisters[1] = 2.0;
@@ -392,8 +412,10 @@ mod tests {
         assert!(exit.is_ok());
         assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 6);
+    }
 
-        // real to integer
+    #[test]
+    fn test_opcode_mul_real_by_integer_to_integer() {
         let mut vm = VM::new();
         vm.rregisters[0] = 3.2;
         vm.iregisters[1] = 2;
@@ -402,8 +424,10 @@ mod tests {
         assert!(exit.is_ok());
         assert!(!exit.unwrap());
         assert_eq!(vm.iregisters[0], 6);
+    }
 
-        // integer to real
+    #[test]
+    fn test_opcode_mul_real_by_integer_to_real() {
         let mut vm = VM::new();
         vm.rregisters[0] = 3.2;
         vm.iregisters[1] = 2;
@@ -417,8 +441,10 @@ mod tests {
         assert!(exit.is_ok());
         assert!(!exit.unwrap());
         assert_approx_eq!(vm.rregisters[0], 6.4);
+    }
 
-        // vector to vector
+    #[test]
+    fn test_opcode_mul_vector_by_vector_to_vector() {
         let mut vm = VM::new();
         vm.vregisters[0] = vec![1.0, 2.0, 3.1];
         vm.vregisters[1] = vec![2.0, 3.0, 4.0];
@@ -432,8 +458,10 @@ mod tests {
         assert!(exit.is_ok());
         assert!(!exit.unwrap());
         assert_eq!(vm.vregisters[0], vec![2.0, 6.0, 12.4]);
+    }
 
-        // real to vector
+    #[test]
+    fn test_opcode_mul_real_by_vector_to_vector() {
         let mut vm = VM::new();
         vm.vregisters[0] = vec![1.0, 2.0, 3.1];
         vm.rregisters[0] = 1.2;
@@ -449,8 +477,10 @@ mod tests {
         for (i, vreg) in vec![1.2, 2.4, 3.72].iter().enumerate() {
             assert_approx_eq!(vm.vregisters[0][i], vreg);
         }
+    }
 
-        // vector to real
+    #[test]
+    fn test_opcode_mul_vector_by_real_to_vector() {
         let mut vm = VM::new();
         vm.vregisters[0] = vec![1.0, 2.0, 3.1];
         vm.rregisters[0] = 1.2;
@@ -466,8 +496,59 @@ mod tests {
         for (i, vreg) in vec![1.2, 2.4, 3.72].iter().enumerate() {
             assert_approx_eq!(vm.vregisters[0][i], vreg);
         }
+    }
 
-        // TODO: test error cases
+    #[test]
+    fn test_opcode_mul_integer_by_vector_to_vector() {
+        let mut vm = VM::new();
+        vm.vregisters[0] = vec![1.0, 2.0, 3.1];
+        vm.iregisters[0] = 2;
+        vm.program = vec![
+            Opcode::MUL as u8,
+            vector_register_to_idx(0),
+            vector_register_to_idx(0),
+            0,
+        ];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert!(!exit.unwrap());
+        for (i, vreg) in vec![2.0, 4.0, 6.2].iter().enumerate() {
+            assert_approx_eq!(vm.vregisters[0][i], vreg);
+        }
+    }
+
+    #[test]
+    fn test_opcode_mul_vector_by_integer_to_vector() {
+        let mut vm = VM::new();
+        vm.vregisters[0] = vec![1.0, 2.0, 3.1];
+        vm.iregisters[0] = 2;
+        vm.program = vec![
+            Opcode::MUL as u8,
+            vector_register_to_idx(0),
+            0,
+            vector_register_to_idx(0),
+        ];
+        let exit = vm.step();
+        assert!(exit.is_ok());
+        assert!(!exit.unwrap());
+        for (i, vreg) in vec![2.0, 4.0, 6.2].iter().enumerate() {
+            assert_approx_eq!(vm.vregisters[0][i], vreg);
+        }
+    }
+
+    #[test]
+    fn test_opcode_mul_vector_by_integer_to_integer() {
+        let mut vm = VM::new();
+        vm.vregisters[0] = vec![1.0, 2.0, 3.1];
+        vm.iregisters[0] = 2;
+        vm.program = vec![
+            Opcode::MUL as u8,
+            int_register_to_idx(0),
+            int_register_to_idx(0),
+            vector_register_to_idx(0),
+        ];
+        let exit = vm.step();
+        assert!(exit.is_err());
     }
 
     #[test]

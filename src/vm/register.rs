@@ -15,7 +15,10 @@ impl TryInto<i32> for Register {
     fn try_into(self) -> Result<i32, Self::Error> {
         match self {
             Register::I(i) => Ok(i),
-            Register::R(r) => Ok(r as i32),
+            Register::R(r) => {
+                log::warn!("Possible loss of precision converting {} into integer", r);
+                Ok(r as i32)
+            }
             Register::V(_) => Err(Error::new("Cannot convert vector register into i32")),
         }
     }
@@ -58,12 +61,20 @@ pub fn is_vector_register(reg: u8) -> bool {
     (reg & 0b01000000) == 0b01000000
 }
 
+pub fn idx_from_int_register(reg: u8) -> u8 {
+    reg
+}
+
 pub fn idx_from_real_register(reg: u8) -> u8 {
     reg & 0b01111111
 }
 
 pub fn idx_from_vector_register(reg: u8) -> u8 {
     reg & 0b10111111
+}
+
+pub fn int_register_to_idx(reg: u8) -> u8 {
+    reg
 }
 
 pub fn real_register_to_idx(reg: u8) -> u8 {
