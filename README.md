@@ -1,4 +1,4 @@
-[![Rust](https://github.com/dmah42/mrdo/workflows/Rust/badge.svg)](https://github.com/dmah42/mrdo/actions?query=workflow%3ARust)
+[![Rust](https://github.com/dmah42/mrdo/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/dmah42/mrdo/actions/workflows/rust.yml)
 # mrdo
 mrdo is a language in which variables may be either a:
 * real (mutable 64-bit floating point)
