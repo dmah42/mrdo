@@ -48,7 +48,14 @@ Once a variable is a type, it can't be reassigned to a new type.
 ### functions
 TODO (not implemented in the new rust world yet)
 
-Functions operate on collections in parallel and are either a:
+### builtins
+TODO (not implemented in the new rust world yet)
+
+Builtins are called using the `do(<builtin>, <args...>)` syntax.
+
+#### collection builtins
+TODO
+These operate on collections in parallel and are either a:
 * `map` (convert each element in the input collection to one element in the
 output collection)
 * `filter` (conditionally output each element in the input collection)
@@ -57,6 +64,11 @@ output collection)
 For `map`, the input and output collections may be different types.
 
 More function types may be added later.
+
+#### io builtins
+Anything can be read or written to stdin/stdout using the builtins
+* TODO: `read`
+* `write`
 
 ### operations
 The usual operations are available:
@@ -90,12 +102,6 @@ governed by a given comparison operation.
 * TODO: first: returns the first 'n' elements of a collection in the same
 * collection
 type.
-
-### io
-Collections can be read or written using the functions
-* TODO: read
-* write
-which used stdin and stdout
 
 old
 --
