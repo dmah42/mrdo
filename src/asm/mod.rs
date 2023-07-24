@@ -4,16 +4,17 @@ use crate::asm::opcode::Opcode;
 use crate::asm::program_parsers::{program, Program};
 use crate::asm::symbols::{Symbol, Table, Type};
 
-pub mod directive_parsers;
-pub mod error;
-pub mod instruction_parsers;
-pub mod label_parsers;
+mod directive_parsers;
+mod error;
+mod instruction_parsers;
+mod label_parsers;
+mod opcode_parsers;
+mod operand_parsers;
+mod register_parsers;
+mod symbols;
+
 pub mod opcode;
-pub mod opcode_parsers;
-pub mod operand_parsers;
 pub mod program_parsers;
-pub mod register_parsers;
-pub mod symbols;
 pub mod syscalls;
 
 pub const DO_HEADER_PREFIX: [u8; 4] = [68, 79, 86, 77]; // "DOVM"

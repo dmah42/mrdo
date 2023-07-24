@@ -9,7 +9,7 @@ use std::io;
 use std::io::Write;
 use std::path::Path;
 
-pub mod command_parser;
+mod command_parser;
 
 const INFO_TAG: char = '\u{29FB}';
 const WARN_TAG: char = '\u{26A0}';

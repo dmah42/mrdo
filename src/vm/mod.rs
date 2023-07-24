@@ -7,10 +7,10 @@ use crate::vm::register::*;
 use std::convert::{TryFrom, TryInto};
 use std::default::Default;
 
-pub mod arith_opcode;
-pub mod compare_opcode;
-pub mod error;
-pub mod logic_opcode;
+mod arith_opcode;
+mod compare_opcode;
+mod error;
+mod logic_opcode;
 pub mod register;
 
 pub struct VM {
