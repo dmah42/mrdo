@@ -1,3 +1,5 @@
+use super::builtin::Builtin;
+
 #[derive(Debug, PartialEq)]
 pub enum Token {
     Comment {
@@ -40,7 +42,7 @@ pub enum Token {
     },
 
     Builtin {
-        builtin: String,
+        builtin: Builtin,
         args: Vec<Token>,
     },
 

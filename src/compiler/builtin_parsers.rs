@@ -1,3 +1,4 @@
+use crate::compiler::builtin::Builtin;
 use crate::compiler::expression_parsers::*;
 use crate::compiler::tokens::Token;
 
@@ -27,44 +28,55 @@ pub fn builtin(i: &str) -> IResult<&str, Token> {
         ),
         |(_, (arg0, arg1))| -> Result<Token, nom::error::Error<&str>> {
             log::debug!("[builtin] success ({:?}, {:?})", arg0, arg1);
-            Ok(match arg1 {
-                Some(rvs) => Token::Builtin {
-                    builtin: String::from(arg0),
-                    args: rvs,
-                },
-                None => Token::Builtin {
-                    builtin: String::from(arg0),
-                    args: vec![],
-                },
-            })
+            match Builtin::try_from(arg0) {
+                Ok(builtin) => Ok(match arg1 {
+                    Some(rvs) => Token::Builtin { builtin, args: rvs },
+                    None => Token::Builtin {
+                        builtin,
+                        args: vec![],
+                    },
+                }),
+                Err(e) => {
+                    log::error!("Unknown builtin: {}", arg0);
+                    Err(e)
+                }
+            }
         },
     )(i)
 }
 
 #[cfg(test)]
 mod tests {
-    use log::LevelFilter;
 
     use super::*;
 
+    //use log::LevelFilter;
     fn init() {
-        let _ = pretty_env_logger::formatted_builder()
-            .is_test(true)
-            .filter_level(LevelFilter::Debug)
-            .try_init();
+        //let _ = pretty_env_logger::formatted_builder()
+        //    .is_test(true)
+        //    .filter_level(LevelFilter::Debug)
+        //    .try_init();
+    }
+
+    #[test]
+    fn test_unknown_builtin() {
+        init();
+
+        let result = builtin("do(foo)");
+        assert!(result.is_err());
     }
 
     #[test]
     fn test_builtin_noargs() {
         init();
 
-        let result = builtin("do(foo)");
+        let result = builtin("do(map)");
         assert!(result.is_ok());
         let (_, token) = result.unwrap();
         assert_eq!(
             token,
             Token::Builtin {
-                builtin: String::from("foo"),
+                builtin: Builtin::try_from("map").unwrap(),
                 args: vec![],
             }
         );
@@ -79,7 +91,7 @@ mod tests {
         assert_eq!(
             token,
             Token::Builtin {
-                builtin: String::from("write"),
+                builtin: Builtin::try_from("write").unwrap(),
                 args: vec![Token::Arith {
                     left: Box::new(Token::Term {
                         left: Box::new(Token::Factor {
@@ -97,13 +109,13 @@ mod tests {
     fn test_builtin_multiple_args() {
         init();
 
-        let result = builtin("do (read, foo, 1.0)");
+        let result = builtin("do (fold, foo, 1.0)");
         //assert!(result.is_ok());
         let (_, token) = result.unwrap();
         assert_eq!(
             token,
             Token::Builtin {
-                builtin: String::from("read"),
+                builtin: Builtin::try_from("fold").unwrap(),
                 args: vec![
                     Token::Arith {
                         left: Box::new(Token::Term {

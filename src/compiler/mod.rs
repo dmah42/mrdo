@@ -1,24 +1,24 @@
 use crate::asm::syscalls::Syscall;
-use crate::compiler::error::Error;
-use crate::compiler::expression_parsers::expression;
-use crate::compiler::program_parser::program;
-use crate::compiler::tokens::Token;
-use crate::compiler::visitor::Visitor;
+use crate::compiler::{
+    builtin::Builtin, error::Error, expression_parsers::expression, program_parser::program,
+    tokens::Token, visitor::Visitor,
+};
 use crate::vm::register::Register as VmRegister;
 
 use std::collections::HashMap;
 use std::mem::size_of;
 
-pub mod builtin_parsers;
-pub mod error;
-pub mod expression_parsers;
-pub mod factor_parsers;
-pub mod operand_parsers;
-pub mod operator_parsers;
-pub mod program_parser;
-pub mod term_parsers;
-pub mod tokens;
-pub mod visitor;
+mod builtin;
+mod builtin_parsers;
+mod error;
+mod expression_parsers;
+mod factor_parsers;
+mod operand_parsers;
+mod operator_parsers;
+mod program_parser;
+mod term_parsers;
+mod tokens;
+mod visitor;
 
 #[derive(Debug, PartialEq)]
 struct Register {
@@ -281,8 +281,8 @@ impl Visitor for Compiler {
             }
 
             Token::Builtin { builtin, args } => {
-                match builtin.as_str() {
-                    "write" => {
+                match builtin {
+                    Builtin::Write => {
                         if args.len() != 1 {
                             return Err(Error::new(
                                 "'write' expects a single argument".to_string(),
@@ -483,6 +483,8 @@ impl Default for Compiler {
 
 #[cfg(test)]
 mod tests {
+    use nom::IResult;
+
     use super::*;
 
     #[test]
@@ -509,20 +511,23 @@ mod tests {
         assert_eq!(v, 'v');
     }
 
-    fn generate_test_program(listing: &str) -> Token {
+    fn generate_test_program(listing: &str) -> IResult<&str, Token> {
         match program(listing) {
             Ok((rest, tree)) => {
                 assert!(rest.is_empty());
-                tree
+                Ok((rest, tree))
             }
-            Err(e) => panic!("ERROR generating test program: {:?}", e),
+            Err(e) => {
+                println!("ERROR generating test program: {:?}", e);
+                Err(e)
+            }
         }
     }
 
     #[test]
     fn test_addition_real() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("1.2 + 3.4\n");
+        let (_, test_program) = generate_test_program("1.2 + 3.4\n").unwrap();
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -550,7 +555,7 @@ mod tests {
     #[test]
     fn test_addition_integer() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("1 + 3\n");
+        let (_, test_program) = generate_test_program("1 + 3\n").unwrap();
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -578,7 +583,7 @@ mod tests {
     #[test]
     fn test_addition_vector() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("[1.2, 3.4] + [3.4, 1.2]\n");
+        let (_, test_program) = generate_test_program("[1.2, 3.4] + [3.4, 1.2]\n").unwrap();
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -622,7 +627,7 @@ mod tests {
     #[test]
     fn test_subtraction() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("1.2 - 3.4\n");
+        let (_, test_program) = generate_test_program("1.2 - 3.4\n").unwrap();
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -650,7 +655,7 @@ mod tests {
     #[test]
     fn test_multiplication() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("1.2 * 3.4\n");
+        let (_, test_program) = generate_test_program("1.2 * 3.4\n").unwrap();
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -678,7 +683,7 @@ mod tests {
     #[test]
     fn test_division() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("1.2 / 3.4\n");
+        let (_, test_program) = generate_test_program("1.2 / 3.4\n").unwrap();
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -706,7 +711,7 @@ mod tests {
     #[test]
     fn test_equals() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("1.2 + 4.1 eq 3.4\n");
+        let (_, test_program) = generate_test_program("1.2 + 4.1 eq 3.4\n").unwrap();
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -736,7 +741,7 @@ mod tests {
     #[test]
     fn test_not_equals() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("1.2 neq 3.4\n");
+        let (_, test_program) = generate_test_program("1.2 neq 3.4\n").unwrap();
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -764,7 +769,7 @@ mod tests {
     #[test]
     fn test_greater_than() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("1.2 gt 3.4\n");
+        let (_, test_program) = generate_test_program("1.2 gt 3.4\n").unwrap();
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -792,7 +797,7 @@ mod tests {
     #[test]
     fn test_greater_than_equals() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("1.2 gte 3.4\n");
+        let (_, test_program) = generate_test_program("1.2 gte 3.4\n").unwrap();
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -820,7 +825,7 @@ mod tests {
     #[test]
     fn test_less_than() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("1.2 lt 3.4\n");
+        let (_, test_program) = generate_test_program("1.2 lt 3.4\n").unwrap();
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -848,7 +853,7 @@ mod tests {
     #[test]
     fn test_less_than_equals() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("1.2 lte 3.4\n");
+        let (_, test_program) = generate_test_program("1.2 lte 3.4\n").unwrap();
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -876,7 +881,7 @@ mod tests {
     #[test]
     fn test_assign() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("foo = 42.0\n");
+        let (_, test_program) = generate_test_program("foo = 42.0\n").unwrap();
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -899,14 +904,14 @@ mod tests {
 
         // test error to reassign type of ident.
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("foo = 42.0\nfoo=[1,2]\n");
+        let (_, test_program) = generate_test_program("foo = 42.0\nfoo=[1,2]\n").unwrap();
         assert!(compiler.visit_token(&test_program).is_err());
     }
 
     #[test]
     fn test_identifier() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("foo = 42.3\nbar = foo\n");
+        let (_, test_program) = generate_test_program("foo = 42.3\nbar = foo\n").unwrap();
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -947,7 +952,7 @@ mod tests {
     #[test]
     fn test_collection() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("[0.1, 1.2]\n");
+        let (_, test_program) = generate_test_program("[0.1, 1.2]\n").unwrap();
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -981,7 +986,7 @@ mod tests {
     #[test]
     fn test_builtin() {
         let mut compiler = Compiler::new();
-        let test_program = generate_test_program("do(write, 42.0)\n");
+        let (_, test_program) = generate_test_program("do(write, 42.0)\n").unwrap();
         assert!(compiler.visit_token(&test_program).is_ok());
         assert_eq!(
             compiler.assembly,
@@ -999,8 +1004,7 @@ mod tests {
         assert_eq!(compiler.free_vec_reg.len(), 32);
         assert_eq!(compiler.used_reg, vec![]);
 
-        let mut compiler = Compiler::new();
-        let test_program = generate_test_program("do(foo)\n");
-        assert!(compiler.visit_token(&test_program).is_err());
+        let res = generate_test_program("do(foo)\n");
+        assert!(res.is_err());
     }
 }
