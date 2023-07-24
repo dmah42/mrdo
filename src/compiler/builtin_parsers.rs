@@ -1,6 +1,4 @@
-use crate::compiler::builtin::Builtin;
-use crate::compiler::expression_parsers::*;
-use crate::compiler::tokens::Token;
+use crate::compiler::{builtin::Builtin, expression_parsers::*, tokens::Token};
 
 use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, multispace0};

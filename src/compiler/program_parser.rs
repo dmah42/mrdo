@@ -1,3 +1,4 @@
+use nom::branch::alt;
 use nom::combinator::map_res;
 use nom::multi::many1;
 use nom::IResult;
@@ -5,11 +6,15 @@ use nom::IResult;
 use crate::compiler::expression_parsers::expression;
 use crate::compiler::tokens::Token;
 
+use super::function_parser::function;
+
 pub fn program(i: &str) -> IResult<&str, Token> {
     map_res(
-        many1(expression),
-        |expressions| -> Result<Token, nom::error::Error<&str>> {
-            Ok(Token::Program { expressions })
+        many1(alt((function, expression))),
+        |funcs_or_exprs| -> Result<Token, nom::error::Error<&str>> {
+            Ok(Token::Program {
+                statements: funcs_or_exprs,
+            })
         },
     )(i)
 }
@@ -27,7 +32,7 @@ mod tests {
         assert_eq!(
             token,
             Token::Program {
-                expressions: vec![
+                statements: vec![
                     Some(Token::Expression {
                         source: String::from("1.2 + 0.3"),
                         token: Box::new(Token::Arith {

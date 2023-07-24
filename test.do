@@ -10,3 +10,7 @@ bar = [42.0, 3, 1]
 baz = bar + foo
 do(write, bar)
 do(write, baz)
+
+func foobar(qux: real) {
+    do(write, qux)
+}

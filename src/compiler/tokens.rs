@@ -1,4 +1,4 @@
-use super::builtin::Builtin;
+use super::{builtin::Builtin, r#type::Type};
 
 #[derive(Debug, PartialEq)]
 pub enum Token {
@@ -38,12 +38,24 @@ pub enum Token {
 
     Assign {
         ident: String,
+        // TODO: type!
         expr: Box<Token>,
     },
 
     Builtin {
         builtin: Builtin,
         args: Vec<Token>,
+    },
+
+    Function {
+        name: String,
+        args: Vec<Token>,         // Args
+        body: Vec<Option<Token>>, // Expressions
+    },
+
+    Arg {
+        ident: String,
+        typ: Type,
     },
 
     Identifier {
@@ -74,6 +86,6 @@ pub enum Token {
         token: Box<Token>,
     },
     Program {
-        expressions: Vec<Option<Token>>,
+        statements: Vec<Option<Token>>,
     },
 }

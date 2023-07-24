@@ -13,11 +13,13 @@ mod builtin_parsers;
 mod error;
 mod expression_parsers;
 mod factor_parsers;
+mod function_parser;
 mod operand_parsers;
 mod operator_parsers;
 mod program_parser;
 mod term_parsers;
 mod tokens;
+mod r#type;
 mod visitor;
 
 #[derive(Debug, PartialEq)]
@@ -46,6 +48,7 @@ pub struct Compiler {
     assembly: Vec<String>,
 
     // Maps from a name to an index into `used_reg`.
+    // TODO: function scope
     variables: HashMap<String, usize>,
 }
 
@@ -324,6 +327,14 @@ impl Visitor for Compiler {
                 };
             }
 
+            Token::Function { name, args, body } => {
+                todo!()
+            }
+
+            Token::Arg { ident, typ } => {
+                todo!()
+            }
+
             Token::Identifier { name } => {
                 // println!("referencing variable '{}'", name.to_string());
                 if !self.variables.contains_key(name) {
@@ -457,10 +468,10 @@ impl Visitor for Compiler {
                 log::debug!("writing assembly for '{}'", source);
                 self.visit_token(token)?;
             }
-            Token::Program { ref expressions } => {
+            Token::Program { ref statements } => {
                 self.rodata.push(".data".into());
                 self.assembly.push(".code".into());
-                expressions
+                statements
                     .iter()
                     .flatten()
                     .try_for_each(|expr| self.visit_token(expr))?;
