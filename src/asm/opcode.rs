@@ -14,6 +14,7 @@ pub enum Opcode {
     MUL,
     DIV,
     JMP,
+    // TODO: RET
     EQ,
     NEQ,
     GT,

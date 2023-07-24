@@ -8,6 +8,8 @@ use crate::vm::register::Register as VmRegister;
 use std::collections::HashMap;
 use std::mem::size_of;
 
+use self::r#type::Type;
+
 mod builtin;
 mod builtin_parsers;
 mod error;
@@ -48,8 +50,8 @@ pub struct Compiler {
     assembly: Vec<String>,
 
     // Maps from a name to an index into `used_reg`.
-    // TODO: function scope
     variables: HashMap<String, usize>,
+    local_variables: Vec<String>,
 }
 
 impl Compiler {
@@ -77,6 +79,7 @@ impl Compiler {
             rodata: vec![],
             assembly: vec![],
             variables: HashMap::new(),
+            local_variables: vec![],
         }
     }
 
@@ -258,6 +261,19 @@ impl Visitor for Compiler {
                 self.visit_token(expr)?;
                 let result_reg = self.used_reg.pop().unwrap();
 
+                if !self.local_variables.contains(ident) {
+                    if self.variables.contains_key(ident) {
+                        // do not allow shadowing.  any variables needed must be passed in.
+                        return Err(Error::new(format!(
+                            "Cannot assign to global variable '{}' in function scope.",
+                            ident
+                        )));
+                    }
+
+                    // add new variables to list so they can be cleared on function definition exit
+                    self.local_variables.push(ident.clone());
+                }
+
                 // Ensure result reg remains 'used' and map name to result reg.
                 // 'unassign' old result reg if the variable already exists.
                 if self.variables.contains_key(ident) {
@@ -328,11 +344,48 @@ impl Visitor for Compiler {
             }
 
             Token::Function { name, args, body } => {
-                todo!()
+                self.assembly.push(format!("; [start func] {}", name));
+                self.assembly.push(format!("func_{}:", name));
+
+                for arg in args {
+                    self.visit_token(arg)?;
+                }
+
+                body.iter()
+                    .flatten()
+                    .try_for_each(|expr| self.visit_token(expr))?;
+
+                // TODO: return?
+
+                log::debug!("{:#?}", self.variables);
+                log::debug!("{:#?}", self.local_variables);
+                log::debug!("{:#?}", self.used_reg);
+
+                // clean up any local variables (in reverse order)
+                let mut free_regs = vec![];
+                for var in self.local_variables.iter().rev() {
+                    let old_used_reg = self.used_reg.remove(self.variables[var]);
+                    free_regs.push(old_used_reg);
+                    self.variables.remove(var);
+                }
+                for reg in free_regs {
+                    self.push_free_reg(reg);
+                }
+                self.assembly.push(format!("; [end func] {}", name));
             }
 
             Token::Arg { ident, typ } => {
-                todo!()
+                let reg = match typ {
+                    Type::Real => self.free_real_reg.pop().unwrap(),
+                    Type::Integer => self.free_int_reg.pop().unwrap(),
+                    Type::Coll => self.free_vec_reg.pop().unwrap(),
+                };
+                self.variables.insert(ident.clone(), self.used_reg.len());
+                log::debug!("{:#?}", self.variables);
+                self.local_variables.push(ident.clone());
+                log::debug!("{:#?}", self.local_variables);
+                self.used_reg.push(reg);
+                log::debug!("{:#?}", self.used_reg);
             }
 
             Token::Identifier { name } => {
@@ -1017,5 +1070,42 @@ mod tests {
 
         let res = generate_test_program("do(foo)\n");
         assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_function() {
+        let mut compiler = Compiler::new();
+        let (_, test_program) = generate_test_program(
+            "func foobar(i: integer, r: real) {\nr = r + i * 2\ndo(write, r)\n}\n",
+        )
+        .unwrap();
+        //assert!(compiler.visit_token(&test_program).is_ok());
+        println!("{:#?}", compiler.visit_token(&test_program));
+        assert_eq!(
+            compiler.assembly,
+            vec![
+                ".code",
+                "; [start func] foobar",
+                "func_foobar:",
+                "; r = r + i * 2",
+                "copy $r30 $r31",
+                "copy $i30 $i31",
+                "load $i29 #2",
+                "mul $i28 $i30 $i29",
+                "add $r29 $r30 $i28",
+                "; do(write, r)",
+                "copy $r31 $r29",
+                "load $i28 #0",
+                "syscall $i28 $r31",
+                "; [end func] foobar",
+                "halt\n"
+            ]
+        );
+        assert_eq!(compiler.free_int_reg.len(), 32);
+        assert_eq!(compiler.free_real_reg.len(), 32);
+        assert_eq!(compiler.free_vec_reg.len(), 32);
+        assert_eq!(compiler.used_reg, vec![]);
+
+        // TODO: test shadowing
     }
 }
