@@ -103,7 +103,10 @@ governed by a given comparison operation.
 * collection
 type.
 
-old
+## assembly language
+for details of all the opcodes and what they do, see [opcodes.md](opcodes.md)
+
+## old
 --
 There's an original version of this project that is more feature rich and
 uses LLVM to compile to a binary, but that restricted what could be done at
