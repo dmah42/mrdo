@@ -12,11 +12,11 @@ keywords = ["cli", "compiler", "assembler", "VM", "programming-language"]
 categories = ["compilers"]
 
 [dependencies]
-pretty_env_logger = "^0.5"
-log = "^0.4"
-nom = "^7.0"
-num_enum="^0.6"
-structopt = "^0.3"
+pretty_env_logger = "0.5"
+log = "0.4"
+nom = "7.1"
+num_enum="0.7"
+structopt = "0.3"
 
 [dev-dependencies]
-assert_approx_eq = "^1.1"
+assert_approx_eq = "1.1"
