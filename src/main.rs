@@ -3,35 +3,43 @@ use crate::compiler::Compiler;
 use crate::repl::REPL;
 use crate::vm::{is_valid_bytecode, VM};
 
+use clap::Parser;
 use log::LevelFilter;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
-use structopt::StructOpt;
 
 pub mod asm;
 pub mod compiler;
 pub mod repl;
 pub mod vm;
 
-#[derive(StructOpt)]
-struct Cli {
-    #[structopt(parse(from_os_str))]
+#[derive(Parser)]
+#[command(name = "mrdo")]
+#[command(bin_name = "mrdo")]
+enum Cli {
+    Args(Args),
+}
+
+#[derive(clap::Args)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    #[arg(value_hint = clap::ValueHint::FilePath, value_name = "INPUT_FILE")]
     program: Option<std::path::PathBuf>,
 
-    #[structopt(short, long, parse(from_os_str))]
+    #[arg(short, long, value_hint = clap::ValueHint::FilePath, value_name = "OUTPUT_FILE")]
     output: Option<std::path::PathBuf>,
 
-    #[structopt(short("d"), long)]
+    #[arg(short = 'd', long)]
     debug: bool,
 
-    #[structopt(short("a"), long)]
+    #[arg(short = 'a', long)]
     list_asm: bool,
 
-    #[structopt(short("b"), long)]
+    #[arg(short = 'b', long)]
     list_bc: bool,
 
-    #[structopt(short("r"), long)]
+    #[arg(short = 'r', long)]
     list_reg: bool,
     // TODO: implement this.
     //#[structopt(short, long)]
@@ -39,7 +47,7 @@ struct Cli {
 }
 
 fn main() {
-    let args = Cli::from_args();
+    let Cli::Args(args) = Cli::parse();
 
     if args.debug {
         pretty_env_logger::formatted_timed_builder()

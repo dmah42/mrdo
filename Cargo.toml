@@ -16,7 +16,7 @@ pretty_env_logger = "0.5"
 log = "0.4"
 nom = "7.1"
 num_enum="0.7"
-structopt = "0.3"
+clap = { version = "4.4", features = ["derive"]}
 
 [dev-dependencies]
 assert_approx_eq = "1.1"
